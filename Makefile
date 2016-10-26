@@ -1,3 +1,8 @@
+#
+# Makefile for the Gomoku project.
+# 
+#
+
 make:
 	mkdir build
 	mkdir build/server
