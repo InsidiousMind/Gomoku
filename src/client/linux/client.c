@@ -22,6 +22,7 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
+
 int translate_to_gips(int x, int y) {
 	
 }
