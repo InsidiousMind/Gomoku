@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <netdb.h>
 #include <pthread.h>
+#include "../../gips/gips.h"
 
 #define HOST "server1.cs.scranton.edu"
 #define HTTPPORT "32200"
@@ -66,7 +67,7 @@ int main() {
 	if (sock != -1) {
 		printf("Enter your name: ");
 		scanf("%s", name);
-		send(sock, name, sizeof(name));
+		send(sock, name, sizeof(name), 0);
 	} else {
 		printf("Couldn't connect to the server.\n");
 		exit(0);
