@@ -1,5 +1,5 @@
 /*
- * Client utilizing the GIPS protocol designed by Sean Batzel and Andrew Plaza.
+ * Client utilizing the Gomoku Inter Process Shuttle (GIPS) protocol designed by Sean Batzel and Andrew Plaza.
  *
  * Client designed by Sean Batzel
  */
@@ -66,6 +66,10 @@ int main() {
 	if (sock != -1) {
 		printf("Enter your name: ");
 		scanf("%s", name);
+		send(sock, name, sizeof(name));
+	} else {
+		printf("Couldn't connect to the server.\n");
+		exit(0);
 	}
 	while (board1 != 999 && board2 != 999) {
 		display_board(board1, board2);
