@@ -39,13 +39,14 @@ int receive_gips_from_server() {
 
 }
 
-void display_board(int board1, board2) {
+void display_board(int board1, int board2) {
 
 }
 
 int connect_to_server() {
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	struct hostent serv = gethostbyname(HOST);
+	struct hostent *serv;
+	serv = gethostbyname(HOST);
 	int succ = connect(sock, serv, sizeof(serv));
 	if (succ != -1) {
 		return sock;
@@ -66,8 +67,8 @@ int main() {
 		printf("Enter your name: ");
 		scanf("%s", name);
 	}
-	while (board != 999) {
-		display_board();
+	while (board1 != 999 && board2 != 999) {
+		display_board(board1, board2);
 		printf("%s> ", name);
 		scanf("%d %d", &move_x, &move_y);
 		gips = translate_to_gips(move_x, move_y);
