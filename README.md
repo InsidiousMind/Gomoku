@@ -1,6 +1,5 @@
 #
 Gomoku
-Gomoku Cool Ass Japanese Game Socket Web App That Will Blow Bi's Socks Off
 
 ## DUE 10/31/2016
 
