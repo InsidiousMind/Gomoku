@@ -4,23 +4,40 @@
 #
 
 make:
-	mkdir build
-	mkdir build/server
-	mkdir build/client
-	mkdir build/client/linux
-	cc src/server/server.c -g -Wall -Wextra -o build/server/server
-	cc src/client/linux/client.c -g -Wall -Wextra -o build/client/linux/client
+	mkdir -p build
+	mkdir -p build/server
+	mkdir -p build/client
+	cc src/server/server.c -o build/server/server
+	cc src/client/client.c -o build/client/client
 
-linux:
-	mkdir build
-	mkdir build/client
-	mkdir build/client/linux
-	cc src/client/linux/client.c -g -Wall -Wextra -o build/client/linux/client
+client:
+	mkdir -p build
+	mkdir -p build/client
+	cc src/client/client.c -o build/client/client
 
 server:
-	mkdir build
-	mkdir build/server
-	cc src/server/server.c -g -Wall -Wextra -o build/server/server
+	mkdir -p build
+	mkdir -p build/server
+	cc src/server/server.c -o build/server/server
+
+
+debug:
+	mkdir -p debug
+	mkdir -p debug/server
+	mkdir -p debug/client
+	cc src/server/server.c -g -Wall -Wextra -o debug/server/server
+	cc src/client/client.c -g -Wall -Wextra -o debug/client/client
+
+client-debug:
+	mkdir -p debug
+	mkdir -p debug/client
+	cc src/client/client.c -g -Wall -Wextra -o debug/client/client
+
+server-debug:
+	mkdir -p debug
+	mkdir -p debug/server
+	cc src/server/server.c -g -Wall -Wextra -o debug/server/server
 
 clean:
 	rm -rf build
+	rm -rf debug

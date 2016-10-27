@@ -23,20 +23,11 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-
-int translate_to_gips(int x, int y) {
-	
-}
-
-int translate_from_gips(int gips) {
+int send_to_server() {
 
 }
 
-int send_gips_to_server(int gips) {
-
-}
-
-int receive_gips_from_server() {
+int receive_from_server() {
 
 }
 
@@ -56,12 +47,10 @@ int connect_to_server() {
 }
 
 int main() {
-	int board1 = 0;
-	int board2 = 0;
+	char board[8][8];
 	char *name;
 	int move_x;
 	int move_y;
-	int gips;
 	int sock = connect_to_server();
 	printf("Gomoku Client for Linux\n");
 	if (sock != -1) {
@@ -73,14 +62,8 @@ int main() {
 		exit(0);
 	}
 	while (board1 != 999 && board2 != 999) {
-		display_board(board1, board2);
-		printf("%s> ", name);
-		scanf("%d %d", &move_x, &move_y);
-		gips = translate_to_gips(move_x, move_y);
-		send_gips_to_server(gips);
-		board1 = receive_gips_from_server();
-		board2 = receive_gips_from_server();
+		printf("%d> ", name);
+		// Asyncronously make moves.
 	}
 	close(sock);
-	return 0;
 }

@@ -4,14 +4,14 @@
 
 extern char *board[8][8];
 
-long encode_send() {
+void encode_send() {
 	
 }
 
-long decode_recv() {
-
+void decode_recv() {
+		
 }
 
 void toggle_node(int a, int b, char c) {
-	
+	board[a][b] = c;	
 }
