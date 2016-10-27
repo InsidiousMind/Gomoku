@@ -17,40 +17,45 @@
 #include <sys/stat.h>
 #include <netdb.h>
 #include <pthread.h>
-#include "../../gips/gips.h"
+#include "../lib/network.h"
+#include "../lib/gips.h"
 
 #define HOST "server1.cs.scranton.edu"
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-int send_to_server() {
-
+char *send_move(int a, int b, char *board) {
+	board[a][b] = 'A';
+	// Send the move to the other guy.
+	return board;
 }
 
-int receive_from_server() {
-
+char *get_move(char *board) {
+	// Get the move from the other guy.
+	// Get an x and y coordinate from the gips packet.
+	// Check if somebody won.
+	// If they did, jump to that subroutine and tell us,
+	// then terminate.
+	board[x][y] = 'B';
+	return board;
 }
 
-void display_board(int board1, int board2) {
-
-}
-
-int connect_to_server() {
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	struct hostent *serv;
-	serv = gethostbyname(HOST);
-	int succ = connect(sock, serv, sizeof(serv));
-	if (succ != -1) {
-		return sock;
+void display_board(char *board) {
+	int i;
+	int j;
+	for (i = 0; i < 8; i++) {
+		for (j = 0; j < 8; j++) {
+			printf("%c", board[i][j]);
+		}
+		printf("\n");
 	}
-	return -1;
 }
 
 int main() {
-	char board[8][8];
 	char *name;
 	int move_x;
 	int move_y;
+	char board[8][8];
 	int sock = connect_to_server();
 	printf("Gomoku Client for Linux\n");
 	if (sock != -1) {
@@ -61,9 +66,9 @@ int main() {
 		printf("Couldn't connect to the server.\n");
 		exit(0);
 	}
-	while (board1 != 999 && board2 != 999) {
+	while () {
 		printf("%d> ", name);
-		// Asyncronously make moves.
+		
 	}
 	close(sock);
 }
