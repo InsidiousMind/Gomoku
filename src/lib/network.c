@@ -9,10 +9,12 @@ int connect_to_server() {
 	return -1;
 }
 
-void send_to(long z) {
-
+void send_to(long z, int sock) {
+	send(sock, z, sizeof(z), 0);
 }
 
-long get_server() {
-
+long get_server(int sock) {
+	long buf;
+	recv(sock, buff, sizeof(buffer), 0);
+	return buff;
 }

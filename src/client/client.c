@@ -24,20 +24,20 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-char *send_move(int a, int b, char *board) {
+char *send_move(int a, int b, char *board, int sock) {
 	board[a][b] = 'A';
 	// Send the move to the other guy.
 	long z = encode(a, b);
-	send_to(z);
+	send_to(z, sock);
 	return board;
 }
 
-char *get_move(char *board) {
+char *get_move(char *board, int sock) {
 	int move[2];
 	// Get the move from the other guy.
 	long z = get_server();
 	// Get an x and y coordinate from the gips packet.
-	someone_won(z); // Check if the game is over.
+	someone_won(z, sock); // Check if the game is over.
 	// Otherwise we just decode
 	move = decode(z);
 	board[move[0]][move[1]] = 'B';
@@ -74,8 +74,8 @@ int main() {
 		//TODO check this loop
 		printf("%d> ", name);
 		scanf("%d%d", move_x, move_y);
-		board = send_move(move_x, move_y, board);
-		board = get_move();
+		board = send_move(move_x, move_y, board, sock);
+		board = get_move(sock);
 	}
 	close(sock);
 }
