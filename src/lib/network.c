@@ -8,3 +8,11 @@ int connect_to_server() {
 	}
 	return -1;
 }
+
+void send_to(long z) {
+
+}
+
+long get_server() {
+
+}

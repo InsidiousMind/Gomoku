@@ -70,9 +70,12 @@ int main() {
 		printf("Couldn't connect to the server.\n");
 		exit(0);
 	}
-	while () {
+	while (1) {
+		//TODO check this loop
 		printf("%d> ", name);
-		
+		scanf("%d%d", move_x, move_y);
+		board = send_move(move_x, move_y, board);
+		board = get_move();
 	}
 	close(sock);
 }

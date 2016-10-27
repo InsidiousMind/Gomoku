@@ -7,8 +7,8 @@ make:
 	mkdir -p build
 	mkdir -p build/server
 	mkdir -p build/client
-	cc src/server/server.c -g -lpthread -o build/server/server
-	cc src/client/linux/client.c -g -o build/client/linux/client
+	cc src/server/server.c -lpthread -o build/server/server
+	cc src/client/linux/client.c -o build/client/linux/client
 
 client:
 	mkdir -p build
@@ -18,7 +18,7 @@ client:
 server:
 	mkdir -p build
 	mkdir -p build/server
-	cc src/server/server.c -g -lpthread -Wall -Wextra -o build/server/server
+	cc src/server/server.c -lpthread -o build/server/server
 
 
 debug:
