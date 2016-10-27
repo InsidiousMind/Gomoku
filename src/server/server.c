@@ -25,8 +25,8 @@ int start_server(int serv_socket, int backlog) ;
 int accept_client(int serv_sock);
 void start_subserver(int reply_sock_fd);
 
-int main(void)
-{
+int main(void) {
+
 	int http_sock_fd;
 	int reply_sock_fd;
 	int yes;
@@ -46,6 +46,7 @@ int main(void)
 		start_subserver(reply_sock_fd);
 	}
 }
+
 
 int get_server_socket(char *hostname, char *port) {
 	struct addrinfo hints, *servinfo, *p;
