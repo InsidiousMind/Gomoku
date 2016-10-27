@@ -37,7 +37,7 @@ char *get_move(char *board, int sock) {
 	// Get the move from the other guy.
 	long z = get_server();
 	// Get an x and y coordinate from the gips packet.
-	someone_won(z, sock); // Check if the game is over.
+	someone_won(z); // Check if the game is over.
 	// Otherwise we just decode
 	move = decode(z);
 	board[move[0]][move[1]] = 'B';
@@ -75,7 +75,7 @@ int main() {
 		printf("%d> ", name);
 		scanf("%d%d", move_x, move_y);
 		board = send_move(move_x, move_y, board, sock);
-		board = get_move(sock);
+		board = get_move(board, sock);
 	}
 	close(sock);
 }
