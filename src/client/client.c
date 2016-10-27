@@ -27,16 +27,20 @@
 char *send_move(int a, int b, char *board) {
 	board[a][b] = 'A';
 	// Send the move to the other guy.
+	long z = encode(a, b);
+	send_to(z);
 	return board;
 }
 
 char *get_move(char *board) {
+	int move[2];
 	// Get the move from the other guy.
+	long z = get_server();
 	// Get an x and y coordinate from the gips packet.
-	// Check if somebody won.
-	// If they did, jump to that subroutine and tell us,
-	// then terminate.
-	board[x][y] = 'B';
+	someone_won(z); // Check if the game is over.
+	// Otherwise we just decode
+	move = decode(z);
+	board[move[0]][move[1]] = 'B';
 	return board;
 }
 

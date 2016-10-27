@@ -1,6 +1,7 @@
 #include <gips.h>
 
 void someone_won(long x) {
+	// Ask the server if someone won?
 	// Takes a single 0 or 1 to tell us if we won or not.
 	// 1 is a loss.
 	switch (x) {
