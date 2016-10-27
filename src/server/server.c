@@ -20,7 +20,32 @@
 void *get_in_addr(struct sockaddr * sa);
 void print_ip( struct addrinfo *ai);
 void *subserver(void * reply_sock_fd_as_ptr);
+int get_server_socket(char *hostname, char *port);
+int start_server(int serv_socket, int backlog) ;
+int accept_client(int serv_sock);
+void start_subserver(int reply_sock_fd);
 
+int main(void)
+{
+	int http_sock_fd;
+	int reply_sock_fd;
+	int yes;
+
+	http_sock_fd = get_server_socket(HOST, HTTPPORT);
+
+	if (start_server(http_sock_fd, BACKLOG) == -1) {
+		printf("start server error\n");
+		exit(1);
+	}
+
+	while(1) {
+		if ((reply_sock_fd = accept_client(http_sock_fd)) == -1) {
+			continue;
+		}
+
+		start_subserver(reply_sock_fd);
+	}
+}
 
 int get_server_socket(char *hostname, char *port) {
 	struct addrinfo hints, *servinfo, *p;
@@ -161,25 +186,4 @@ void *get_in_addr(struct sockaddr * sa) {
 	}
 }
 
-int main(void)
-{
-	int http_sock_fd;
-	int reply_sock_fd;
-	int yes;
-
-	http_sock_fd = get_server_socket(HOST, HTTPPORT);
-
-	if (start_server(http_sock_fd, BACKLOG) == -1) {
-		printf("start server error\n");
-		exit(1);
-	}
-
-	while(1) {
-		if ((reply_sock_fd = accept_client(http_sock_fd)) == -1) {
-			continue;
-		}
-
-		start_subserver(reply_sock_fd);
-	}
-} 
 
