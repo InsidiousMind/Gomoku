@@ -1,19 +1,26 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <errno.h>
+#include <signal.h>
 
-//#define HOST "server2.cs.scranton.edu"
+#define HOST "127.0.0.1"
 #define HTTPPORT "32200"
 #define BACKLOG 10
+#define NUM_THREADS 2
+void *get_in_addr(struct sockaddr * sa);
+void print_ip( struct addrinfo *ai);
+void *subserver(void * reply_sock_fd_as_ptr);
+
 
 int get_server_socket(char *hostname, char *port) {
 	struct addrinfo hints, *servinfo, *p;
