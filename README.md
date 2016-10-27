@@ -1,5 +1,5 @@
-# Gomoku
-Gomoku Cool Ass Chinese Game Socket Web App That Will Blow Bi's Socks Off
+#
+Gomoku
 
 ## DUE 10/31/2016
 
