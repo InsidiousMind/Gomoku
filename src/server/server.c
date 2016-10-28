@@ -30,7 +30,12 @@ int main(void) {
 
 	int http_sock_fd;
 	int reply_sock_fd;
-	//int yes;
+	
+	/*
+	 * int yes; This patches a compiler error that prevented compiling
+	 * with the current compiler settings that complained about it being
+	 * unused.
+	 */
 
 	http_sock_fd = get_server_socket(HOST, HTTPPORT);
 
