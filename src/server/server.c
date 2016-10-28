@@ -30,7 +30,7 @@ int main(void) {
 
 	int http_sock_fd;
 	int reply_sock_fd;
-	int yes;
+	//int yes;
 
 	http_sock_fd = get_server_socket(HOST, HTTPPORT);
 

@@ -25,18 +25,18 @@ debug:
 	mkdir -p debug
 	mkdir -p debug/server
 	mkdir -p debug/client
-	cc src/server/server.c -g -lpthread -Wall -Wextra -o debug/server/server
-	cc src/client/client.c -g -Wall -Wextra -o debug/client/client
+	cc src/server/server.c -g -lpthread -Wall -Wextra -Werror -o debug/server/server
+	cc src/client/client.c -g -Wall -Wextra -Werror -o debug/client/client
 
 client-debug:
 	mkdir -p debug
 	mkdir -p debug/client
-	cc src/client/client.c -g -Wall -Wextra -o debug/client/client
+	cc src/client/client.c -g -Wall -Wextra -Werror -o debug/client/client
 
 server-debug:
 	mkdir -p debug
 	mkdir -p debug/server
-	cc src/server/server.c -g -lpthread -Wall -Wextra -o debug/server/server
+	cc src/server/server.c -g -lpthread -Wall -Wextra -Werror -o debug/server/server
 
 clean:
 	rm -rf build

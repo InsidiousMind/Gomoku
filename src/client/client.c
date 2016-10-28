@@ -27,15 +27,15 @@
 char *send_move(int a, int b, char *board, int sock) {
 	board[a][b] = 'A';
 	// Send the move to the other guy.
-	long z = encode(a, b);
+	gips *z = encode(a, b);
 	send_to(z, sock);
 	return board;
 }
 
 char *get_move(char *board, int sock) {
-	int move[2];
+	int *move;
 	// Get the move from the other guy.
-	long z = get_server();
+	gips *z = get_server(sock);
 	// Get an x and y coordinate from the gips packet.
 	someone_won(z); // Check if the game is over.
 	// Otherwise we just decode
@@ -72,8 +72,8 @@ int main() {
 	}
 	while (1) {
 		//TODO check this loop
-		printf("%d> ", name);
-		scanf("%d%d", move_x, move_y);
+		printf("%s> ", name);
+		scanf("%d%d", &move_x, &move_y);
 		board = send_move(move_x, move_y, board, sock);
 		board = get_move(board, sock);
 	}

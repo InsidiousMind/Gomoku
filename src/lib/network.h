@@ -1,3 +1,5 @@
+#include "gips.h"
+
 int connect_to_server();
-void send_to(long z, int sock);
-long get_server(int sock);
+void send_to(gips *z, int sock);
+gips *get_server(int sock);
