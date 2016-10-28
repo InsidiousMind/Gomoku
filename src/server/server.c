@@ -17,13 +17,14 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 #define NUM_THREADS 2
-void *get_in_addr(struct sockaddr * sa);
-void print_ip( struct addrinfo *ai);
-void *subserver(void * reply_sock_fd_as_ptr);
-int get_server_socket(char *hostname, char *port);
-int start_server(int serv_socket, int backlog) ;
-int accept_client(int serv_sock);
-void start_subserver(int reply_sock_fd);
+
+void *get_in_addr(struct sockaddr * sa); //get info of incoming addr in struct
+void print_ip( struct addrinfo *ai); //prints IP
+void *subserver(void * reply_sock_fd_as_ptr); //starts subserver, sends HTML page
+int get_server_socket(char *hostname, char *port); //get a socket and bind to it
+int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
+int accept_client(int serv_sock); //accepts incoming connection
+void start_subserver(int reply_sock_fd); //starts subserver
 
 int main(void) {
 
@@ -48,6 +49,7 @@ int main(void) {
 }
 
 
+// 
 int get_server_socket(char *hostname, char *port) {
 	struct addrinfo hints, *servinfo, *p;
 	int status;
@@ -176,6 +178,7 @@ void print_ip( struct addrinfo *ai) {
 	}
 }
 
+//get the structure of incoming addr
 void *get_in_addr(struct sockaddr * sa) {
 	if (sa->sa_family == AF_INET) {
 		printf("ipv4\n");
