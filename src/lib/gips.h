@@ -2,9 +2,10 @@
 #define GIPS
 typedef struct {
 	short player;
-	long long move;
+	long long pos;
 } gips;
-gips *encode(int x, int y);
-int *decode(gips *x);
+
+gips *pack(char **pos, short player); //packs long long
+int *unpack(gips *x);
 void someone_won(gips *x);
 #endif /*GIPS*/
