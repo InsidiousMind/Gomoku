@@ -3,6 +3,10 @@
 
 /*
 //if the game logic is server-side, this is unnecessary
+// It's actually not unnecessary - the game logic determines if we won,
+// but the client needs to be responsible for telling the player and
+// quitting itself. - Sean
+*/
 void someone_won(gips *x) {
 	// Ask the server if someone won?
 	// Takes a single 0 or 1 to tell us if we won or not.
@@ -15,7 +19,6 @@ void someone_won(gips *x) {
 	}
 	exit(0);
 }
-*/
 
 //packs positions of player into a long long
 //stored on a per-player basis, cannot store
