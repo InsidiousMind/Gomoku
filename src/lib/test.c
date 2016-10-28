@@ -1,31 +1,25 @@
-#include "gips.h"
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "gips.h"
 
-/*
-//if the game logic is server-side, this is unnecessary
-// It's actually not unnecessary - the game logic determines if we won,
-// but the client needs to be responsible for telling the player and
-// quitting itself. - Sean
-*/
-void someone_won(gips *x) {
-	// Ask the server if someone won?
-	// Takes a single 0 or 1 to tell us if we won or not.
-	// 1 is a loss.
-	switch (x->move) {
-		case 1:
-			printf("You've lost.");
-		case 0:
-			printf("You win!");
-	}
-	exit(0);
+
+
+//just for testing GIPS methods
+
+
+int main(){
+  char board[8][8];
+  short player = 1; 
+  gips info;
+
+  board[1][3] = 'x';
+  board [5][5] = 'x';
+  info = pack(board, player);
+  unpack(info);
+
 }
 
-//packs positions of player into a long long
-//stored on a per-player basis, cannot store
-//both players in one long long because
-//long long is only 64bits 8*8 64 so perfecto ;D
 gips *pack(char **pos, short player){
   static gips info;
   int i, j;
@@ -47,6 +41,8 @@ gips *pack(char **pos, short player){
 }
 
 //can unpack the same way, except with AND
+//x &= (1ull << i + j);
+//back to math hw x.x
 char **unpack(gips *info){
   int i, j;
 
@@ -65,5 +61,7 @@ char **unpack(gips *info){
       }
     }
   }
+
+  return pos;
 }
 
