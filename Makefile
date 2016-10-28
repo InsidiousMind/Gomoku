@@ -19,6 +19,7 @@ server:
 	mkdir -p build
 	mkdir -p build/server
 	cc src/server/server.c -g -lpthread -Wall -Wextra -o build/server/server
+	ln -s build/server/server server
 
 
 debug:
