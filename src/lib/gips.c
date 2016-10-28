@@ -9,7 +9,7 @@
 // but the client needs to be responsible for telling the player and
 // quitting itself. - Sean
 */
-void someone_won(gips *x) {
+/*void someone_won(gips *x) {
 	// Ask the server if someone won?
 	// Takes a single 0 or 1 to tell us if we won or not.
 	// 1 is a loss.
@@ -20,7 +20,7 @@ void someone_won(gips *x) {
 			printf("You win!");
 	}
 	exit(0);
-}
+} */
 
 //packs positions of player into a long long
 //stored on a per-player basis, cannot store
