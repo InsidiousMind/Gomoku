@@ -6,6 +6,6 @@ typedef struct {
 } gips;
 
 gips *pack(char **pos, short player); //packs long long
-int *unpack(gips *x);
+char **unpack(gips *info);
 void someone_won(gips *x);
 #endif /*GIPS*/

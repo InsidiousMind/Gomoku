@@ -44,7 +44,7 @@ gips *pack(char **pos, short player){
 //can unpack the same way, except with AND
 //x &= (1ull << i + j);
 //back to math hw x.x
-int *unpack(gips *x){
+char **unpack(gips *info){
   
 }
 
