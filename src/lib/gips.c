@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 /*
-//if the game logic is server-side, this is unnecessary
 // It's actually not unnecessary - the game logic determines if we won,
 // but the client needs to be responsible for telling the player and
 // quitting itself. - Sean
