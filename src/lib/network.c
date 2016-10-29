@@ -12,8 +12,24 @@ int connect_to_server() {
 	return -1;
 }
 
-void send_to(gips *z, int sock) {
-	send(sock, z, sizeof(z), 0);
+void send_to(gips *info, int sock) 
+{
+  total = 0;
+  int bytesleft = sizeof(z), n;
+  int len = sizeof(info);
+  while(total < len)
+  {
+    n = send(sock, info+total, bytesleft, 0);
+    if(n==-1)
+    {
+      perror("[!!!] could not send");
+      break;
+    }
+    total += n; //tally up what was sent
+    bytesleft -= n; //bytes left to send
+  }
+  len = total; // number of bytes actually sent
+  return n == -1? -1:0; //-1 on fail 0 on success
 }
 
 gips *get_server(int sock) {

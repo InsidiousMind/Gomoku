@@ -1,7 +1,7 @@
 #ifndef GIPS
 #define GIPS
 typedef struct {
-	short player;
+	short player; // player 1 is black player 2 is white
 	long long pos;
 } gips;
 
