@@ -14,12 +14,12 @@
 #include <signal.h>
 #include "../lib/network.h"
 #include "../lib/gips.h"
-#include "../lib/glogic.h"
 
 #define HOST "127.0.0.1"
 #define HTTPPORT "32200"
 #define BACKLOG 10
 #define NUM_THREADS 2
+
 
 void *get_in_addr(struct sockaddr * sa); //get info of incoming addr in struct
 void print_ip( struct addrinfo *ai); //prints IP
@@ -31,7 +31,7 @@ void start_subserver(int reply_sock_fd); //starts subserver
 
 int main(void) {
 
-	int http_sock_fd;
+	int sock_fd;
 	int reply_sock_fd;
 	
 	/*
@@ -40,15 +40,15 @@ int main(void) {
 	 * unused.
 	 */
 
-	http_sock_fd = get_server_socket(HOST, HTTPPORT);
+	sock_fd = get_server_socket(HOST, HTTPPORT);
 
-	if (start_server(http_sock_fd, BACKLOG) == -1) {
+	if (start_server(sock_fd, BACKLOG) == -1) {
 		printf("start server error\n");
 		exit(1);
 	}
 
 	while(1) {
-		if ((reply_sock_fd = accept_client(http_sock_fd)) == -1) {
+		if ((reply_sock_fd = accept_client(sock_fd)) == -1) {
 			continue;
 		}
 
@@ -135,23 +135,29 @@ void start_subserver(int reply_sock_fd) {
 }
 
 void *subserver(void * reply_sock_fd_as_ptr) {
-	char *html_file;
-	int html_file_fd;
-	int read_count = -1;
-	int BUFFERSIZE = 256;
-	char buffer[BUFFERSIZE+1];
-
-	long reply_sock_fd_long = (long) reply_sock_fd_as_ptr;
-	int reply_sock_fd = (int) reply_sock_fd_long;
-
-  printf("subserver ID = %ld\n", (unsigned long) pthread_self());
-	read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
-  buffer[read_count] = '\0';
+  int read_count = -1;
+  int BUFFERSIZE = 256;
+  char buffer[BUFFERSIZE+1];
+  gips player_info;
   
-	close(reply_sock_fd);
+  long reply_sock_fd_long = (long) reply_sock_fd_as_ptr;
+  int reply_sock_fd = (int) reply_sock_fd_long;
+ 
+  printf("subserver ID = %ld\n", (unsigned long) pthread_self());
+  
+  read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
+  buffer[read_count] = '\0';
+  printf("%s\n", buffer);
 
-	return NULL;
+  while(read_count != 0){
+    read_count = recv(reply_sock_fd, &player_info, sizeof(player_info), 0);
+    //init game logic
+  }
+  close(reply_sock_fd);
+  //should serialize this when we have more time
+  return NULL;
 }
+
 
 void print_ip( struct addrinfo *ai) {
 	struct addrinfo *p;
