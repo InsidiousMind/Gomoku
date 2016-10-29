@@ -140,9 +140,11 @@ void *subserver(void * reply_sock_fd_as_ptr) {
 
 	long reply_sock_fd_long = (long) reply_sock_fd_as_ptr;
 	int reply_sock_fd = (int) reply_sock_fd_long;
-	printf("subserver ID = %ld\n", (unsigned long) pthread_self());
+
+  printf("subserver ID = %ld\n", (unsigned long) pthread_self());
 	read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
-	buffer[read_count] = '\0';
+  buffer[read_count] = '\0';
+
 	printf("%s\n", buffer);
 	html_file = "../pages/";
 	html_file = strtok(&buffer[5], " \t\n");
