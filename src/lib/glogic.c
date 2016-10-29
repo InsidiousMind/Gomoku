@@ -8,9 +8,6 @@ void check_for_win_server(gips *x) {
 }
 
 int check_for_win_client(gips *x) {
-	if (x->is_win == 1) {
-		return 1;
-	} else {
-		return 0;
-	}
+	// We may not need this after all...
+	return 0;
 }
