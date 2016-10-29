@@ -3,7 +3,8 @@
 # 
 #
 
-CC = cc
+CC = gcc
+CCO = gcc -c
 CDEBUG = -g -Wall -Wextra -Werror
 make:
 	mkdir -p build
@@ -38,7 +39,10 @@ client-debug:
 server-debug:
 	mkdir -p debug
 	mkdir -p debug/server
-	$(CC) src/server/server.c $(CDEBUG) -lpthread -o debug/server/server
+	mkdir -p debug/lib/
+	${CCO} src/server/server.c $(CDEBUG) -lpthread -o debug/server/server.o
+	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
+	${CC} debug/server/server.o debug/lib/gips.o $(CDEBUG) -lpthread -o debug/server/server
 
 clean:
 	rm -rf build

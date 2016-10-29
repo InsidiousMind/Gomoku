@@ -46,7 +46,7 @@ gips *pack(char **pos, short player){
   }
 
   info.pos = num;
-  info.player = player;
+  info.pid = player;
   return &info;
 }
 
