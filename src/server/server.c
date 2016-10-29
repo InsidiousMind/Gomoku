@@ -12,6 +12,9 @@
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
+#include "../lib/network.h"
+#include "../lib/gips.h"
+#include "../lib/glogic.h"
 
 #define HOST "127.0.0.1"
 #define HTTPPORT "32200"
@@ -144,15 +147,7 @@ void *subserver(void * reply_sock_fd_as_ptr) {
   printf("subserver ID = %ld\n", (unsigned long) pthread_self());
 	read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
-
-	printf("%s\n", buffer);
-	html_file = "../pages/";
-	html_file = strtok(&buffer[5], " \t\n");
-	printf("FILENAME: %s\n", html_file);
-	html_file_fd = open(html_file, O_RDONLY);
-	while ((read_count = read(html_file_fd, buffer, BUFFERSIZE))>0) {
-		send(reply_sock_fd, buffer, read_count, 0);
-	}
+  
 	close(reply_sock_fd);
 
 	return NULL;
