@@ -9,6 +9,8 @@
 // but the client needs to be responsible for telling the player and
 // quitting itself. - Sean
 */
+
+//OK fair enough. Uncommented b/c compilation error and i was testing pack and unpack
 /*void someone_won(gips *x) {
 	// Ask the server if someone won?
 	// Takes a single 0 or 1 to tell us if we won or not.
