@@ -23,16 +23,22 @@
 
 void *get_in_addr(struct sockaddr * sa); //get info of incoming addr in struct
 void print_ip( struct addrinfo *ai); //prints IP
-void *subserver(void * reply_sock_fd_as_ptr); //starts subserver, sends HTML page
+void *subserver(void * reply_sock_fd_as_ptr, short player); //starts subserver, sends HTML page
 int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
-void start_subserver(int reply_sock_fd); //starts subserver
+void start_subserver(int reply_sock_fd, int client_count); //starts subserver
+
+struct arg_s {
+  long arg1;
+  short arg2;
+};
 
 int main(void) {
 
 	int sock_fd;
 	int reply_sock_fd;
+  int client_count = 0;
 	
 	/*
 	 * int yes; This patches a compiler error that prevented compiling
@@ -50,9 +56,11 @@ int main(void) {
 	while(1) {
 		if ((reply_sock_fd = accept_client(sock_fd)) == -1) {
 			continue;
-		}
+		}else{
+  		start_subserver(reply_sock_fd, client_count);
+      client_count++; 
+    }
 
-		start_subserver(reply_sock_fd);
 	}
 }
 
@@ -123,10 +131,19 @@ int accept_client(int serv_sock) {
 	return reply_sock_fd;
 }
 
-void start_subserver(int reply_sock_fd) {
-	pthread_t pthread;
+void start_subserver(int reply_sock_fd, int client_count) {
+  
+  struct arg_s args;  
+  pthread_t pthread;
 	long reply_sock_fd_long = reply_sock_fd;
-	if (pthread_create(&pthread, NULL, subserver, (void *)reply_sock_fd_long) != 0) {
+  args.arg1 = reply_sock_fd_long;
+ 
+  if(client_count == 0)
+    args.arg2 = 1;
+  else
+    args.arg2 = 2;
+
+	if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
 		printf("failed to start subserver\n");
 	}
 	else {
@@ -134,11 +151,26 @@ void start_subserver(int reply_sock_fd) {
 	}
 }
 
-void *subserver(void * reply_sock_fd_as_ptr) {
+void *subserver(void * reply_sock_fd_as_ptr, short player) {
+  //create board 
+  int i; 
+  char **board;
+  board = malloc(HEIGHT * sizeof(char *));
+ 
+  for(i = 0; i < HEIGHT; i++){
+    board[i] = malloc(DEPTH);
+    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
+  }
+  board[3][3] = 'x';
+
+  gips *player_info;
+  player_info = pack(board, player);
+ 
+ 
   int read_count = -1;
   int BUFFERSIZE = 256;
   char buffer[BUFFERSIZE+1];
-  gips player_info;
+
   
   long reply_sock_fd_long = (long) reply_sock_fd_as_ptr;
   int reply_sock_fd = (int) reply_sock_fd_long;
@@ -148,7 +180,10 @@ void *subserver(void * reply_sock_fd_as_ptr) {
   read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
   printf("%s\n", buffer);
-
+  
+  //send an instantiated GIPS board
+  send(reply_sock_fd, &player_info, sizeof(player_info), 0);
+  
   while(read_count != 0){
     read_count = recv(reply_sock_fd, &player_info, sizeof(player_info), 0);
     //init game logic

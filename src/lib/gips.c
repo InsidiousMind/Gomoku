@@ -28,7 +28,8 @@
 
 
 
-//Some methods to compress what we send over the nets
+//Some functions to compress what we send over the nets
+// (Andrew, they're called FUNCTIONS in C...
 //gets packed int a long long (64bits/8bytes)
 
 // ((i*HEIGHT) + j ) to get the right pos of a 2d array
@@ -46,7 +47,7 @@ gips *pack(char **pos, short player){
   }
 
   info.pos = num;
-  info.player = player;
+  info.pid = player;
   return &info;
 }
 
