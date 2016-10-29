@@ -57,12 +57,10 @@ gips *pack(char **pos, short player){
   //I will assume it's size 0-7 for now
   //    (should probs fix this)
   // sets the bit i+j to 1
-  for(i = 0; i < 8; i++)  {
-    for(j = 0; j < 8;j++) {
+  for(i = 0; i < HEIGHT; i++)  {
+    for(j = 0; j < DEPTH; j++) {
       if(pos[i][j] == 'x' )
-        num ^= (-1 ^ num) & (1 <<  (i+j));
-      //else
-        //num ^=(-0 ^ num) & (1 << (i+j));
+        num |= (1ull << (((i*HEIGHT)+j)));
     }
   }
 
@@ -85,7 +83,7 @@ char **unpack(gips *info){
 
   for(i = 0; i < 8; i++){
     for(j = 0; j < 8; j++) {
-      if( ((info->pos >> (i+j)) & 1) == 1 ){
+      if( ((info->pos >> ((i*HEIGHT)+j)) & 1) == 1 ){
         pos[i][j] = 'x';
       }else{
         pos[i][j] = 'o';

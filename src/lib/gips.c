@@ -26,31 +26,33 @@
 //stored on a per-player basis, cannot store
 //both players in one long long because
 //long long is only 64bits 8*8 64 so perfecto ;D
+
 gips *pack(char **pos, short player){
   static gips info;
   int i, j;
-  long long x;
+  long long num = 0;
+  
   //I will assume it's size 0-7 for now
   //    (should probs fix this)
   // sets the bit i+j to 1
-  // 1u is an unsigned integer 
-  for(i = 0; i < 8; i++)  {
-    for(j = 0; j < 8;j++) {
-      if(pos[i][j] = 'x' )
-        x |= (1ull << i+j);  //i think ull is unsigned long long
+  for(i = 0; i < HEIGHT; i++)  {
+    for(j = 0; j < DEPTH; j++) {
+      if(pos[i][j] == 'x' )
+        num |= (1ull << (((i*HEIGHT)+j)));
     }
   }
 
-  info.pos = x;
+  info.pos = num;
   info.player = player;
   return &info;
 }
 
 //can unpack the same way, except with AND
+//x &= (1ull << ((i*HEIGHT) + j));
 char **unpack(gips *info){
   int i, j;
 
-  char *pos[8];
+  static char *pos[8];
   for(i = 0; i < 8; i++){
     pos[i] = malloc(8);
     memset(&pos[i], 0, sizeof(pos[i])* strlen(pos[i]));
@@ -58,12 +60,13 @@ char **unpack(gips *info){
 
   for(i = 0; i < 8; i++){
     for(j = 0; j < 8; j++) {
-      if( ((info->pos >> i+j) & 1) == 1 ){
+      if( ((info->pos >> ((i*HEIGHT)+j)) & 1) == 1 ){
         pos[i][j] = 'x';
       }else{
         pos[i][j] = 'o';
       }
     }
   }
-}
 
+  return pos;
+}
