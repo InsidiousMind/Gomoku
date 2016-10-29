@@ -5,12 +5,13 @@
 
 void print_board(char **board);
 
-//just for testing GIPS methods int main(){
+//just for testing GIPS methods
+
 int main(){
   int i, j;
   char **board;
   short player = 1; 
-
+  //full board in memory
   board = malloc(HEIGHT * sizeof(char *));
  
   for(i = 0; i < HEIGHT; i++){
@@ -39,15 +40,6 @@ int main(){
 
 
 }
-void print_board(char **board){
-  int i, j;
-  for(i = 0; i < HEIGHT; i ++){
-    for(j = 0; j < DEPTH; j++){
-      printf("%c", board[i][j]);
-    }
-    printf("\n");
-  }
-}
 
 gips *pack(char **pos, short player){
   static gips info;
@@ -69,6 +61,7 @@ gips *pack(char **pos, short player){
   return &info;
 }
 
+
 //can unpack the same way, except with AND
 //x &= (1ull << i + j);
 //back to math hw x.x
@@ -76,13 +69,14 @@ char **unpack(gips *info){
   int i, j;
 
   static char *pos[8];
-  for(i = 0; i < 8; i++){
-    pos[i] = malloc(8);
+
+  for(i = 0; i < HEIGHT; i++){
+    pos[i] = malloc(HEIGHT);
     memset(&pos[i], 0, sizeof(pos[i])* strlen(pos[i]));
   }
 
-  for(i = 0; i < 8; i++){
-    for(j = 0; j < 8; j++) {
+  for(i = 0; i < HEIGHT; i++){
+    for(j = 0; j < DEPTH; j++) {
       if( ((info->pos >> ((i*HEIGHT)+j)) & 1) == 1 ){
         pos[i][j] = 'x';
       }else{
@@ -92,5 +86,16 @@ char **unpack(gips *info){
   }
 
   return pos;
+}
+
+
+void print_board(char **board){
+  int i, j;
+  for(i = 0; i < HEIGHT; i ++){
+    for(j = 0; j < DEPTH; j++){
+      printf("%c", board[i][j]);
+    }
+    printf("\n");
+  }
 }
 

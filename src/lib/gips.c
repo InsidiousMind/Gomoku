@@ -10,7 +10,10 @@
 // quitting itself. - Sean
 */
 
+
 //OK fair enough. Uncommented b/c compilation error and i was testing pack and unpack
+
+
 /*void someone_won(gips *x) {
 	// Ask the server if someone won?
 	// Takes a single 0 or 1 to tell us if we won or not.
@@ -24,19 +27,18 @@
 	exit(0);
 } */
 
-//packs positions of player into a long long
-//stored on a per-player basis, cannot store
-//both players in one long long because
-//long long is only 64bits 8*8 64 so perfecto ;D
 
+
+//Some methods to compress what we send over the nets
+//gets packed int a long long (64bits/8bytes)
+
+// ((i*HEIGHT) + j ) to get the right pos of a 2d array
+//packs positions of player into a long long
 gips *pack(char **pos, short player){
   static gips info;
   int i, j;
   long long num = 0;
   
-  //I will assume it's size 0-7 for now
-  //    (should probs fix this)
-  // sets the bit i+j to 1
   for(i = 0; i < HEIGHT; i++)  {
     for(j = 0; j < DEPTH; j++) {
       if(pos[i][j] == 'x' )
@@ -49,19 +51,22 @@ gips *pack(char **pos, short player){
   return &info;
 }
 
-//can unpack the same way, except with AND
-//x &= (1ull << ((i*HEIGHT) + j));
+
+//unpacks by checking if the bit in the ll
+//is toggled (1)
+//returns fully built board 
 char **unpack(gips *info){
   int i, j;
 
   static char *pos[8];
+
   for(i = 0; i < 8; i++){
     pos[i] = malloc(8);
     memset(&pos[i], 0, sizeof(pos[i])* strlen(pos[i]));
   }
 
-  for(i = 0; i < 8; i++){
-    for(j = 0; j < 8; j++) {
+  for(i = 0; i < HEIGHT; i++){
+    for(j = 0; j < DEPTH; j++) {
       if( ((info->pos >> ((i*HEIGHT)+j)) & 1) == 1 ){
         pos[i][j] = 'x';
       }else{
