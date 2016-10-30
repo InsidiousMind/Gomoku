@@ -201,8 +201,6 @@ void *subserver(void *arguments) {
   buffer[read_count] = '\0';
   printf("%s\n", buffer);
 
-  //send an instantiated GIPS board"
-  send_to(player_info, reply_sock_fd);
   
   if((win = gameLoop(reply_sock_fd, player_info)) == -1){
     perror("[!!!] error: Game Loop Fail");
@@ -213,11 +211,25 @@ void *subserver(void *arguments) {
   
 }
 
+
+/*This is where the magic happens, once the client and server
+* all this function does so far is keep receiving stuff it gets from
+* the client and keep checking for a win
+*
+* TODO: send back the other players move
+*   this requires: a shared resource with the other thread to determine
+*   the other players move, and send it back to this specific subservers
+*   client so that the client can update the gameboard
+*/
 int gameLoop(int reply_sock_fd, gips *info){
   //gips struct holds the player we are conversing with
   gips player_info = *info;
 
-  //int player = player_info.pid;
+//  int player = player_info.pid;
+
+  //send an instantiated GIPS board"
+  send_to(player_info, reply_sock_fd);
+
   int read_count = -1;
 
    
@@ -227,6 +239,7 @@ int gameLoop(int reply_sock_fd, gips *info){
     //check_for_win_server(&player_info, board);
     if(player_info.isWin != 0) 
       return player_info.isWin;
+    //update gameserver with moves of other player, send updated GIPS back
   }
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
