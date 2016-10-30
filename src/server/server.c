@@ -225,7 +225,7 @@ int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
-  char isTurnc = 2;
+  char turnc = 2;
 
   char is_otherTurnc; 
   char other_pid;
@@ -248,7 +248,7 @@ int gameLoop(int reply_sock_fd, char pid){
 
     addMove(player_info->move_a, player_info->move_b, player_info->pid);
 
-    player_info->isTurn = turn(player_info);
+    player_info->turn = turn(player_info);
     
     /*modify last turn as needed
     if(player_info->isTurn == 1) lastTurn = player_info->pid;

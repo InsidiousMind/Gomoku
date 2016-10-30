@@ -37,9 +37,9 @@ gips *pack(char pid,char isWin, char isTurn, char move_a, char move_b){
   
   info.pid = pid; //1 if player1, 2 if player2
   info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
-  info.isTurn = isTurn; //0 if not turn, 1 if turn
-  info.move_a = move_a;
-  info.move_b = move_b;  
+  info.turn = isTurn; //PID of whose turn it is
+  info.move_a = move_a; //move 
+  info.move_b = move_b;  //move
   
   return &info;
 }
