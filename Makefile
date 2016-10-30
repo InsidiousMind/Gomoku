@@ -3,17 +3,11 @@
 # 
 #
 
-<<<<<<< HEAD
 CC = gcc
 CCO = gcc -c
 CDEBUG = -g -Wall -Wextra -Werror
 SERV_SRC = src/server/server.c
 
-=======
-CC = cc
-CCO = cc -c
-CDEBUG = -g -Wall -Wextra
->>>>>>> af6c83d6dc5b0d85552e932e42611c2141ea8069
 make:
 	mkdir -p build
 	mkdir -p build/server
@@ -48,10 +42,8 @@ server-debug:
 	mkdir -p debug
 	mkdir -p debug/server
 	mkdir -p debug/lib/
-<<<<<<< HEAD
+
 	${CCO} $(SERV_SRC) $(CDEBUG) -lpthread -o debug/server/server.o
-=======
->>>>>>> af6c83d6dc5b0d85552e932e42611c2141ea8069
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 	${CCO} src/server/server.c $(CDEBUG) -lpthread -o debug/server/server.o
