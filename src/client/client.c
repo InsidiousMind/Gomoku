@@ -21,81 +21,78 @@
 #include "../lib/gips.h"
 #include "../lib/glogic.h"
 
-#define HOST "server1.cs.scranton.edu"
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
 void send_move(int a, int b, char board[][DEPTH], int sock, short player);
-char *get_move(char *board, int sock, short which_player);
+char **get_move(char **board, int sock, short which_player);
 void display_board(char *board);
-  
+
 int main() {
-	// TODO We need a variable we can pass around to keep track of
-	// TODO what player number we current are.
-	char *name;
-	short which_player;
-	int move_x;
-	int move_y;
-	char board[HEIGHT][DEPTH];
-	int sock = connect_to_server();
-	printf("Gomoku Client for Linux\n");
-	
-  if (sock != -1) {
-		printf("Enter your name: ");
-		scanf("%s", name);
-		send(sock, name, sizeof(name), 0);
-		recv(sock, &which_player, sizeof(which_player), 0);
-	} else {
-		printf("Couldn't connect to the server.\n");
-		exit(0);
-	}
-	while (1) {
-		//TODO check this loop
-		printf("%s> ", name);
-		scanf("%d%d", &move_x, &move_y);
-	  send_move(move_x, move_y, board, sock, which_player);
-		board = get_move(board, sock, which_player);
-	}
-	close(sock);
+    // TODO We need a variable we can pass around to keep track of
+    // TODO what player number we current are.
+    char *name;
+    short which_player;
+    int move_x;
+    int move_y;
+    char board[HEIGHT][DEPTH];
+    int sock = connect_to_server();
+    printf("Gomoku Client for Linux\n");
+
+    if (sock != -1) {
+        printf("Enter your name: ");
+        scanf("%s", name);
+        send(sock, name, sizeof(name), 0);
+        recv(sock, &which_player, sizeof(which_player), 0);
+    } else {
+        printf("Couldn't connect to the server.\n");
+        exit(0);
+    }
+    while (1) {
+        //TODO check this loop
+        printf("%s> ", name);
+        scanf("%d%d", &move_x, &move_y);
+        send_move(move_x, move_y, board, sock, which_player);
+        board = get_move(board, sock, which_player);
+    }
+    close(sock);
 }
 
 void send_move(int a, int b, char board[][], int sock, short player) {
-	board[a][b] = 'x';
-	// Send the move to the other guy.
-	gips *z = pack(board, player);
-	send_to(z, sock);
+    board[a][b] = 'x';
+    // Send the move to the other guy.
+    gips *z = pack(player, 0, !player, a, b);
+    send_to(z, sock);
 }
 
 char **get_move(char *board, int sock, short which_player) {
-	// TODO This needs to take an argument determining what player we are.
-	int *move;
-	// Get the move from the other guy.
-  gips *z; 
-  recv(sock, z, sizeof(z), 0);
+    // TODO This needs to take a MOVE and apply it to the board.
+    // Get the move from the other guy.
+    gips *z; 
+    recv(sock, z, sizeof(z), 0);
 
-	// Get an x and y coordinate from the gips packet.
-	if (z->isWin != 0) {
-		// This needs to be changed to the current player's number.
-		if (z->isWin == which_player) {
-			printf("You won!");
-		} else {
-			printf("You lost.");
-		}
-	}
-	// Check if the game is over.
-	// Otherwise we just decode
-	move = unpack(z);
-	board[move[0]][move[1]] = 'B';
-	return board;
+    // Get an x and y coordinate from the gips packet.
+    if (z->isWin != 0) {
+        // This needs to be changed to the current player's number.
+        if (z->isWin == which_player) {
+            printf("You won!");
+        } else {
+            printf("You lost.");
+        }
+    }
+    // Check if the game is over.
+    // Otherwise we just decode
+    board[z->move_x][z->move_y] = 'B';
+    return board;
 }
 
 void display_board(char *board) {
-	int i;
-	int j;
-	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 8; j++) {
-			printf("%c", board[i][j]);
-		}
-		printf("\n");
-	}
+    int i;
+    int j;
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+            printf("%c", board[i][j]);
+        }
+        printf("\n");
+    }
 }

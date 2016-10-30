@@ -206,7 +206,7 @@ void *subserver(void *arguments) {
 
 int gameLoop(int reply_sock_fd, gips *info){
   //gips struct holds the player we are conversing with
-  int player = info->player;
+  int player = info->pid;
   int read_count = -1;
    
   while(read_count != 0 || read_count != -1){

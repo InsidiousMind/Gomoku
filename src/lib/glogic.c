@@ -15,20 +15,29 @@ char crawl_board(char *board) {
 	 * manner in which chars are represented to provide us with a 
 	 * smaller memory footprint.
 	 */
-	char i = 0;
-	char j = 0;
-	char k = 0;
-	char l = 0;
-	while (i < 8) {
-		while (j < 8) {
-			while ((i + k >= 0) && (i + k < 8)) {
-				while ((j + l >= 0) && (j + l < 8)) {
-					l++;
-				}
-				k++;
-			}
-			j++;
-		}
-		i++;
-	}
+	char i;
+	char j;
+	char k;
+	char l;
+	for (i = 0; i < 8; i++) {
+            for (j = 0; j < 8; j++) {
+                k = -5;
+                l = -5;
+                while (k < 6) {
+                    while (l < 6) {
+                        // We're going to make sure we aren't overflowing the board.
+                        if ((((i + k < 8) || (j + l < 8)) 
+                            || ((i + k >= 0) || (j + l >= 0)))
+                            || ()) { // This needs to check to make sure we're only checking valid combinations.
+                            continue;
+                        }
+                        // Here's where we check if we have a win on the board.
+                        
+                        // Next.
+                        l++;
+                    }
+                    k++;
+                }
+            }
+        }
 }
