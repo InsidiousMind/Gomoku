@@ -27,9 +27,11 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
-int gameLoop(int reply_sock_fd, gips *info);
+int gameLoop(int reply_sock_fd, char pid);
 void addMove(char move_x, char move_y, char pid);
-char **initBoard(board);
+char **initBoard(char **board);
+int turn(gips *info);
+
 
 //shouldn't need a mutext lock for these because they are only accessed by their respective threads
 
@@ -45,23 +47,7 @@ int play2[2];
 struct arg_s{
   long arg1;
   char arg2;
-}
-
-//needs to have a mutex lock
-//
-//
-/*
- *How are we going to keep track of moves?
-  * keep two different boards on the server, one for each player
- *  once we get a move from the client, update the board of this player 
- *    PROBLEM: How is the OTHER thread going to send the OTHER players move back to their client?
- *          We can find differences in the two boards
- *          we can have a variable with the latest moves, but that might not work, especially if the client keeps pinging back moves
- *            hold the moves in a struct --> this seems like hte best idea I think. The threads will just keep sending hte moves to the client,
- *            if it's the same move, so what? it'll just update that same place on the board. If it's a different move, it will update that too.  
- *            there won't be any clobbering because each thread should have it's own player moves array
- *              though this means we HAVE to limit the server to ONLY two threads. Otherwise, madness will ensue.
- */
+};
 
 int main(void) {
  
@@ -72,7 +58,7 @@ int main(void) {
 	int sock_fd;
 	int reply_sock_fd;
   int client_count = 0;
-	
+  int i;	
 	/*
 	 * int yes; This patches a compiler error that prevented compiling
 	 * with the current compiler settings that complained about it being
@@ -97,9 +83,11 @@ int main(void) {
 	}
 
   for(i = 0; i < HEIGHT; i++){
-    free(board[i]);
+    free(p1board[i]);
+    free(p2board[i]);
   }
-  free(board);
+  free(p1board);
+  free(p2board);
 }
 
 
@@ -236,15 +224,20 @@ void *subserver(void *arguments) {
 int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
-
+  gips *other_player;
   char isTurnc = 2;
+
+  char is_otherTurnc; 
+  char other_pid;
+  if(pid == 1) other_pid = 2;
+  if(pid == 2) other_pid = 1;
   
+    
   player_info = pack(pid, 0, isTurnc, 3, 3);
 
-  int lastTurn = 2;
+//  int lastTurn = 2;
 
-
-  //send an instantiated GIPS board"
+  //send an instantiated GIPS board
   send_to(player_info, reply_sock_fd);
 
   int read_count = -1;
@@ -255,20 +248,32 @@ int gameLoop(int reply_sock_fd, char pid){
 
     addMove(player_info->move_a, player_info->move_b, player_info->pid);
 
-    player_info->isTurn = turn(player_info, lastTurn);
-
+    player_info->isTurn = turn(player_info);
+    
+    /*modify last turn as needed
     if(player_info->isTurn == 1) lastTurn = player_info->pid;
-    
+    else if (player_info->isTurn == 0 && pid == 1) lastTurn = 2;
+    else lastTurn = 1; */
 
+    if(player_info->isTurn) is_otherTurnc = 0;
+    else is_otherTurnc = 1;
+    //send other players moves
+    if(pid == 1){
+      pthread_mutex_lock(&play2Moves);
+      other_player = pack(other_pid, 0, is_otherTurnc, (char)play2[0], (char)play2[1]);
+      pthread_mutex_unlock(&play2Moves);
+    }
+    else { 
+      pthread_mutex_lock(&play1Moves);
+      other_player = pack(other_pid, 0, is_otherTurnc, (char)play1[0], (char)play1[1]);
+      pthread_mutex_lock(&play1Moves);
+    }
+    send_to(other_player, reply_sock_fd);
 
-     
     //check_for_win_server(&player_info, board);
-    //send moves back to client 
-      
-    
     //how to send back to client 
-    if(player_info.isWin != 0) 
-      return player_info.isWin;
+    if(player_info->isWin != 0) 
+      return player_info->isWin;
     //update gameserver with moves of other player, send updated GIPS back
   }
 
@@ -316,18 +321,17 @@ void *get_in_addr(struct sockaddr * sa) {
 }
 
 void addMove(char move_a, char move_b, char pid){
-  int player_id = (int)pid;
   
   if(pid == 1){
-    p1board[move_a][move_b] = 'x';
+    p1board[(int)move_a][(int)move_b] = 'x';
     
     pthread_mutex_lock(&play1Moves);
     play1[0] = (int)move_a;
-    play1[1] = (int/move_b; 
+    play1[1] = (int)move_b; 
     pthread_mutex_unlock(&play2Moves);
   }
   else if (pid == 2){
-    p2board[move_a][move_b] = 'x';
+    p2board[(int)move_a][(int)move_b] = 'x';
     
     pthread_mutex_lock(&play2Moves);
     play2[0] = (int)move_a;
@@ -336,11 +340,15 @@ void addMove(char move_a, char move_b, char pid){
   }
   return;
 }
-void turn(gips *info, int lastTurn){
-  if(info->isTurn == 1 && info->pid = 1)        return 2;
-  else if (info->isTurn = 1 && info->pid = 2)   return 1;
-  else if (info->isTurn = 0 && info-> pid = 1)  return 1;
-  else if (info -> isTurn = 0 && info->pid = 2) return 2;
+
+
+int turn(gips *info){
+  if((info->isTurn == 1) && (info->pid == 1))       return 2;
+  else if ((info->isTurn = 1) && (info->pid == 2))  return 1;
+  else if ((info->isTurn = 0) && (info-> pid == 1)) return 1;
+  else if ((info -> isTurn = 0) && (info->pid == 2))   return 2;
+
+  return 0;
 }
 
 char **initBoard(char **board){

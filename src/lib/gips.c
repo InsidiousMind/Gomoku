@@ -49,7 +49,7 @@ gips *pack(char pid,char isWin, char isTurn, char move_a, char move_b){
 
 // ((i*HEIGHT) + j ) to get the right pos of a 2d array
 //packs positions of player into a long long
-gips *to_long(char **pos, short player){
+/*gips *to_long(char **pos, short player){
   static gips info;
   int i, j;
   long long num = 0;
@@ -93,4 +93,4 @@ char **from_long(gips *info){
   return pos;
 }
 
-
+*/
