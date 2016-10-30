@@ -12,27 +12,30 @@
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
-#include "../lib/network.h"
 #include "../lib/gips.h"
+#include "../lib/network.h"
 
-#define HOST "127.0.0.1"
-#define HTTPPORT "32200"
 #define BACKLOG 10
 #define NUM_THREADS 2
 
 
 void *get_in_addr(struct sockaddr * sa); //get info of incoming addr in struct
 void print_ip( struct addrinfo *ai); //prints IP
-void *subserver(void * reply_sock_fd_as_ptr, short player); //starts subserver, sends HTML page
+void *subserver(void *args); //starts subserver, sends HTML page
 int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
+int gameLoop(int reply_sock_fd, gips *info);
 
+
+
+//just for storing args which are going to be passed to pthread_create
 struct arg_s {
   long arg1;
-  short arg2;
+  long arg2;
 };
+
 
 int main(void) {
 
@@ -151,8 +154,15 @@ void start_subserver(int reply_sock_fd, int client_count) {
 	}
 }
 
-void *subserver(void * reply_sock_fd_as_ptr, short player) {
-  //create board 
+void *subserver(void *arguments) {
+  
+  //get the arguments 
+  struct arg_s *args =  arguments;
+  long reply_sock_fd_long = args->arg1;
+  short player = args->arg2;
+  
+
+  //create the board
   int i; 
   char **board;
   board = malloc(HEIGHT * sizeof(char *));
@@ -161,18 +171,16 @@ void *subserver(void * reply_sock_fd_as_ptr, short player) {
     board[i] = malloc(DEPTH);
     memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
   }
+
   board[3][3] = 'x';
 
   gips *player_info;
   player_info = pack(board, player);
  
- 
-  int read_count = -1;
+  int read_count = -1; 
   int BUFFERSIZE = 256;
   char buffer[BUFFERSIZE+1];
 
-  
-  long reply_sock_fd_long = (long) reply_sock_fd_as_ptr;
   int reply_sock_fd = (int) reply_sock_fd_long;
  
   printf("subserver ID = %ld\n", (unsigned long) pthread_self());
@@ -180,19 +188,38 @@ void *subserver(void * reply_sock_fd_as_ptr, short player) {
   read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
   printf("%s\n", buffer);
-  
-  //send an instantiated GIPS board
-  send(reply_sock_fd, &player_info, sizeof(player_info), 0);
-  
-  while(read_count != 0){
-    read_count = recv(reply_sock_fd, &player_info, sizeof(player_info), 0);
-    //init game logic
+
+  //send an instantiated GIPS board"
+  send_to(player_info, reply_sock_fd);
+
+  if(gameLoop(reply_sock_fd, player_info) == -1){
+    perror("[!!!] error: Game Loop Fail");
   }
+  
   close(reply_sock_fd);
-  //should serialize this when we have more time
   return NULL;
+  
 }
 
+int gameLoop(int reply_sock_fd, gips *info){
+  //gips struct holds the player we are conversing with
+  int player = info->player;
+  int read_count = -1;
+   
+  while(read_count != 0 || read_count != -1){
+    read_count = recv(reply_sock_fd, &info, sizeof(info), 0);
+    
+    //game logic
+   
+    
+    
+  }
+
+  //should serialize this when we have more time
+
+  return read_count == -1? -1:0; //-1 on fail 0 on success
+
+}
 
 void print_ip( struct addrinfo *ai) {
 	struct addrinfo *p;
