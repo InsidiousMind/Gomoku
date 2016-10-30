@@ -225,7 +225,7 @@ int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
-  char turnc = 2;
+  char isTurnc = 2;
 
   char is_otherTurnc; 
   char other_pid;
@@ -233,17 +233,19 @@ int gameLoop(int reply_sock_fd, char pid){
   if(pid == 2) other_pid = 1;
   
     
-  player_info = pack(pid, 0, isTurnc, 3, 3);
+  player_info = pack(pid, 0, turnc, 3, 3);
 
 //  int lastTurn = 2;
 
-  //send an instantiated GIPS board
+  //send the first instantiated game board with
+  //player1 moved on a center piece
   send_to(player_info, reply_sock_fd);
 
   int read_count = -1;
 
    
   while(read_count != 0 || read_count != -1){
+    
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     addMove(player_info->move_a, player_info->move_b, player_info->pid);
