@@ -61,7 +61,7 @@ gips *to_long(char **pos, short player){
     }
   }
 
-  info.pos = num;
+  //info.pos = num;
   info.pid = player;
   return &info;
 }
@@ -70,7 +70,7 @@ gips *to_long(char **pos, short player){
 //unpacks by checking if the bit in the ll
 //is toggled (1)
 //returns fully built board 
-char **from_long(gips *info){
+/*char **from_long(gips *info){
   int i, j;
 
   static char *pos[8];
@@ -92,5 +92,4 @@ char **from_long(gips *info){
 
   return pos;
 }
-
-
+*/

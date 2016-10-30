@@ -7,6 +7,7 @@ CC = gcc
 CCO = gcc -c
 CDEBUG = -g -Wall -Wextra -Werror
 SERV_SRC = src/server/server.c
+DBG_DEPS =  debug/lib/gips.o debug/lib/network.o 
 
 make:
 	mkdir -p build
@@ -36,7 +37,11 @@ debug:
 client-debug:
 	mkdir -p debug
 	mkdir -p debug/client
-	$(CC) src/client/client.c $(CDEBUG) -o debug/client/client
+	mkdir -p debug/lib/
+	$(CCO) src/client/client.c $(CDEBUG) -o debug/client/client.o
+	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
+	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
+	$(CC) debug/client/client.o $(DBG_DEPS) $(CDEBUG) -o debug/client/client
 
 server-debug:
 	mkdir -p debug
@@ -48,7 +53,7 @@ server-debug:
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 #	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
 	${CCO} src/server/server.c $(CDEBUG) -lpthread -o debug/server/server.o
-	${CC} debug/server/server.o debug/lib/gips.o debug/lib/network.o $(CDEBUG) -lpthread -o debug/server/server
+	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
 
 clean:
 	rm -rf build

@@ -24,18 +24,22 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-void send_move(int a, int b, char board[][DEPTH], int sock, short player);
-char **get_move(char board[][DEPTH], int sock, short which_player);
-void display_board(char *board);
+void send_move(int a, int b, char **board, int sock, short player);
+char **get_move(char **board, int sock, short which_player);
+void display_board(char **board);
 
 int main() {
     // TODO We need a variable we can pass around to keep track of
     // TODO what player number we current are.
-    char *name;
+    char *name = malloc(sizeof(char) * 15);
     short which_player;
     int move_x;
     int move_y;
-    char board[HEIGHT][DEPTH];
+    char **board = malloc(HEIGHT * sizeof(char*));
+    int i;
+    for (i = 0; i < HEIGHT; i++) {
+        board[i] = malloc(DEPTH);
+    }
     int sock = connect_to_server();
     printf("Gomoku Client for Linux\n");
 
@@ -58,17 +62,17 @@ int main() {
     close(sock);
 }
 
-void send_move(int a, int b, char board[][DEPTH], int sock, short player) {
+void send_move(int a, int b, char **board, int sock, short player) {
     board[a][b] = 'x';
     // Send the move to the other guy.
     gips *z = pack(player, 0, !player, a, b);
     send_to(z, sock);
 }
 
-char **get_move(char board[][DEPTH], int sock, short which_player) {
+char **get_move(char **board, int sock, short which_player) {
     // TODO This needs to take a MOVE and apply it to the board.
     // Get the move from the other guy.
-    gips *z; 
+    gips *z = malloc(sizeof(gips)); 
     recv(sock, z, sizeof(z), 0);
 
     // Get an x and y coordinate from the gips packet.
@@ -82,11 +86,11 @@ char **get_move(char board[][DEPTH], int sock, short which_player) {
     }
     // Check if the game is over.
     // Otherwise we just decode
-    board[z->move_a][z->move_b] = 'B';
+    board[(int)z->move_a][(int)z->move_b] = 'B';
     return board;
 }
 
-void display_board(char *board) {
+void display_board(char **board) {
     int i;
     int j;
     for (i = 0; i < 8; i++) {
