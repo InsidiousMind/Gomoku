@@ -1,14 +1,16 @@
 #ifndef GIPS
 #define GIPS
 typedef struct {
-	short pid; // player 1 is black player 2 is whitg
-	long long pos;
+  char pid;
   char isWin;
+  char isTurn;
+  char move_x;
+  char move_y;
 } gips;
 
-gips *pack(char **pos, short player); //packs long long
-char **unpack(gips *info);
-void someone_won(gips *x);
+gips *pack(char pid,char isWin, char isTurn, char move_x, char move_y);
+//char **unpack(gips *info);
+//void someone_won(gips *x);
 #endif /*GIPS*/
 
 #ifndef DEPTH

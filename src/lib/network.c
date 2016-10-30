@@ -32,8 +32,3 @@ void send_to(gips *info, int sock)
   return n == -1? -1:0; //-1 on fail 0 on success
 }
 
-gips *get_server(int sock) {
-	gips *buff;
-	recv(sock, buff, sizeof(buffer), 0);
-	return buff;
-}

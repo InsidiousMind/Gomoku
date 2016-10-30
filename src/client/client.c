@@ -25,7 +25,7 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-char *send_move(int a, int b, char *board, int sock);
+void send_move(int a, int b, char board[][DEPTH], int sock, short player);
 char *get_move(char *board, int sock, short which_player);
 void display_board(char *board);
   
@@ -36,10 +36,11 @@ int main() {
 	short which_player;
 	int move_x;
 	int move_y;
-	char board[8][8];
+	char board[HEIGHT][DEPTH];
 	int sock = connect_to_server();
 	printf("Gomoku Client for Linux\n");
-	if (sock != -1) {
+	
+  if (sock != -1) {
 		printf("Enter your name: ");
 		scanf("%s", name);
 		send(sock, name, sizeof(name), 0);
@@ -52,25 +53,26 @@ int main() {
 		//TODO check this loop
 		printf("%s> ", name);
 		scanf("%d%d", &move_x, &move_y);
-		board = send_move(move_x, move_y, board, sock, which_player);
+	  send_move(move_x, move_y, board, sock, which_player);
 		board = get_move(board, sock, which_player);
 	}
 	close(sock);
 }
 
-char *send_move(int a, int b, char board[][], int sock, short player) {
-	board[a][b] = 'A';
+void send_move(int a, int b, char board[][], int sock, short player) {
+	board[a][b] = 'x';
 	// Send the move to the other guy.
 	gips *z = pack(board, player);
 	send_to(z, sock);
-	return board;
 }
 
 char **get_move(char *board, int sock, short which_player) {
 	// TODO This needs to take an argument determining what player we are.
 	int *move;
 	// Get the move from the other guy.
-	gips *z = get_server(sock);
+  gips *z; 
+  recv(sock, z, sizeof(z), 0);
+
 	// Get an x and y coordinate from the gips packet.
 	if (z->isWin != 0) {
 		// This needs to be changed to the current player's number.
