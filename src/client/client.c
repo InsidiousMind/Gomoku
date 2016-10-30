@@ -25,7 +25,7 @@
 #define BACKLOG 10
 
 void send_move(int a, int b, char board[][DEPTH], int sock, short player);
-char **get_move(char **board, int sock, short which_player);
+char **get_move(char board[][DEPTH], int sock, short which_player);
 void display_board(char *board);
 
 int main() {
@@ -58,14 +58,14 @@ int main() {
     close(sock);
 }
 
-void send_move(int a, int b, char board[][], int sock, short player) {
+void send_move(int a, int b, char board[][DEPTH], int sock, short player) {
     board[a][b] = 'x';
     // Send the move to the other guy.
     gips *z = pack(player, 0, !player, a, b);
     send_to(z, sock);
 }
 
-char **get_move(char *board, int sock, short which_player) {
+char **get_move(char board[][DEPTH], int sock, short which_player) {
     // TODO This needs to take a MOVE and apply it to the board.
     // Get the move from the other guy.
     gips *z; 
@@ -82,7 +82,7 @@ char **get_move(char *board, int sock, short which_player) {
     }
     // Check if the game is over.
     // Otherwise we just decode
-    board[z->move_x][z->move_y] = 'B';
+    board[z->move_a][z->move_b] = 'B';
     return board;
 }
 
