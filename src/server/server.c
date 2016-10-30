@@ -33,7 +33,7 @@ int gameLoop(int reply_sock_fd, gips *info);
 //just for storing args which are going to be passed to pthread_create
 struct arg_s {
   long arg1;
-  long arg2;
+  char arg2;
 };
 
 
@@ -159,8 +159,7 @@ void *subserver(void *arguments) {
   //get the arguments 
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
-  short player = args->arg2;
-  
+  char pid = args->arg2;
 
   //create the board
   int i; 
@@ -175,7 +174,11 @@ void *subserver(void *arguments) {
   board[3][3] = 'x';
 
   gips *player_info;
-  player_info = pack(board, player);
+  char isTurn = 0;
+  if(pid == 2) isTurn=1;
+  else isTurn = 0;
+
+  player_info = pack(pid, 0, isTurn, 3, 3);
  
   int read_count = -1; 
   int BUFFERSIZE = 256;
@@ -260,4 +263,9 @@ void *get_in_addr(struct sockaddr * sa) {
 	}
 }
 
+void addMove(char move_x, char move_y){
+
+
+
+}
 
