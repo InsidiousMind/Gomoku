@@ -40,6 +40,26 @@ struct arg_s {
   char arg2;
 };
 
+//struct for the different moves
+//needs to have a mutex lock
+//
+//
+/*
+ *How are we going to keep track of moves?
+  * keep two different boards on the server, one for each player
+ *  once we get a move from the client, update the board of this player 
+ *    PROBLEM: How is the OTHER thread going to send the OTHER players move back to their client?
+ *          We can find differences in the two boards
+ *          we can have a variable with the latest moves, but that might not work, especially if the client keeps pinging back moves
+ *            hold the moves in a struct --> this seems like hte best idea I think. The threads will just keep sending hte moves to the client,
+ *            if it's the same move, so what? it'll just update that same place on the board. If it's a different move, it will update that too.  
+ *            there won't be any clobbering because each thread should have it's own player moves array
+ *              though this means we HAVE to limit the server to ONLY two threads. Otherwise, madness will ensue.
+struct moves {
+  int play1[2];
+  int play2[2];
+};
+
 
 int main(void) {
   int i; 
