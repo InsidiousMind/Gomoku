@@ -27,36 +27,38 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
-int gameLoop(int reply_sock_fd, gips *info);
+int gameLoop(int reply_sock_fd, char pid);
 void addMove(char move_x, char move_y, char pid);
+char **initBoard(char **board);
+int turn(gips *info);
 
-pthread_mutex_t board_access;
-char **board;
 
+//shouldn't need a mutext lock for these because they are only accessed by their respective threads
 
+char **p1board;
+char **p2board;
 //just for storing args which are going to be passed to pthread_create
-struct arg_s {
+
+pthread_mutex_t play1Moves = PTHREAD_MUTEX_INITIALIZER;
+int play1[2];
+pthread_mutex_t play2Moves = PTHREAD_MUTEX_INITIALIZER;
+int play2[2];
+
+struct arg_s{
   long arg1;
   char arg2;
 };
 
-
 int main(void) {
-  int i; 
-  //instantiate board 
-  board = malloc(HEIGHT * sizeof(char *));
  
-  for(i = 0; i < HEIGHT; i++){
-    board[i] = malloc(DEPTH);
-    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
-  }
-
-  board[3][3] = 'x';
+ 
+  p1board = initBoard(p1board);
+  p2board = initBoard(p2board);
 
 	int sock_fd;
 	int reply_sock_fd;
   int client_count = 0;
-	
+  int i;	
 	/*
 	 * int yes; This patches a compiler error that prevented compiling
 	 * with the current compiler settings that complained about it being
@@ -81,9 +83,11 @@ int main(void) {
 	}
 
   for(i = 0; i < HEIGHT; i++){
-    free(board[i]);
+    free(p1board[i]);
+    free(p2board[i]);
   }
-  free(board);
+  free(p1board);
+  free(p2board);
 }
 
 
@@ -162,8 +166,11 @@ void start_subserver(int reply_sock_fd, int client_count) {
  
   if(client_count == 0)
     args.arg2 = 1;
-  else
+  else if(client_count == 1)
     args.arg2 = 2;
+  else
+    return;
+  //just want to return, our game can only accomodate 2 players
 
 	if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
 		printf("failed to start subserver\n");
@@ -180,13 +187,6 @@ void *subserver(void *arguments) {
   long reply_sock_fd_long = args->arg1;
   char pid = args->arg2;
 
-
-  gips *player_info;
-  char isTurn = 0;
-  if(pid == 2) isTurn=1;
-  else isTurn = 0;
-
-  player_info = pack(pid, 0, isTurn, 3, 3);
  
   int read_count = -1; 
   int win;
@@ -202,7 +202,7 @@ void *subserver(void *arguments) {
   printf("%s\n", buffer);
 
   
-  if((win = gameLoop(reply_sock_fd, player_info)) == -1){
+  if((win = gameLoop(reply_sock_fd, pid)) == -1){
     perror("[!!!] error: Game Loop Fail");
   }
 
@@ -221,24 +221,59 @@ void *subserver(void *arguments) {
 *   the other players move, and send it back to this specific subservers
 *   client so that the client can update the gameboard
 */
-int gameLoop(int reply_sock_fd, gips *info){
-  //gips struct holds the player we are conversing with
-  gips player_info = *info;
+int gameLoop(int reply_sock_fd, char pid){
+  //for the first time, white goes first (Player 2)
+  gips *player_info;
+  gips *other_player;
+  char isTurnc = 2;
 
-//  int player = player_info.pid;
+  char is_otherTurnc; 
+  char other_pid;
+  if(pid == 1) other_pid = 2;
+  if(pid == 2) other_pid = 1;
+  
+    
+  player_info = pack(pid, 0, isTurnc, 3, 3);
 
-  //send an instantiated GIPS board"
+//  int lastTurn = 2;
+
+  //send an instantiated GIPS board
   send_to(player_info, reply_sock_fd);
 
   int read_count = -1;
 
    
   while(read_count != 0 || read_count != -1){
-    read_count = recv(reply_sock_fd, &info, sizeof(info), 0);
-    addMove(player_info.move_a, player_info.move_b, player_info.pid);
+    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
+
+    addMove(player_info->move_a, player_info->move_b, player_info->pid);
+
+    player_info->isTurn = turn(player_info);
+    
+    /*modify last turn as needed
+    if(player_info->isTurn == 1) lastTurn = player_info->pid;
+    else if (player_info->isTurn == 0 && pid == 1) lastTurn = 2;
+    else lastTurn = 1; */
+
+    if(player_info->isTurn) is_otherTurnc = 0;
+    else is_otherTurnc = 1;
+    //send other players moves
+    if(pid == 1){
+      pthread_mutex_lock(&play2Moves);
+      other_player = pack(other_pid, 0, is_otherTurnc, (char)play2[0], (char)play2[1]);
+      pthread_mutex_unlock(&play2Moves);
+    }
+    else { 
+      pthread_mutex_lock(&play1Moves);
+      other_player = pack(other_pid, 0, is_otherTurnc, (char)play1[0], (char)play1[1]);
+      pthread_mutex_lock(&play1Moves);
+    }
+    send_to(other_player, reply_sock_fd);
+
     //check_for_win_server(&player_info, board);
-    if(player_info.isWin != 0) 
-      return player_info.isWin;
+    //how to send back to client 
+    if(player_info->isWin != 0) 
+      return player_info->isWin;
     //update gameserver with moves of other player, send updated GIPS back
   }
 
@@ -286,15 +321,46 @@ void *get_in_addr(struct sockaddr * sa) {
 }
 
 void addMove(char move_a, char move_b, char pid){
-  //b == black w == white 
-  char move;
-  if(pid == 1) move = 'b';
-  else move = 'w';
-
-  //access shared memory resource
-  pthread_mutex_lock(&board_access);
-  board[(int)move_a][(int)move_b] = move;
-  pthread_mutex_unlock(&board_access);
+  
+  if(pid == 1){
+    p1board[(int)move_a][(int)move_b] = 'x';
+    
+    pthread_mutex_lock(&play1Moves);
+    play1[0] = (int)move_a;
+    play1[1] = (int)move_b; 
+    pthread_mutex_unlock(&play2Moves);
+  }
+  else if (pid == 2){
+    p2board[(int)move_a][(int)move_b] = 'x';
+    
+    pthread_mutex_lock(&play2Moves);
+    play2[0] = (int)move_a;
+    play2[1] = (int)move_b;
+    pthread_mutex_unlock(&play2Moves);
+  }
   return;
 }
 
+
+int turn(gips *info){
+  if((info->isTurn == 1) && (info->pid == 1))       return 2;
+  else if ((info->isTurn = 1) && (info->pid == 2))  return 1;
+  else if ((info->isTurn = 0) && (info-> pid == 1)) return 1;
+  else if ((info -> isTurn = 0) && (info->pid == 2))   return 2;
+
+  return 0;
+}
+
+char **initBoard(char **board){
+  int i; 
+  //instantiate board 
+  board = malloc(HEIGHT * sizeof(char *));
+ 
+  for(i = 0; i < HEIGHT; i++){
+    board[i] = malloc(DEPTH);
+    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
+  }
+
+  board[3][3] = 'x';
+  return board;
+}

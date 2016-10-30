@@ -49,10 +49,10 @@ gips *pack(char pid,char isWin, char isTurn, char move_a, char move_b){
 
 // ((i*HEIGHT) + j ) to get the right pos of a 2d array
 //packs positions of player into a long long
-gips *to_long(char **pos, short player){
+/*gips *to_long(char **pos, short player){
   static gips info;
   int i, j;
-  long long num = 0;
+  lng long num = 0;
   
   for(i = 0; i < HEIGHT; i++)  {
     for(j = 0; j < DEPTH; j++) {
@@ -70,7 +70,7 @@ gips *to_long(char **pos, short player){
 //unpacks by checking if the bit in the ll
 //is toggled (1)
 //returns fully built board 
-/*char **from_long(gips *info){
+char **from_long(gips *info){
   int i, j;
 
   static char *pos[8];
