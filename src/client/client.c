@@ -20,6 +20,7 @@
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/glogic.h"
+// This file compiles with glogic.h
 
 #define HTTPPORT "32200"
 #define BACKLOG 10

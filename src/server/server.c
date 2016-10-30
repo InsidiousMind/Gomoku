@@ -14,6 +14,7 @@
 #include <signal.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
+// Why is this commented out?
 //#include "../lib/glogic.h"
 
 #define BACKLOG 10
