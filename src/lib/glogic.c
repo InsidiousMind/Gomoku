@@ -1,14 +1,15 @@
 #include "glogic.h"
 #include "gips.h"
 
-void check_for_win_server(gips *x) {
+void check_for_win_server(gips *x, char **board) {
 	// Set x->is_win to 0 if nobody won, otherwise set it to the
 	// Player number of the winner.
-	char *board = unpack(x);
-	x->is_win = crawl_board(board);
+	
+  x->isWin = crawl_board(board);
+
 }
 
-char crawl_board(char *board) {
+char crawl_board(char **board) {
 	/*
 	 * In C, chars are just ascii values stored in a byte of memory.
 	 * We don't need a full integer, so we're going to leverage the

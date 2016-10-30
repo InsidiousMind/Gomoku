@@ -46,6 +46,7 @@ server-debug:
 	${CCO} $(SERV_SRC) $(CDEBUG) -lpthread -o debug/server/server.o
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
+#	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
 	${CCO} src/server/server.c $(CDEBUG) -lpthread -o debug/server/server.o
 	${CC} debug/server/server.o debug/lib/gips.o debug/lib/network.o $(CDEBUG) -lpthread -o debug/server/server
 

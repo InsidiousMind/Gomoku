@@ -14,6 +14,7 @@
 #include <signal.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
+//#include "../lib/glogic.h"
 
 #define BACKLOG 10
 #define NUM_THREADS 2
@@ -27,7 +28,10 @@ int start_server(int serv_socket, int backlog);  //starts listening on port for 
 int accept_client(int serv_sock); //accepts incoming connection
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
 int gameLoop(int reply_sock_fd, gips *info);
+void addMove(char move_x, char move_y, char pid);
 
+pthread_mutex_t board_access;
+char **board;
 
 
 //just for storing args which are going to be passed to pthread_create
@@ -38,6 +42,16 @@ struct arg_s {
 
 
 int main(void) {
+  int i; 
+  //instantiate board 
+  board = malloc(HEIGHT * sizeof(char *));
+ 
+  for(i = 0; i < HEIGHT; i++){
+    board[i] = malloc(DEPTH);
+    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
+  }
+
+  board[3][3] = 'x';
 
 	int sock_fd;
 	int reply_sock_fd;
@@ -65,6 +79,11 @@ int main(void) {
     }
 
 	}
+
+  for(i = 0; i < HEIGHT; i++){
+    free(board[i]);
+  }
+  free(board);
 }
 
 
@@ -161,17 +180,6 @@ void *subserver(void *arguments) {
   long reply_sock_fd_long = args->arg1;
   char pid = args->arg2;
 
-  //create the board
-  int i; 
-  char **board;
-  board = malloc(HEIGHT * sizeof(char *));
- 
-  for(i = 0; i < HEIGHT; i++){
-    board[i] = malloc(DEPTH);
-    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
-  }
-
-  board[3][3] = 'x';
 
   gips *player_info;
   char isTurn = 0;
@@ -181,6 +189,7 @@ void *subserver(void *arguments) {
   player_info = pack(pid, 0, isTurn, 3, 3);
  
   int read_count = -1; 
+  int win;
   int BUFFERSIZE = 256;
   char buffer[BUFFERSIZE+1];
 
@@ -194,11 +203,11 @@ void *subserver(void *arguments) {
 
   //send an instantiated GIPS board"
   send_to(player_info, reply_sock_fd);
-
-  if(gameLoop(reply_sock_fd, player_info) == -1){
+  
+  if((win = gameLoop(reply_sock_fd, player_info)) == -1){
     perror("[!!!] error: Game Loop Fail");
   }
-  
+
   close(reply_sock_fd);
   return NULL;
   
@@ -206,19 +215,19 @@ void *subserver(void *arguments) {
 
 int gameLoop(int reply_sock_fd, gips *info){
   //gips struct holds the player we are conversing with
-  int player = info->pid;
+  gips player_info = *info;
+
+  //int player = player_info.pid;
   int read_count = -1;
+
    
   while(read_count != 0 || read_count != -1){
     read_count = recv(reply_sock_fd, &info, sizeof(info), 0);
-    
-    //game logic
-   
-    
-    
+    addMove(player_info.move_a, player_info.move_b, player_info.pid);
+    //check_for_win_server(&player_info, board);
+    if(player_info.isWin != 0) 
+      return player_info.isWin;
   }
-
-  //should serialize this when we have more time
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
 
@@ -263,9 +272,16 @@ void *get_in_addr(struct sockaddr * sa) {
 	}
 }
 
-void addMove(char move_x, char move_y){
+void addMove(char move_a, char move_b, char pid){
+  //b == black w == white 
+  char move;
+  if(pid == 1) move = 'b';
+  else move = 'w';
 
-
-
+  //access shared memory resource
+  pthread_mutex_lock(&board_access);
+  board[(int)move_a][(int)move_b] = move;
+  pthread_mutex_unlock(&board_access);
+  return;
 }
 

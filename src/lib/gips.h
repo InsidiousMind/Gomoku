@@ -4,8 +4,8 @@ typedef struct {
   char pid;
   char isWin;
   char isTurn;
-  char move_x;
-  char move_y;
+  char move_a;
+  char move_b;
 } gips;
 
 gips *pack(char pid,char isWin, char isTurn, char move_x, char move_y);
