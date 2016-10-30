@@ -52,7 +52,7 @@ gips *pack(char pid,char isWin, char isTurn, char move_a, char move_b){
 /*gips *to_long(char **pos, short player){
   static gips info;
   int i, j;
-  long long num = 0;
+  lng long num = 0;
   
   for(i = 0; i < HEIGHT; i++)  {
     for(j = 0; j < DEPTH; j++) {
@@ -61,7 +61,7 @@ gips *pack(char pid,char isWin, char isTurn, char move_a, char move_b){
     }
   }
 
-  info.pos = num;
+  //info.pos = num;
   info.pid = player;
   return &info;
 }
@@ -92,5 +92,4 @@ char **from_long(gips *info){
 
   return pos;
 }
-
 */
