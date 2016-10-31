@@ -34,11 +34,11 @@
 //using chars to make the package as small as possible
 gips *pack(char pid,char isWin, char whoTurn, char move_a, char move_b, char waiting){
   static gips info;
-  
+
   info.pid = pid; //1 if player1, 2 if player2
   info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
   info.whoTurn = whoTurn; //0 for nothing, 1 if player 1 turn, 2 if player 2 turn
-  info.move_a = move_a; //move || first board == own player turn, 
+  info.move_a = move_a; //move || first board == own player turn,
   info.move_b = move_b;  //move         EVERY OTHER board === OTHER PLAYER move
   info.waiting = waiting;
   return &info;
@@ -53,7 +53,7 @@ gips *pack(char pid,char isWin, char whoTurn, char move_a, char move_b, char wai
   static gips info;
   int i, j;
   lng long num = 0;
-  
+
   for(i = 0; i < HEIGHT; i++)  {
     for(j = 0; j < DEPTH; j++) {
       if(pos[i][j] == 'x' )
@@ -69,7 +69,7 @@ gips *pack(char pid,char isWin, char whoTurn, char move_a, char move_b, char wai
 
 //unpacks by checking if the bit in the ll
 //is toggled (1)
-//returns fully built board 
+//returns fully built board
 char **from_long(gips *info){
   int i, j;
 

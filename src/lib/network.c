@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 int connect_to_server() {
+    // FIXME This is the source for the connection subroutine in the example.
     char *hostname = HOST;
     char *port = HTTPPORT;
     int serverfd;
@@ -40,7 +41,7 @@ int connect_to_server() {
     }
 
     freeaddrinfo(servinfo);
-   
+
     if (status != -1) return serverfd;
     else return -1;
 }
@@ -65,7 +66,7 @@ int send_to(gips *info, int sock) {
 }
 
 int send_mesg(char *str, int sock){
-  
+
   int total = 0;
   int bytesleft = sizeof(str), n;
   int len = sizeof(str);
@@ -81,6 +82,3 @@ int send_mesg(char *str, int sock){
   len = total;
   return n == -1? -1:0;
 }
-
-
-

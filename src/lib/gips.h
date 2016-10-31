@@ -11,7 +11,7 @@ typedef struct {
 
 typedef struct {
   char pid;
-  long long comp_board; 
+  long long comp_board;
 } gips_comp;
 
 gips *to_long(char **pos, short player); //packs long long
@@ -25,7 +25,7 @@ gips *pack(char pid,char isWin, char isTurn, char move_x, char move_y, char wait
 #define DEPTH 8
 #endif
 #ifndef HEIGHT
-#define HEIGHT 8 
+#define HEIGHT 8
 #endif
 #ifndef FALSE
 #define FALSE 0
