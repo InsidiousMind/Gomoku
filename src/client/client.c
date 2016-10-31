@@ -74,7 +74,7 @@ void send_move(int a, int b, char **board, int sock, char player) {
 char **get_move(char **board, int sock, char which_player) {
     // TODO This needs to take a MOVE and apply it to the board.
     // Get the move from the other guy.
-    gips *z = malloc(sizeof(gips)); 
+    gips *z = malloc(sizeof(gips));
     recv(sock, z, sizeof(z), 0);
 
     // Get an x and y coordinate from the gips packet.

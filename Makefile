@@ -1,6 +1,6 @@
 #
 # Makefile for the Gomoku project.
-# 
+#
 #
 
 CC = cc
@@ -15,8 +15,8 @@ make:
 	mkdir -p build
 	mkdir -p build/server
 	mkdir -p build/client
-        $(CCO) $(CLIE_SRC) -o build/client/client.o
-        $(CCO) $(SERV_SRC) -o build/server/server.o
+  $(CCO) $(CLIE_SRC) -o build/client/client.o
+  $(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
 	$(CCO) src/lib/network.c -o build/lib/network.o
 	$(CC) $(PRD_DEPS) $(SERV_SRC) -lpthread -o build/server/server
@@ -24,7 +24,7 @@ make:
 
 client:
 	mkdir -p build
-	mkdir -p build/client
+	mkdir -p build/client	
 	$(CC) $(CLIE_SRC) -o build/client/client
 
 server:
@@ -36,7 +36,7 @@ server:
 debug:
 	mkdir -p debug
 	mkdir -p debug/server
-	mkdir -p debug/client 
+	mkdir -p debug/client
 	$(CC) $(SERV_SRC) $(CDEBUG) -lpthread  -o debug/server/server
 	$(CC) $(CLIE_SRC) $(CDEBUG) -o debug/client/client
 
