@@ -48,6 +48,7 @@ char crawl_board(char **board, int startx, int starty, int pid) {
         for (int j = 0; j < 8 && IsWithinBoard(x, y); j++)
         {
             // Test this cell here, maybe increment numInARow 
+            // Does this file compile?
             if (board[i + x][j + y] == pid) numInARow++;
             x += xdirs[i];
             y += ydirs[i];

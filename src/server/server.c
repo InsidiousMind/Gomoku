@@ -14,6 +14,7 @@
 #include <signal.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
+// Why is this commented out?
 //#include "../lib/glogic.h"
 
 #define BACKLOG 10
@@ -43,6 +44,9 @@ pthread_mutex_t play1Moves = PTHREAD_MUTEX_INITIALIZER;
 int play1[2];
 pthread_mutex_t play2Moves = PTHREAD_MUTEX_INITIALIZER;
 int play2[2];
+
+pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
+int whoTurn;
 
 struct arg_s{
   long arg1;
@@ -206,6 +210,13 @@ void *subserver(void *arguments) {
     perror("[!!!] error: Game Loop Fail");
   }
 
+  if(win == 1 && pid == 1) 
+    send_mesg("You Win!", reply_sock_fd);
+  else if (win == 2 && pid == 2) 
+    send_mesg("You Win!", reply_sock_fd);
+  else 
+    send_mesg("You Lose :-(", reply_sock_fd);
+
   close(reply_sock_fd);
   return NULL;
   
@@ -225,20 +236,34 @@ int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
-  char isTurnc;
-  if(pid == 1) isTurnc = FALSE;
-  else if (pid == 2) isTurnc = TRUE;
-
+  
   //make variables to keep track of the other player
-  char is_otherTurnc; 
+  
   char other_pid;
-  if(pid == 1) other_pid = 2;
-  if(pid == 2) other_pid = 1;
- 
+  if(pid == 1){
+    other_pid = 2;
+    pthread_mutex_lock(&play1Moves);
+    play1[0] = 3;
+    play1[1] = 3;
+    p1board[3][3] = 'x';
+  }else if(pid == 2) {
+    other_pid = 1;
+  }
+
+  //game starts with player2's turn, player 1 automatically starts at 3,3
+  //                                                 (middle of the board)
+  
+  pthread_mutex_lock(&whoTurn_access);
+  whoTurn = 2;
+  pthread_mutex_unlock(&whoTurn_access);
+
   //first packet sent to respective client concerns
   //the own players board, every packet after that is
   //about the OTHER players board 
-  player_info = pack(pid, FALSE, turnc, 3, 3);
+  //waiting will always be set to FALSE by the server
+  //it's clients job to tell the server if it is waiting or not
+  player_info = pack(pid, FALSE, whoTurn, 3, 3, FALSE);
+  
 
   //send the first instantiated game board with
   //player1 moved on a center piece
@@ -247,41 +272,54 @@ int gameLoop(int reply_sock_fd, char pid){
   int read_count = -1;
 
    
-  while(read_count != 0 || read_count != -1){
+  do {
     
     //receive board of client we are conversing with  
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
-    
-    //add the move to the board, and to the respective client arrays keeping track of
-    //each players moves
-    addMove(player_info->move_a, player_info->move_b, player_info->pid);
-    
-    
-    //send OTHER players moves
-    //send other PID
-    //send if it's THIS players turn
-    //sends isWin
-    // i'm thinking we make isTurn 0 1 or 2 like isWin
-    if(pid == 1){
-      //i hope this is OK because i'm using pass by value, and the actual 'pack' function
-      //only modifies copies of values locally
-      pthread_mutex_lock(&play2Moves);
-      other_player = pack(other_pid, 0, turn(player_info, pid), (char)play2[0], (char)play2[1]);
-      pthread_mutex_unlock(&play2Moves);
-    }
-    else { 
-      pthread_mutex_lock(&play1Moves);
-      other_player = pack(other_pid, 0, turn(player_info, pid), (char)play1[0], (char)play1[1]);
-      pthread_mutex_lock(&play1Moves);
-    }
+     
 
-    //check_for_win_server(&player_info, board);
-    //how to send back to client 
-    if(player_info->isWin != 0) 
-      return player_info->isWin;
-    else: 
-      send_to(other_player, reply_sock_fd);
-  }
+    if(player_info->waiting){
+      //go and move if it's the clients turn
+      player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
+
+    }else{
+   
+      //add the move to the board, and to the respective client arrays keeping track of
+      //each players moves
+      addMove(player_info->move_a, player_info->move_b, player_info->pid);
+      
+      
+      //send OTHER players moves
+      //send other PID
+      //send if it's THIS players turn
+      //sends isWin
+      // i'm thinking we make isTurn 0 1 or 2 like isWin
+      if(pid == 1){
+        //i hope this is OK because i'm using pass by value, and the actual 'pack' function
+        //only modifies copies of values locally
+        pthread_mutex_lock(&play2Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play2[0], (char)play2[1], TRUE);
+        pthread_mutex_unlock(&play2Moves);
+      }
+      else { 
+        pthread_mutex_lock(&play1Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
+        pthread_mutex_unlock(&play1Moves);
+      }
+      //switch the turn
+      pthread_mutex_lock(&whoTurn_access);
+      whoTurn = turn(player_info);
+      pthread_mutex_lock(&whoTurn_access);
+
+      //check_for_win_server(&player_info, board);
+      //how to send back to client 
+      if(player_info->isWin != 0) 
+        return player_info->isWin;
+      else
+        send_to(other_player, reply_sock_fd);
+   
+    }
+  } while(read_count != 0 || read_count != -1);
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
 
@@ -348,13 +386,12 @@ void addMove(char move_a, char move_b, char pid){
 }
 
 //checks if it is this 
-int turn(gips *player_info, char pid){
-  if((player_info->isTurn == 1) && (player_info->pid == pid))       return FALSE;
-  else if ((player_info->isTurn = 1) && (player_info->pid != pid))  return TRUE;
-  else if ((player_info->isTurn = 0) && (player_info-> pid == pid)) return TRUE;
-  else if ((player_info -> isTurn = 0) && (player_info->pid != pid))   return TRUE;
+//make sure turn logic works out
+int turn(gips *player_info){
 
-  return 0;
+  if(player_info->whoTurn == 1)
+    return 2;
+  else return 1;
 }
 
 char **initBoard(char **board){
