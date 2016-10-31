@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>   
 #include "gips.h"
 #include "network.h"
 

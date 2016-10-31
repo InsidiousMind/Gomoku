@@ -3,8 +3,8 @@
 # 
 #
 
-CC = gcc
-CCO = gcc -c
+CC = cc
+CCO = cc -c
 CDEBUG = -g -Wall -Wextra -Werror
 SERV_SRC = src/server/server.c
 DBG_DEPS =  debug/lib/gips.o debug/lib/network.o 
@@ -48,11 +48,11 @@ server-debug:
 	mkdir -p debug/server
 	mkdir -p debug/lib/
 
-	${CCO} $(SERV_SRC) $(CDEBUG) -lpthread -o debug/server/server.o
+	${CCO} $(SERV_SRC) $(CDEBUG) -o debug/server/server.o
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 #	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	${CCO} src/server/server.c $(CDEBUG) -lpthread -o debug/server/server.o
+	${CCO} src/server/server.c $(CDEBUG) -o debug/server/server.o
 	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
 
 clean:

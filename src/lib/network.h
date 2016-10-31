@@ -1,7 +1,7 @@
 #include "gips.h"
 
 #ifndef HOST
-#define HOST "10.31.231.101"
+#define HOST "server1.cs.scranton.edu"
 #endif
 #ifndef HTTPPORT
 #define HTTPPORT "32200"
