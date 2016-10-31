@@ -12,12 +12,15 @@ int crawl_board(char **board, int startx, int starty);
 
 
 int check_for_win_server(char **board) {
-  int isWin = 0;
-  int i; 
+  int isWin = 0; 
   find_starts(board);
   
-  for(i = 0; i < (signed)(sizeof(start_pos_x)/sizeof(char)); i++){
+  // Set x->is_win to 0 if nobody won, otherwise set it to the
+  // Player number of the winner.
+  //
+  for(int i = 0; i < (sizeof(start_pos_x)/sizeof(char)); i++){
     isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
+  
   }
   return isWin;
 
@@ -44,8 +47,8 @@ int crawl_board(char **board, int startx, int starty) {
         for (j = 0; j < DEPTH && IsWithinBoard(x, y); j++)
         {
             // Test this cell here, maybe increment numInARow 
-            if(numInARow == 5) return TRUE;
             if (board[x][y] == 'x') numInARow++;
+            if(numInARow == 5) return TRUE;
             x += xdirs[i];
             y += ydirs[i];
         }

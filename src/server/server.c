@@ -14,7 +14,7 @@
 #include <signal.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
-//#include "../lib/glogic.h"
+#include "../lib/glogic.h"
 
 #define BACKLOG 10
 #define NUM_THREADS 2
@@ -44,21 +44,24 @@ int play1[2];
 pthread_mutex_t play2Moves = PTHREAD_MUTEX_INITIALIZER;
 int play2[2];
 
+pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
+int whoTurn;
+
 struct arg_s{
   long arg1;
   char arg2;
 };
 
 int main(void) {
- 
- 
+
+
   p1board = initBoard(p1board);
   p2board = initBoard(p2board);
 
 	int sock_fd;
 	int reply_sock_fd;
   int client_count = 0;
-  int i;	
+  int i;
 	/*
 	 * int yes; This patches a compiler error that prevented compiling
 	 * with the current compiler settings that complained about it being
@@ -77,7 +80,7 @@ int main(void) {
 			continue;
 		}else{
   		start_subserver(reply_sock_fd, client_count);
-      client_count++; 
+      client_count++;
     }
 
 	}
@@ -91,7 +94,7 @@ int main(void) {
 }
 
 
-// 
+//
 int get_server_socket(char *hostname, char *port) {
 	struct addrinfo hints, *servinfo, *p;
 	int status;
@@ -144,12 +147,12 @@ int accept_client(int serv_sock) {
 	struct sockaddr_storage client_addr;
 	char client_printable_addr[INET6_ADDRSTRLEN];
 
-	if ((reply_sock_fd = accept(serv_sock, 
+	if ((reply_sock_fd = accept(serv_sock,
 					(struct sockaddr *)&client_addr, &sin_size)) == -1) {
 		printf("socket accept error\n");
 	}
 	else {
-		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr), 
+		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr),
 				client_printable_addr, sizeof client_printable_addr);
 		printf("server: connection from %s at port %d\n", client_printable_addr,
 				((struct sockaddr_in*)&client_addr)->sin_port);
@@ -158,12 +161,12 @@ int accept_client(int serv_sock) {
 }
 
 void start_subserver(int reply_sock_fd, int client_count) {
-  
-  struct arg_s args;  
+
+  struct arg_s args;
   pthread_t pthread;
 	long reply_sock_fd_long = reply_sock_fd;
   args.arg1 = reply_sock_fd_long;
- 
+
   if(client_count == 0)
     args.arg2 = 1;
   else if(client_count == 1)
@@ -181,34 +184,46 @@ void start_subserver(int reply_sock_fd, int client_count) {
 }
 
 void *subserver(void *arguments) {
-  
-  //get the arguments 
+  // TODO
+  // NEED to implement a "wait" function so that if only one client is connected
+  // they don't play the game themselves
+  //
+  // If someone connects while two clients are already connected
+  // need to kill connection and tell them that two players are already playing
+  //get the arguments
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
   char pid = args->arg2;
 
- 
-  int read_count = -1; 
+
+  int read_count = -1;
   int win;
   int BUFFERSIZE = 256;
   char buffer[BUFFERSIZE+1];
 
   int reply_sock_fd = (int) reply_sock_fd_long;
- 
+
   printf("subserver ID = %ld\n", (unsigned long) pthread_self());
-  
+
   read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
-  printf("%s\n", buffer);
+  printf("%s%s\n", buffer, "'s subserver");
 
-  
+
   if((win = gameLoop(reply_sock_fd, pid)) == -1){
     perror("[!!!] error: Game Loop Fail");
   }
 
+  if(win == 1 && pid == 1)
+    send_mesg("You Win!", reply_sock_fd);
+  else if (win == 2 && pid == 2)
+    send_mesg("You Win!", reply_sock_fd);
+  else
+    send_mesg("You Lose :-(", reply_sock_fd);
+
   close(reply_sock_fd);
   return NULL;
-  
+
 }
 
 
@@ -225,57 +240,94 @@ int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
-  char isTurnc = 2;
 
-  char is_otherTurnc; 
+  //make variables to keep track of the other player
+
   char other_pid;
-  if(pid == 1) other_pid = 2;
-  if(pid == 2) other_pid = 1;
-  
-    
-  player_info = pack(pid, 0, isTurnc, 3, 3);
+  if(pid == 1){
+    other_pid = 2;
+    pthread_mutex_lock(&play1Moves);
+    play1[0] = 3;
+    play1[1] = 3;
+    p1board[3][3] = 'x';
+  }else if(pid == 2) {
+    other_pid = 1;
+  }
 
-//  int lastTurn = 2;
+  //game starts with player2's turn, player 1 automatically starts at 3,3
+  //                                                 (middle of the board)
 
-  //send an instantiated GIPS board
+  pthread_mutex_lock(&whoTurn_access);
+  whoTurn = 2;
+  pthread_mutex_unlock(&whoTurn_access);
+
+  //first packet sent to respective client concerns
+  //the own players board, every packet after that is
+  //about the OTHER players board
+  player_info = pack(pid, FALSE, (char)whoTurn, 3, 3, FALSE);
+
+  //send the first instantiated game board with
+  //player1 moved on a center piece
   send_to(player_info, reply_sock_fd);
 
   int read_count = -1;
 
-   
-  while(read_count != 0 || read_count != -1){
+
+  do {
+
+    //receive board of client we are conversing with
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
-    addMove(player_info->move_a, player_info->move_b, player_info->pid);
 
-    player_info->isTurn = turn(player_info);
-    
-    /*modify last turn as needed
-    if(player_info->isTurn == 1) lastTurn = player_info->pid;
-    else if (player_info->isTurn == 0 && pid == 1) lastTurn = 2;
-    else lastTurn = 1; */
+    if(player_info->waiting){
+      //go and move if it's the clients turn
+      pthread_mutex_lock(&whoTurn_access);
+      player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
+      pthread_mutex_unlock(&whoTurn_access);
 
-    if(player_info->isTurn) is_otherTurnc = 0;
-    else is_otherTurnc = 1;
-    //send other players moves
-    if(pid == 1){
-      pthread_mutex_lock(&play2Moves);
-      other_player = pack(other_pid, 0, is_otherTurnc, (char)play2[0], (char)play2[1]);
-      pthread_mutex_unlock(&play2Moves);
+    }else{
+
+      //add the move to the board, and to the respective client arrays keeping track of
+      //each players moves
+      addMove(player_info->move_a, player_info->move_b, player_info->pid);
+
+
+      //send OTHER players moves
+      //send other PID
+      //send if it's THIS players turn
+      //sends isWin
+      // i'm thinking we make isTurn 0 1 or 2 like isWin
+      if(pid == 1){
+        //i hope this is OK because i'm using pass by value, and the actual 'pack' function
+        //only modifies copies of values locally
+        pthread_mutex_lock(&play2Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play2[0], (char)play2[1], TRUE);
+        pthread_mutex_unlock(&play2Moves);
+      }
+      else {
+        pthread_mutex_lock(&play1Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
+        pthread_mutex_unlock(&play1Moves);
+      }
+      //switch the turn
+      pthread_mutex_lock(&whoTurn_access);
+      whoTurn = turn(player_info);
+      pthread_mutex_lock(&whoTurn_access);
+
+      if(pid == 1){
+        check_for_win_server(p1board);
+
+      }else{
+        check_for_win_server(p2board);
+      }
+      //how to send back to client
+      if(player_info->isWin != 0)
+        return player_info->isWin;
+      else
+        send_to(other_player, reply_sock_fd);
+
     }
-    else { 
-      pthread_mutex_lock(&play1Moves);
-      other_player = pack(other_pid, 0, is_otherTurnc, (char)play1[0], (char)play1[1]);
-      pthread_mutex_lock(&play1Moves);
-    }
-    send_to(other_player, reply_sock_fd);
-
-    //check_for_win_server(&player_info, board);
-    //how to send back to client 
-    if(player_info->isWin != 0) 
-      return player_info->isWin;
-    //update gameserver with moves of other player, send updated GIPS back
-  }
+  } while(read_count != 0 || read_count != -1);
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
 
@@ -321,18 +373,18 @@ void *get_in_addr(struct sockaddr * sa) {
 }
 
 void addMove(char move_a, char move_b, char pid){
-  
+
   if(pid == 1){
     p1board[(int)move_a][(int)move_b] = 'x';
-    
+
     pthread_mutex_lock(&play1Moves);
     play1[0] = (int)move_a;
-    play1[1] = (int)move_b; 
+    play1[1] = (int)move_b;
     pthread_mutex_unlock(&play2Moves);
   }
   else if (pid == 2){
     p2board[(int)move_a][(int)move_b] = 'x';
-    
+
     pthread_mutex_lock(&play2Moves);
     play2[0] = (int)move_a;
     play2[1] = (int)move_b;
@@ -341,21 +393,20 @@ void addMove(char move_a, char move_b, char pid){
   return;
 }
 
+//checks if it is this
+//make sure turn logic works out
+int turn(gips *player_info){
 
-int turn(gips *info){
-  if((info->isTurn == 1) && (info->pid == 1))       return 2;
-  else if ((info->isTurn = 1) && (info->pid == 2))  return 1;
-  else if ((info->isTurn = 0) && (info-> pid == 1)) return 1;
-  else if ((info -> isTurn = 0) && (info->pid == 2))   return 2;
-
-  return 0;
+  if(player_info->whoTurn == 1)
+    return 2;
+  else return 1;
 }
 
 char **initBoard(char **board){
-  int i; 
-  //instantiate board 
+  int i;
+  //instantiate board
   board = malloc(HEIGHT * sizeof(char *));
- 
+
   for(i = 0; i < HEIGHT; i++){
     board[i] = malloc(DEPTH);
     memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
