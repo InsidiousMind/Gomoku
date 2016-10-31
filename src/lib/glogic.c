@@ -12,10 +12,11 @@ int crawl_board(char **board, int startx, int starty);
 
 
 int check_for_win_server(char **board) {
-  int isWin = 0; 
+  int isWin = 0;
+  int i; 
   find_starts(board);
   
-  for(int i = 0; i < (sizeof(start_pos_x)/sizeof(char)); i++){
+  for(i = 0; i < (signed)(sizeof(start_pos_x)/sizeof(char)); i++){
     isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
   }
   return isWin;
