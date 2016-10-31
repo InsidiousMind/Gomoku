@@ -279,7 +279,9 @@ int gameLoop(int reply_sock_fd, char pid){
 
     if(player_info->waiting){
       //go and move if it's the clients turn
+      pthread_mutex_lock(&whoTurn_access);
       player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
+      pthread_mutex_unlock(&whoTurn_access);
 
     }else{
    
