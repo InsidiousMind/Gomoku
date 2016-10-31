@@ -15,8 +15,8 @@ make:
 	mkdir -p build
 	mkdir -p build/server
 	mkdir -p build/client
-  $(CCO) $(CLIE_SRC) -o build/client/client.o
-  $(CCO) $(SERV_SRC) -o build/server/server.o
+	$(CCO) $(CLIE_SRC) -o build/client/client.o
+	$(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
 	$(CCO) src/lib/network.c -o build/lib/network.o
 	$(CC) $(PRD_DEPS) $(SERV_SRC) -lpthread -o build/server/server
@@ -47,6 +47,7 @@ client-debug:
 	$(CCO) $(CLIE_SRC) $(CDEBUG) -o debug/client/client.o
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
+	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
 	$(CC) debug/client/client.o $(DBG_DEPS) $(CDEBUG) -o debug/client/client
 
 server-debug:
