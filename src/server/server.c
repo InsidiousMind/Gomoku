@@ -187,6 +187,9 @@ void *subserver(void *arguments) {
   // TODO
   // NEED to implement a "wait" function so that if only one client is connected
   // they don't play the game themselves 
+  //
+  // If someone connects while two clients are already connected
+  // need to kill connection and tell them that two players are already playing
   //get the arguments 
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
