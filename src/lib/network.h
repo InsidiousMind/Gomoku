@@ -1,7 +1,7 @@
 #include "gips.h"
 
 #ifndef HOST
-#define HOST "10.31.231.101"
+#define HOST "127.0.0.1"
 #endif
 #ifndef HTTPPORT
 #define HTTPPORT "32200"
@@ -10,3 +10,5 @@
 int connect_to_server();
 int send_to(gips *info, int sock);
 gips *get_server(int sock);
+int send_mesg(char *str, int sock);
+

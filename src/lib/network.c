@@ -23,8 +23,7 @@ int send_to(gips *info, int sock) {
   int len = sizeof(info);
   while(total < len){
     n = send(sock, &(*(info+total)), bytesleft, 0);
-    if(n==-1)
-    {
+    if(n==-1){
       perror("[!!!] could not send");
       break;
     }
@@ -34,4 +33,24 @@ int send_to(gips *info, int sock) {
   len = total; // number of bytes actually sent
   return n == -1? -1:0; //-1 on fail 0 on success
 }
+
+int send_mesg(char *str, int sock){
+  
+  int total = 0;
+  int bytesleft = sizeof(str), n;
+  int len = sizeof(str);
+  while(total < len){
+    n = send(sock, str+total, bytesleft, 0);
+    if(n==-1){
+      perror("[!!!] could not send:");
+      break;
+    }
+    total += n;
+    bytesleft -= n;
+  }
+  len = total;
+  return n == -1? -1:0;
+}
+
+
 
