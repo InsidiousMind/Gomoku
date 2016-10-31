@@ -311,8 +311,12 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_lock(&whoTurn_access);
       whoTurn = turn(player_info);
       pthread_mutex_lock(&whoTurn_access);
-
-      //check_for_win_server(&player_info, board);
+      if(pid == 1){
+        check_for_win_server(p1board);
+ 
+      }else{
+        check_for_win_server(p2board) 
+      }
       //how to send back to client 
       if(player_info->isWin != 0) 
         return player_info->isWin;
