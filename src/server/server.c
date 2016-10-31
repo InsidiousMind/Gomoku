@@ -259,10 +259,7 @@ int gameLoop(int reply_sock_fd, char pid){
   //first packet sent to respective client concerns
   //the own players board, every packet after that is
   //about the OTHER players board 
-  //waiting will always be set to FALSE by the server
-  //it's clients job to tell the server if it is waiting or not
-  player_info = pack(pid, FALSE, whoTurn, 3, 3, FALSE);
-  
+  player_info = pack(pid, FALSE, (char)whoTurn, 3, 3, FALSE);
 
   //send the first instantiated game board with
   //player1 moved on a center piece
@@ -311,11 +308,12 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_lock(&whoTurn_access);
       whoTurn = turn(player_info);
       pthread_mutex_lock(&whoTurn_access);
+
       if(pid == 1){
         check_for_win_server(p1board);
  
       }else{
-        check_for_win_server(p2board) 
+        check_for_win_server(p2board);
       }
       //how to send back to client 
       if(player_info->isWin != 0) 
