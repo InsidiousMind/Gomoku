@@ -25,15 +25,15 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-void send_move(int a, int b, char **board, int sock, short player);
-char **get_move(char **board, int sock, short which_player);
+void send_move(int a, int b, char **board, int sock, char player);
+char **get_move(char **board, int sock, char which_player);
 void display_board(char **board);
 
 int main() {
     // TODO We need a variable we can pass around to keep track of
     // TODO what player number we current are.
     char *name = malloc(sizeof(char) * 15);
-    short which_player;
+    gips player_info;
     int move_x;
     int move_y;
     char **board = malloc(HEIGHT * sizeof(char*));
@@ -47,8 +47,8 @@ int main() {
     if (sock != -1) {
         printf("Enter your name: ");
         scanf("%s", name);
-        send(sock, name, sizeof(name), 0);
-        recv(sock, &which_player, sizeof(which_player), 0);
+        send_mesg(name, sock);
+        recv(sock, &player_info, sizeof(player_info), 0);
     } else { // Does this go through correctly in the first place?
         printf("Couldn't connect to the server.\n");
         printf("%d\n", errno);
@@ -58,20 +58,20 @@ int main() {
         //TODO check this loop
         printf("%s> ", name);
         scanf("%d%d", &move_x, &move_y);
-        send_move(move_x, move_y, board, sock, which_player);
-        board = get_move(board, sock, which_player);
+        send_move(move_x, move_y, board, sock, player_info.pid);
+        board = get_move(board, sock, player_info.pid);
     }
     close(sock);
 }
 
-void send_move(int a, int b, char **board, int sock, short player) {
+void send_move(int a, int b, char **board, int sock, char player) {
     board[a][b] = 'x';
     // Send the move to the other guy.
     gips *z = pack(player, 0, !player, a, b, 1);
     send_to(z, sock);
 }
 
-char **get_move(char **board, int sock, short which_player) {
+char **get_move(char **board, int sock, char which_player) {
     // TODO This needs to take a MOVE and apply it to the board.
     // Get the move from the other guy.
     gips *z = malloc(sizeof(gips)); 

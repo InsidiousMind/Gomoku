@@ -184,7 +184,9 @@ void start_subserver(int reply_sock_fd, int client_count) {
 }
 
 void *subserver(void *arguments) {
-  
+  // TODO
+  // NEED to implement a "wait" function so that if only one client is connected
+  // they don't play the game themselves 
   //get the arguments 
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
@@ -202,7 +204,7 @@ void *subserver(void *arguments) {
   
   read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
-  printf("%s\n", buffer);
+  printf("%s%s\n", buffer, "'s subserver");
 
   
   if((win = gameLoop(reply_sock_fd, pid)) == -1){
