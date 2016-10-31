@@ -19,6 +19,7 @@
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/glogic.h"
+#include <errno.h>
 // This file compiles with glogic.h
 
 #define HTTPPORT "32200"
@@ -50,6 +51,7 @@ int main() {
         recv(sock, &which_player, sizeof(which_player), 0);
     } else { // Does this go through correctly in the first place?
         printf("Couldn't connect to the server.\n");
+        printf("%d\n", errno);
         exit(0);
     }
     while (1) {
