@@ -3,8 +3,8 @@
 # 
 #
 
-CC = gcc
-CCO = gcc -c
+CC = cc
+CCO = cc -c
 CDEBUG = -g -Wall -Wextra -Werror
 SERV_SRC = src/server/server.c
 DBG_DEPS =  debug/lib/gips.o debug/lib/network.o 

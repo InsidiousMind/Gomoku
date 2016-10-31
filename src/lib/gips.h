@@ -26,3 +26,9 @@ gips *pack(char pid,char isWin, char isTurn, char move_x, char move_y);
 #ifndef HEIGHT
 #define HEIGHT 8 
 #endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif

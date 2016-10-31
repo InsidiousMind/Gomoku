@@ -226,56 +226,62 @@ int gameLoop(int reply_sock_fd, char pid){
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
-  char isTurnc = 2;
+  char isTurnc;
+  if(pid == 1) isTurnc = FALSE;
+  else if (pid == 2) isTurnc = TRUE;
 
+  //make variables to keep track of the other player
   char is_otherTurnc; 
   char other_pid;
   if(pid == 1) other_pid = 2;
   if(pid == 2) other_pid = 1;
-  
-    
-  player_info = pack(pid, 0, isTurnc, 3, 3);
+ 
+  //first packet sent to respective client concerns
+  //the own players board, every packet after that is
+  //about the OTHER players board 
+  player_info = pack(pid, FALSE, turnc, 3, 3);
 
-//  int lastTurn = 2;
-
-  //send an instantiated GIPS board
+  //send the first instantiated game board with
+  //player1 moved on a center piece
   send_to(player_info, reply_sock_fd);
 
   int read_count = -1;
 
    
   while(read_count != 0 || read_count != -1){
-    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
-
-    addMove(player_info->move_a, player_info->move_b, player_info->pid);
-
-    player_info->isTurn = turn(player_info);
     
-    /*modify last turn as needed
-    if(player_info->isTurn == 1) lastTurn = player_info->pid;
-    else if (player_info->isTurn == 0 && pid == 1) lastTurn = 2;
-    else lastTurn = 1; */
-
-    if(player_info->isTurn) is_otherTurnc = 0;
-    else is_otherTurnc = 1;
-    //send other players moves
+    //receive board of client we are conversing with  
+    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
+    
+    //add the move to the board, and to the respective client arrays keeping track of
+    //each players moves
+    addMove(player_info->move_a, player_info->move_b, player_info->pid);
+    
+    
+    //send OTHER players moves
+    //send other PID
+    //send if it's THIS players turn
+    //sends isWin
+    // i'm thinking we make isTurn 0 1 or 2 like isWin
     if(pid == 1){
+      //i hope this is OK because i'm using pass by value, and the actual 'pack' function
+      //only modifies copies of values locally
       pthread_mutex_lock(&play2Moves);
-      other_player = pack(other_pid, 0, is_otherTurnc, (char)play2[0], (char)play2[1]);
+      other_player = pack(other_pid, 0, turn(player_info, pid), (char)play2[0], (char)play2[1]);
       pthread_mutex_unlock(&play2Moves);
     }
     else { 
       pthread_mutex_lock(&play1Moves);
-      other_player = pack(other_pid, 0, is_otherTurnc, (char)play1[0], (char)play1[1]);
+      other_player = pack(other_pid, 0, turn(player_info, pid), (char)play1[0], (char)play1[1]);
       pthread_mutex_lock(&play1Moves);
     }
-    send_to(other_player, reply_sock_fd);
 
     //check_for_win_server(&player_info, board);
     //how to send back to client 
     if(player_info->isWin != 0) 
       return player_info->isWin;
-    //update gameserver with moves of other player, send updated GIPS back
+    else: 
+      send_to(other_player, reply_sock_fd);
   }
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
@@ -342,12 +348,12 @@ void addMove(char move_a, char move_b, char pid){
   return;
 }
 
-
-int turn(gips *info){
-  if((info->isTurn == 1) && (info->pid == 1))       return 2;
-  else if ((info->isTurn = 1) && (info->pid == 2))  return 1;
-  else if ((info->isTurn = 0) && (info-> pid == 1)) return 1;
-  else if ((info -> isTurn = 0) && (info->pid == 2))   return 2;
+//checks if it is this 
+int turn(gips *player_info, char pid){
+  if((player_info->isTurn == 1) && (player_info->pid == pid))       return FALSE;
+  else if ((player_info->isTurn = 1) && (player_info->pid != pid))  return TRUE;
+  else if ((player_info->isTurn = 0) && (player_info-> pid == pid)) return TRUE;
+  else if ((player_info -> isTurn = 0) && (player_info->pid != pid))   return TRUE;
 
   return 0;
 }
