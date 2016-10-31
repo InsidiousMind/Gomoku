@@ -1,7 +1,6 @@
 /*
  * Client utilizing the Gomoku Inter Process Shuttle (GIPS) protocol designed by Sean Batzel and Andrew Plaza.
  *
- * Client designed by Sean Batzel
  */
 
 #include <stdio.h>
@@ -20,6 +19,7 @@
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/glogic.h"
+// This file compiles with glogic.h
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
@@ -38,7 +38,7 @@ int main() {
     char **board = malloc(HEIGHT * sizeof(char*));
     int i;
     for (i = 0; i < HEIGHT; i++) {
-        board[i] = malloc(DEPTH);
+        board[i] = malloc(DEPTH * sizeof(char *));
     }
     int sock = connect_to_server();
     printf("Gomoku Client for Linux\n");
@@ -48,7 +48,7 @@ int main() {
         scanf("%s", name);
         send(sock, name, sizeof(name), 0);
         recv(sock, &which_player, sizeof(which_player), 0);
-    } else {
+    } else { // Does this go through correctly in the first place?
         printf("Couldn't connect to the server.\n");
         exit(0);
     }
@@ -65,7 +65,7 @@ int main() {
 void send_move(int a, int b, char **board, int sock, short player) {
     board[a][b] = 'x';
     // Send the move to the other guy.
-    gips *z = pack(player, 0, !player, a, b);
+    gips *z = pack(player, 0, !player, a, b, 1);
     send_to(z, sock);
 }
 
