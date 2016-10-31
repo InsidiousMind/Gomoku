@@ -65,7 +65,7 @@ int main() {
 void send_move(int a, int b, char **board, int sock, short player) {
     board[a][b] = 'x';
     // Send the move to the other guy.
-    gips *z = pack(player, 0, !player, a, b);
+    gips *z = pack(player, 0, !player, a, b, 1);
     send_to(z, sock);
 }
 
