@@ -208,9 +208,13 @@ void *subserver(void *arguments) {
   if((win = gameLoop(reply_sock_fd, pid)) == -1){
     perror("[!!!] error: Game Loop Fail");
   }
-  if(win == 1 && pid == 1) send_mesg("You Win!", reply_sock_fd);
-  else if (win == 2 && pid == 2) send_mesg("You Win!", reply_sock_fd);
-  else send_mesg("You Lose :-(", reply_sock_fd);
+
+  if(win == 1 && pid == 1) 
+    send_mesg("You Win!", reply_sock_fd);
+  else if (win == 2 && pid == 2) 
+    send_mesg("You Win!", reply_sock_fd);
+  else 
+    send_mesg("You Lose :-(", reply_sock_fd);
 
   close(reply_sock_fd);
   return NULL;
@@ -238,7 +242,8 @@ int gameLoop(int reply_sock_fd, char pid){
   if(pid == 1){
     other_pid = 2;
     pthread_mutex_lock(&play1Moves);
-    play1[3][3];
+    play1[0] = 3;
+    play1[1] = 3;
     p1board[3][3] = 'x';
   }else if(pid == 2) {
     other_pid = 1;
@@ -272,7 +277,7 @@ int gameLoop(int reply_sock_fd, char pid){
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
      
 
-    if(player_info->isWaiting){
+    if(player_info->waiting){
       //go and move if it's the clients turn
       player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
 
@@ -309,7 +314,7 @@ int gameLoop(int reply_sock_fd, char pid){
       //how to send back to client 
       if(player_info->isWin != 0) 
         return player_info->isWin;
-      else: 
+      else
         send_to(other_player, reply_sock_fd);
    
     }
@@ -383,8 +388,9 @@ void addMove(char move_a, char move_b, char pid){
 //make sure turn logic works out
 int turn(gips *player_info){
 
-  if((player_info->whoTurn == 1)) return 2;
-  else (player_info->whoTurn == 2) return 1;
+  if(player_info->whoTurn == 1)
+    return 2;
+  else return 1;
 }
 
 char **initBoard(char **board){
