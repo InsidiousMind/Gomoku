@@ -68,10 +68,12 @@ int send_to(gips *info, int sock) {
 int send_mesg(char *str, int sock){
 
   int total = 0;
-  int bytesleft = sizeof(str), n;
-  int len = sizeof(str);
+  int bytesleft = strlen(str) * sizeof(char);
+  int n;
+  int len = bytesleft;
+
   while(total < len){
-    n = send(sock, str+total, bytesleft, 0);
+    n = send(sock, str+total, bytesleft, MSG_NOSIGNAL);
     if(n==-1){
       perror("[!!!] could not send:");
       break;

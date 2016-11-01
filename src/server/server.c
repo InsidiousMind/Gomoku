@@ -79,8 +79,14 @@ int main(void) {
 		if ((reply_sock_fd = accept_client(sock_fd)) == -1) {
 			continue;
 		}else{
-  		start_subserver(reply_sock_fd, client_count);
-      client_count++;
+      if(client_count > 1){
+        send_mesg("Gomoku already has two players, sorry! \n", reply_sock_fd);
+        close(reply_sock_fd);
+        continue;
+      }else{
+  		  start_subserver(reply_sock_fd, client_count);
+        client_count++;
+      }
     }
 
 	}
@@ -149,7 +155,7 @@ int accept_client(int serv_sock) {
 
 	if ((reply_sock_fd = accept(serv_sock,
 					(struct sockaddr *)&client_addr, &sin_size)) == -1) {
-		printf("socket accept error\n");
+		perror("socket accept error\n");
 	}
 	else {
 		inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr),
@@ -167,13 +173,10 @@ void start_subserver(int reply_sock_fd, int client_count) {
 	long reply_sock_fd_long = reply_sock_fd;
   args.arg1 = reply_sock_fd_long;
 
-  if(client_count == 0)
+  if(client_count % 2 == 0)
     args.arg2 = 1;
-  else if(client_count == 1)
+  else if(client_count % 2 == 1)
     args.arg2 = 2;
-  else
-    return;
-  //just want to return, our game can only accomodate 2 players
 
 	if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
 		printf("failed to start subserver\n");
@@ -207,8 +210,8 @@ void *subserver(void *arguments) {
 
   read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
-  printf("%s%s\n", buffer, "'s subserver");
-
+  
+  printf("%s\n", buffer);
 
   if((win = gameLoop(reply_sock_fd, pid)) == -1){
     perror("[!!!] error: Game Loop Fail");

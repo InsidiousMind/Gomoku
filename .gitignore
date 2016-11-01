@@ -2,3 +2,5 @@ CMakeLists.txt
 .idea/*
 build/*
 debug/*
+.*.*.swp
+.*.*.swo
