@@ -2,13 +2,14 @@
 #include <netdb.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/socket.h>   
 #include "gips.h"
 #include "network.h"
 #include <string.h>
 #include <unistd.h>
 
 int connect_to_server() {
+    // FIXME This is the source for the connection subroutine in the example.
     char *hostname = HOST;
     char *port = HTTPPORT;
     int serverfd;
@@ -40,7 +41,7 @@ int connect_to_server() {
     }
 
     freeaddrinfo(servinfo);
-   
+
     if (status != -1) return serverfd;
     else return -1;
 }
@@ -65,12 +66,14 @@ int send_to(gips *info, int sock) {
 }
 
 int send_mesg(char *str, int sock){
-  
+
   int total = 0;
-  int bytesleft = sizeof(str), n;
-  int len = sizeof(str);
+  int bytesleft = strlen(str) * sizeof(char);
+  int n;
+  int len = bytesleft;
+
   while(total < len){
-    n = send(sock, str+total, bytesleft, 0);
+    n = send(sock, str+total, bytesleft, MSG_NOSIGNAL);
     if(n==-1){
       perror("[!!!] could not send:");
       break;
@@ -81,6 +84,3 @@ int send_mesg(char *str, int sock){
   len = total;
   return n == -1? -1:0;
 }
-
-
-
