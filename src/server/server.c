@@ -191,6 +191,8 @@ void *subserver(void *arguments) {
   // If someone connects while two clients are already connected
   // need to kill connection and tell them that two players are already playing
   //get the arguments 
+  //
+  //Pretty sure I can make playerboard variables local to each thread
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
   char pid = args->arg2;
