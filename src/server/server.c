@@ -287,7 +287,14 @@ int gameLoop(int reply_sock_fd, char pid){
     //receive board of client we are conversing with
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
     printf("%d\n", read_count);
+    
 
+    //Waiting: if it's not the clients turn, the server will send a gips packet with
+    //the clients own PID and waiting set to 1 (true). 
+    //while the client is waiting, it should keep itself in a loop, while printing to the user
+    //that the other player is making a move
+    //once the client receives a packer with waiting set to FALSE then that gips packet
+    //will contain the other players moves
     if(player_info->waiting){
       //go and move if it's the clients turn
       if(currentTurn != pid){
