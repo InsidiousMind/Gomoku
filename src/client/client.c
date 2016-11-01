@@ -100,7 +100,7 @@ int main() {
         scanf("%s", name);
         send_mesg(name, sock);
         recv(sock, &player_info, sizeof(player_info), 0);
-        get_move(board, &player_info);
+        board = get_move(board, &player_info);
         pid = player_info.pid;
     } else { // Does this go through correctly in the first place?
         printf("Couldn't connect to the server. Error number: ");
@@ -108,20 +108,20 @@ int main() {
         exit(0);
     }
     
-   while(board != NULL) {
-    printf("Wait your turn!\n");
-    while(player_info.waiting == TRUE){
-      sleep(3);
-      send_wait(sock, &player_info, pid);
+    while(board != NULL) {
+      printf("Wait your turn!\n");
+      while(player_info.waiting == TRUE){
+        sleep(3);
+        send_wait(sock, &player_info, pid);
+        recv(sock, &player_info, sizeof(player_info), 0);
+      }
+      display_board(board);
+      printf("Now you can move\n");
+      printf("%s> ", name);
+      scanf("%d%d", &move_x, &move_y);
+      send_move(move_x, move_y, board, sock, pid, player_info.whoTurn);
       recv(sock, &player_info, sizeof(player_info), 0);
-    }
-    display_board(board);
-    printf("Now you can move\n");
-    printf("%s> ", name);
-    scanf("%d%d", &move_x, &move_y);
-    send_move(move_x, move_y, board, sock, pid, player_info.whoTurn);
-    recv(sock, &player_info, sizeof(player_info), 0);
-    get_move(board, &player_info);
+      board = get_move(board, &player_info);
    }
    close(sock);
    free(board);

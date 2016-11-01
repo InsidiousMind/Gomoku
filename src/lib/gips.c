@@ -3,30 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
-// It's actually not unnecessary - the game logic determines if we won,
-// but the client needs to be responsible for telling the player and
-// quitting itself. - Sean
-*/
-
-
-//OK fair enough. Uncommented b/c compilation error and i was testing pack and unpack
-
-
-/*void someone_won(gips *x) {
-	// Ask the server if someone won?
-	// Takes a single 0 or 1 to tell us if we won or not.
-	// 1 is a loss.
-	switch (x->move) {
-		case 1:
-			printf("You've lost.");
-		case 0:
-			printf("You win!");
-	}
-	exit(0);
-} */
-
-
 
 //Some functions to compress what we send over the nets
 

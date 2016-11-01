@@ -308,7 +308,15 @@ int gameLoop(int reply_sock_fd, char pid){
         player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
       }
       send_to(player_info, reply_sock_fd);
-    
+   while(player_info->waiting) {
+    if(currentTurn != pid) 
+      player_info = pack(pid, FALSE, currentTurn, -1, -1, TRUE);
+    else{
+      int *moves = findOtherMoves(player_info);
+    }
+   
+   
+   }
     
     }else{
 

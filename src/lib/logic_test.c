@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "glogic.h"
 #include "gips.h"
 
@@ -10,6 +14,23 @@ void find_starts(char **board);
 int IsWithinBoard(int x, int y);
 int crawl_board(char **board, int startx, int starty);
 
+
+
+
+int main(){
+
+
+  char **board = malloc(HEIGHT * sizeof(char*));
+  for(int i =0; i < HEIGHT; i++){
+    board[i] = malloc(DEPTH);
+  }
+  board[3][3] = 'x';
+  board[2][2] = 'x';
+  board[3][4] = 'x';
+
+  printf("%d\n", check_for_win_server(board));
+
+}
 
 int check_for_win_server(char **board) {
   int isWin = 0; 
