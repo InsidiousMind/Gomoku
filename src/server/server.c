@@ -31,6 +31,7 @@ int gameLoop(int reply_sock_fd, char pid);
 void addMove(char move_x, char move_y, char pid);
 char **initBoard(char **board);
 int turn(gips *info);
+int * findOtherMoves(gips *player_info);
 
 
 //shouldn't need a mutext lock for these because they are only accessed by their respective threads
@@ -289,11 +290,14 @@ int gameLoop(int reply_sock_fd, char pid){
 
     if(player_info->waiting){
       //go and move if it's the clients turn
-      pthread_mutex_lock(&whoTurn_access);
-      player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
-      pthread_mutex_unlock(&whoTurn_access);
+      if(currentTurn != pid){
+        player_info = pack(pid, FALSE, currentTurn, -1, -1, TRUE);
+      }
+      else{
+        int * moves = findOtherMoves(player_info);
+        player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
+      }
       send_to(player_info, reply_sock_fd);
-
     }else{
 
       //add the move to the board, and to the respective client arrays keeping track of
@@ -426,4 +430,21 @@ char **initBoard(char **board){
 
   board[3][3] = 'x';
   return board;
+}
+
+int * findOtherMoves(gips *player_info){
+  int *moves = malloc(2 * sizeof(int));
+  if(player_info->pid == 1){
+    pthread_mutex_trylock(&play2Moves);
+      moves[0] = play2[0];
+      moves[1] = play2[1];
+    pthread_mutex_unlock(&play2Moves);
+  }else if (player_info->pid == 2){
+    pthread_mutex_trylock(&play1Moves);
+      moves[0] = play1[0];
+      moves[1] = play1[1];
+    pthread_mutex_unlock(&play1Moves);
+  }
+
+  return moves;
 }
