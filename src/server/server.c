@@ -242,6 +242,9 @@ void *subserver(void *arguments) {
 *   client so that the client can update the gameboard
 */
 int gameLoop(int reply_sock_fd, char pid){
+ 
+  int p1win;
+  int p2win; 
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
@@ -305,21 +308,26 @@ int gameLoop(int reply_sock_fd, char pid){
         player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
       }
       send_to(player_info, reply_sock_fd);
+    
+    
     }else{
 
       //add the move to the board, and to the respective client arrays keeping track of
       //each players moves
       addMove(player_info->move_a, player_info->move_b, player_info->pid);
+
       currentTurn = turn(player_info);
 
       //send OTHER players moves
       //send other PID
-      //send if it's THIS players turn
-      //sends isWin
-      // i'm thinking we make isTurn 0 1 or 2 like isWin
+      //send  players turn
+      //check/sends isWin
+      
       if(pid == 1){
         //i hope this is OK because i'm using pass by value, and the actual 'pack' function
         //only modifies copies of values locally
+        //pack a gips player with turns of other player, other players pid, current turn,
+        //and waiting set to TRUE
         pthread_mutex_lock(&play2Moves);
         other_player = pack(other_pid, 0, currentTurn, (char)play2[0], (char)play2[1], TRUE);
         pthread_mutex_unlock(&play2Moves);
@@ -334,19 +342,25 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_lock(&whoTurn_access);
       whoTurn = currentTurn;
       pthread_mutex_unlock(&whoTurn_access);
+     
       
+
+      //most up-to-date moves are this player 
       if(pid % 2 == 0){
-        check_for_win_server(p1board);
+        p2win = check_for_win_server(p2board);
 
       }else{
-        check_for_win_server(p2board);
+        p1win = check_for_win_server(p1board);
       }
-
-      if(player_info->isWin != 0){
-        return player_info->isWin;
-      }
-      else{
-       send_to(other_player, reply_sock_fd);
+      //if it's a win send a packet with other players moves
+      //and isWin set to pid of winner
+      //return from gameLoop
+      if((p1win) || (p2win)){
+        other_player->isWin = pid;
+        send_to(other_player, reply_sock_fd);
+        return other_player->isWin;
+      } else {
+        send_to(other_player, reply_sock_fd);
       }
     }
 
