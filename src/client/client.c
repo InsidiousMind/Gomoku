@@ -78,7 +78,8 @@ char **get_move(char **board, int sock, char which_player) {
   // TODO This needs to take a MOVE and apply it to the board.
   // Get the move from the other guy.
   gips *z = malloc(sizeof(gips));
-  recv(sock, z, sizeof(z), 0);
+  recv(sock, z, sizeof(z), 0); // FIXME The client hangs here
+  //FIXME while waiting for a server response.
 
   // Get an x and y coordinate from the gips packet.
   if (z->isWin != 0) {

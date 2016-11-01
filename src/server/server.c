@@ -153,6 +153,7 @@ int get_server_socket(char *hostname, char *port) {
     struct sockaddr_storage client_addr;
     char client_printable_addr[INET6_ADDRSTRLEN];
 
+    // 157 is the last line that GDB reports.
     if ((reply_sock_fd = accept(serv_sock,
       (struct sockaddr *)&client_addr, &sin_size)) == -1) {
         perror("socket accept error\n");

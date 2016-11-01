@@ -54,8 +54,8 @@ debug:
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	$(CC) $(SERV_SRC) $(CDEBUG) -lpthread  -o debug/server/server
-	$(CC) $(CLIE_SRC) $(CDEBUG) -o debug/client/client
+	$(CC) $(DBG_DEPS) $(SERV_SRC) $(CDEBUG) -lpthread  -o debug/server/server
+	$(CC) $(DBG_DEPS) $(CLIE_SRC) $(CDEBUG) -o debug/client/client
 
 client-debug:
 	mkdir -p debug
@@ -78,6 +78,19 @@ server-debug:
 	${CCO} src/server/server.c $(CDEBUG) -o debug/server/server.o
 	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
 
+run-client-debug:
+	gdb debug/client/client
+
+run-server-debug:
+	gdb debug/server/server
+
+run-client-valgrind:
+	valgrind --leak-check=full -v --track-origins=yes debug/client/client
+
+run-server-valgrind:
+	valgrind --leak-check=full -v --track-origins=yes debug/server/server
+
 clean:
 	rm -rf build
 	rm -rf debug
+	rm -rf vgcore.*
