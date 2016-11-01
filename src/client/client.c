@@ -60,6 +60,7 @@ int main() {
     scanf("%d%d", &move_x, &move_y);
     send_move(move_x, move_y, board, sock, player_info.pid);
     board = get_move(board, sock, player_info.pid);
+    display_board(board);
   }
   close(sock);
 }
