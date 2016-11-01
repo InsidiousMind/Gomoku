@@ -25,7 +25,7 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-void send_move(int a, int b, char **board, int sock, char player);
+void send_move(int a, int b, char **board, int sock, char player, char whoTurn, gips *player_info);
 char **get_move(char **board, int sock, char which_player);
 void display_board(char **board);
 
@@ -36,6 +36,7 @@ int main() {
   gips player_info;
   int move_x;
   int move_y;
+  char pid;
   char **board = malloc(HEIGHT * sizeof(char*));
   int i;
   for (i = 0; i < HEIGHT; i++) {
@@ -49,6 +50,7 @@ int main() {
     scanf("%s", name);
     send_mesg(name, sock);
     recv(sock, &player_info, sizeof(player_info), 0);
+    pid = player_info.pid;
   } else { // Does this go through correctly in the first place?
     printf("Couldn't connect to the server.\n");
     printf("%d\n", errno);
@@ -58,7 +60,7 @@ int main() {
     //TODO check this loop
     printf("%s> ", name);
     scanf("%d%d", &move_x, &move_y);
-    send_move(move_x, move_y, board, sock, player_info.pid);
+    send_move(move_x, move_y, board, sock, pid, player_info.whoTurn, &player_info);
     board = get_move(board, sock, player_info.pid);
     display_board(board);
     board = get_move(board, sock, player_info.pid);
@@ -69,10 +71,17 @@ int main() {
   free(name);
 }
 
-void send_move(int a, int b, char **board, int sock, char player) {
+void send_move(int a, int b, char **board, int sock, char player, char whoTurn, gips *player_info) {
   board[a][b] = 'x';
   // Send the move to the other guy.
-  gips *z = pack(player, 0, !player, a, b, 1);
+  gips *z = malloc(sizeof(gips));
+
+  if(player_info->pid == player && player_info->waiting == TRUE){
+    z = pack(player, 0, whoTurn, a, b, TRUE) ;
+  }else{
+    z = pack(player, 0, whoTurn, a, b, FALSE);
+  }
+
   send_to(z, sock);
 }
 
