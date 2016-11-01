@@ -15,7 +15,10 @@ make:
 	mkdir -p build
 	mkdir -p build/server
 	mkdir -p build/client
+<<<<<<< HEAD
+=======
 	mkdir -p build/lib
+>>>>>>> 63ed7c80fac088eae606d0917347a19c6acb0bad
 	$(CCO) $(CLIE_SRC) -o build/client/client.o
 	$(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o

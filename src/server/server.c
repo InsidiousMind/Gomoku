@@ -166,255 +166,255 @@ int get_server_socket(char *hostname, char *port) {
       return reply_sock_fd;
     }
 
-    void start_subserver(int reply_sock_fd, int client_count) {
+void start_subserver(int reply_sock_fd, int client_count) {
 
-      struct arg_s args;
-      pthread_t pthread;
-      long reply_sock_fd_long = reply_sock_fd;
-      args.arg1 = reply_sock_fd_long;
+  struct arg_s args;
+  pthread_t pthread;
+  long reply_sock_fd_long = reply_sock_fd;
+  args.arg1 = reply_sock_fd_long;
 
-      if(client_count % 2 == 0)
-      args.arg2 = 1;
-      else if(client_count % 2 == 1)
-      args.arg2 = 2;
+  if(client_count % 2 == 0)
+  args.arg2 = 1;
+  else if(client_count % 2 == 1)
+  args.arg2 = 2;
 
-      if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
-        printf("failed to start subserver\n");
-      }
-      else {
-        printf("subserver %lu started\n", (unsigned long)pthread);
-      }
-    }
+  if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
+    printf("failed to start subserver\n");
+  }
+  else {
+    printf("subserver %lu started\n", (unsigned long)pthread);
+  }
+}
 
-    void *subserver(void *arguments) {
-      // TODO
-      // NEED to implement a "wait" function so that if only one client is connected
-      // they don't play the game themselves
-      //
-      // If someone connects while two clients are already connected
-      // need to kill connection and tell them that two players are already playing
-      //get the arguments
-      struct arg_s *args =  arguments;
-      long reply_sock_fd_long = args->arg1;
-      char pid = args->arg2;
-
-
-      int read_count = -1;
-      int win;
-      int BUFFERSIZE = 256;
-      char buffer[BUFFERSIZE+1];
-
-      int reply_sock_fd = (int) reply_sock_fd_long;
-
-      printf("subserver ID = %lu\n", (unsigned long) pthread_self());
-
-      read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
-      buffer[read_count] = '\0';
-
-      printf("%s\n", buffer);
-
-      if((win = gameLoop(reply_sock_fd, pid)) == -1){
-        perror("[!!!] error: Game Loop Fail");
-      }
-
-      if(win == 1 && pid == 1)
-      send_mesg("You Win!", reply_sock_fd);
-      else if (win == 2 && pid == 2)
-      send_mesg("You Win!", reply_sock_fd);
-      else
-      send_mesg("You Lose :-(", reply_sock_fd);
-
-      close(reply_sock_fd);
-      return NULL;
-
-    }
+void *subserver(void *arguments) {
+  // TODO
+  // NEED to implement a "wait" function so that if only one client is connected
+  // they don't play the game themselves
+  //
+  // If someone connects while two clients are already connected
+  // need to kill connection and tell them that two players are already playing
+  //get the arguments
+  struct arg_s *args =  arguments;
+  long reply_sock_fd_long = args->arg1;
+  char pid = args->arg2;
 
 
-    /*This is where the magic happens, once the client and server
-    * all this function does so far is keep receiving stuff it gets from
-    * the client and keep checking for a win
-    *
-    * TODO: send back the other players move
-    *   this requires: a shared resource with the other thread to determine
-    *   the other players move, and send it back to this specific subservers
-    *   client so that the client can update the gameboard
-    */
-    int gameLoop(int reply_sock_fd, char pid){
-      //for the first time, white goes first (Player 2)
-      gips *player_info;
-      gips *other_player;
+  int read_count = -1;
+  int win;
+  int BUFFERSIZE = 256;
+  char buffer[BUFFERSIZE+1];
 
-      //make variables to keep track of the other player
+  int reply_sock_fd = (int) reply_sock_fd_long;
 
-      char other_pid;
-      if(pid == 1){
-        other_pid = 2;
-        pthread_mutex_lock(&play1Moves);
-        play1[0] = 3;
-        play1[1] = 3;
-        p1board[3][3] = 'x';
-      }else if(pid == 2) {
-        other_pid = 1;
-      }
+  printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-      //game starts with player2's turn, player 1 automatically starts at 3,3
-      //                                                 (middle of the board)
+  read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
+  buffer[read_count] = '\0';
 
+  printf("%s\n", buffer);
+
+  if((win = gameLoop(reply_sock_fd, pid)) == -1){
+    perror("[!!!] error: Game Loop Fail");
+  }
+
+  if(win == 1 && pid == 1)
+  send_mesg("You Win!", reply_sock_fd);
+  else if (win == 2 && pid == 2)
+  send_mesg("You Win!", reply_sock_fd);
+  else
+  send_mesg("You Lose :-(", reply_sock_fd);
+
+  close(reply_sock_fd);
+  return NULL;
+
+}
+
+
+/*This is where the magic happens, once the client and server
+* all this function does so far is keep receiving stuff it gets from
+* the client and keep checking for a win
+*
+* TODO: send back the other players move
+*   this requires: a shared resource with the other thread to determine
+*   the other players move, and send it back to this specific subservers
+*   client so that the client can update the gameboard
+*/
+int gameLoop(int reply_sock_fd, char pid){
+  //for the first time, white goes first (Player 2)
+  gips *player_info;
+  gips *other_player;
+
+  //make variables to keep track of the other player
+
+  char other_pid;
+  if(pid == 1){
+    other_pid = 2;
+    pthread_mutex_lock(&play1Moves);
+    play1[0] = 3;
+    play1[1] = 3;
+    p1board[3][3] = 'x';
+  }else if(pid == 2) {
+    other_pid = 1;
+  }
+
+  //game starts with player2's turn, player 1 automatically starts at 3,3
+  //                                                 (middle of the board)
+
+  pthread_mutex_lock(&whoTurn_access);
+  whoTurn = 2;
+  pthread_mutex_unlock(&whoTurn_access);
+
+  //first packet sent to respective client concerns
+  //the own players board, every packet after that is
+  //about the OTHER players board
+  player_info = pack(pid, FALSE, (char)whoTurn, 3, 3, FALSE);
+
+  //send the first instantiated game board with
+  //player1 moved on a center piece
+  send_to(player_info, reply_sock_fd);
+
+  int read_count = -1;
+
+
+  do {
+
+    //receive board of client we are conversing with
+    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
+    printf("%d\n", read_count);
+
+    if(player_info->waiting){
+      //go and move if it's the clients turn
       pthread_mutex_lock(&whoTurn_access);
-      whoTurn = 2;
+      player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
       pthread_mutex_unlock(&whoTurn_access);
 
-      //first packet sent to respective client concerns
-      //the own players board, every packet after that is
-      //about the OTHER players board
-      player_info = pack(pid, FALSE, (char)whoTurn, 3, 3, FALSE);
+    }else{
 
-      //send the first instantiated game board with
-      //player1 moved on a center piece
-      send_to(player_info, reply_sock_fd);
-
-      int read_count = -1;
+      //add the move to the board, and to the respective client arrays keeping track of
+      //each players moves
+      addMove(player_info->move_a, player_info->move_b, player_info->pid);
 
 
-      do {
-
-        //receive board of client we are conversing with
-        read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
-        printf("%d\n", read_count);
-
-        if(player_info->waiting){
-          //go and move if it's the clients turn
-          pthread_mutex_lock(&whoTurn_access);
-          player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
-          pthread_mutex_unlock(&whoTurn_access);
-
-        }else{
-
-          //add the move to the board, and to the respective client arrays keeping track of
-          //each players moves
-          addMove(player_info->move_a, player_info->move_b, player_info->pid);
-
-
-          //send OTHER players moves
-          //send other PID
-          //send if it's THIS players turn
-          //sends isWin
-          // i'm thinking we make isTurn 0 1 or 2 like isWin
-          if(pid == 1){
-            //i hope this is OK because i'm using pass by value, and the actual 'pack' function
-            //only modifies copies of values locally
-            pthread_mutex_lock(&play2Moves);
-            other_player = pack(other_pid, 0, turn(player_info), (char)play2[0], (char)play2[1], TRUE);
-            pthread_mutex_unlock(&play2Moves);
-          }
-          else {
-            pthread_mutex_lock(&play1Moves);
-            other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
-            pthread_mutex_unlock(&play1Moves);
-          }
-          //switch the turn
-          pthread_mutex_lock(&whoTurn_access);
-          whoTurn = turn(player_info);
-          pthread_mutex_lock(&whoTurn_access);
-          //printf("%d\n", whoTurn);
-          if(pid % 2 == 0){
-            check_for_win_server(p1board);
-
-          }else{
-            check_for_win_server(p2board);
-          }
-          //how to send back to client
-          if(player_info->isWin != 0)
-          return player_info->isWin;
-          else
-          send_to(other_player, reply_sock_fd);
-
-        }
-      } while(read_count != 0 || read_count != -1);
-
-      return read_count == -1? -1:0; //-1 on fail 0 on success
-
-    }
-
-    void print_ip( struct addrinfo *ai) {
-      struct addrinfo *p;
-      void *addr;
-      char *ipver;
-      char ipstr[INET6_ADDRSTRLEN];
-      struct sockaddr_in *ipv4;
-      struct sockaddr_in6 *ipv6;
-      short port = 0;
-
-      for (p = ai; p !=  NULL; p = p->ai_next) {
-        if (p->ai_family == AF_INET) {
-          ipv4 = (struct sockaddr_in *)p->ai_addr;
-          addr = &(ipv4->sin_addr);
-          port = ipv4->sin_port;
-          ipver = "IPV4";
-        }
-        else {
-          ipv6= (struct sockaddr_in6 *)p->ai_addr;
-          addr = &(ipv6->sin6_addr);
-          port = ipv4->sin_port;
-          ipver = "IPV6";
-        }
-        inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-        printf("serv ip info: %s - %s @%d\n", ipstr, ipver, ntohs(port));
-      }
-    }
-
-    //get the structure of incoming addr
-    void *get_in_addr(struct sockaddr * sa) {
-      if (sa->sa_family == AF_INET) {
-        printf("ipv4\n");
-        return &(((struct sockaddr_in *)sa)->sin_addr);
+      //send OTHER players moves
+      //send other PID
+      //send if it's THIS players turn
+      //sends isWin
+      // i'm thinking we make isTurn 0 1 or 2 like isWin
+      if(pid == 1){
+        //i hope this is OK because i'm using pass by value, and the actual 'pack' function
+        //only modifies copies of values locally
+        pthread_mutex_lock(&play2Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play2[0], (char)play2[1], TRUE);
+        pthread_mutex_unlock(&play2Moves);
       }
       else {
-        printf("ipv6\n");
-        return &(((struct sockaddr_in6 *)sa)->sin6_addr);
-      }
-    }
-
-    void addMove(char move_a, char move_b, char pid){
-
-      if(pid == 1){
-        p1board[(int)move_a][(int)move_b] = 'x';
-
         pthread_mutex_lock(&play1Moves);
-        play1[0] = (int)move_a;
-        play1[1] = (int)move_b;
-        pthread_mutex_unlock(&play2Moves);
+        other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
+        pthread_mutex_unlock(&play1Moves);
       }
-      else if (pid == 2){
-        p2board[(int)move_a][(int)move_b] = 'x';
+      //switch the turn
+      pthread_mutex_lock(&whoTurn_access);
+      whoTurn = turn(player_info);
+      pthread_mutex_lock(&whoTurn_access);
+      //printf("%d\n", whoTurn);
+      if(pid % 2 == 0){
+        check_for_win_server(p1board);
 
-        pthread_mutex_lock(&play2Moves);
-        play2[0] = (int)move_a;
-        play2[1] = (int)move_b;
-        pthread_mutex_unlock(&play2Moves);
+      }else{
+        check_for_win_server(p2board);
       }
-      return;
+      //how to send back to client
+      if(player_info->isWin != 0)
+      return player_info->isWin;
+      else
+      send_to(other_player, reply_sock_fd);
+
     }
+  } while(read_count != 0 || read_count != -1);
 
-    //checks if it is this
-    //make sure turn logic works out
-    int turn(gips *player_info){
+  return read_count == -1? -1:0; //-1 on fail 0 on success
 
-      if(player_info->whoTurn == 1)
-      return 2;
-      else return 1;
+}
+
+void print_ip( struct addrinfo *ai) {
+  struct addrinfo *p;
+  void *addr;
+  char *ipver;
+  char ipstr[INET6_ADDRSTRLEN];
+  struct sockaddr_in *ipv4;
+  struct sockaddr_in6 *ipv6;
+  short port = 0;
+
+  for (p = ai; p !=  NULL; p = p->ai_next) {
+    if (p->ai_family == AF_INET) {
+      ipv4 = (struct sockaddr_in *)p->ai_addr;
+      addr = &(ipv4->sin_addr);
+      port = ipv4->sin_port;
+      ipver = "IPV4";
     }
-
-    char **initBoard(char **board){
-      int i;
-      //instantiate board
-      board = malloc(HEIGHT * sizeof(char *));
-
-      for(i = 0; i < HEIGHT; i++){
-        board[i] = malloc(DEPTH);
-        memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
-      }
-
-      board[3][3] = 'x';
-      return board;
+    else {
+      ipv6= (struct sockaddr_in6 *)p->ai_addr;
+      addr = &(ipv6->sin6_addr);
+      port = ipv4->sin_port;
+      ipver = "IPV6";
     }
+    inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
+    printf("serv ip info: %s - %s @%d\n", ipstr, ipver, ntohs(port));
+  }
+}
+
+//get the structure of incoming addr
+void *get_in_addr(struct sockaddr * sa) {
+  if (sa->sa_family == AF_INET) {
+    printf("ipv4\n");
+    return &(((struct sockaddr_in *)sa)->sin_addr);
+  }
+  else {
+    printf("ipv6\n");
+    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
+  }
+}
+
+void addMove(char move_a, char move_b, char pid){
+
+  if(pid == 1){
+    p1board[(int)move_a][(int)move_b] = 'x';
+
+    pthread_mutex_lock(&play1Moves);
+    play1[0] = (int)move_a;
+    play1[1] = (int)move_b;
+    pthread_mutex_unlock(&play2Moves);
+  }
+  else if (pid == 2){
+    p2board[(int)move_a][(int)move_b] = 'x';
+
+    pthread_mutex_lock(&play2Moves);
+    play2[0] = (int)move_a;
+    play2[1] = (int)move_b;
+    pthread_mutex_unlock(&play2Moves);
+  }
+  return;
+}
+
+//checks if it is this
+//make sure turn logic works out
+int turn(gips *player_info){
+
+  if(player_info->whoTurn == 1)
+  return 2;
+  else return 1;
+}
+
+char **initBoard(char **board){
+  int i;
+  //instantiate board
+  board = malloc(HEIGHT * sizeof(char *));
+
+  for(i = 0; i < HEIGHT; i++){
+    board[i] = malloc(DEPTH);
+    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
+  }
+
+  board[3][3] = 'x';
+  return board;
+}
