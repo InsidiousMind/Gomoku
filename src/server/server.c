@@ -288,8 +288,6 @@ int gameLoop(int reply_sock_fd, char pid){
 
   do {
     //receive board of client we are conversing with
-    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
-    printf("%d\n", read_count);
     
 
     //Waiting: if it's not the clients turn, the server will send a gips packet with
@@ -298,78 +296,77 @@ int gameLoop(int reply_sock_fd, char pid){
     //that the other player is making a move
     //once the client receives a packer with waiting set to FALSE then that gips packet
     //will contain the other players moves
-    if(player_info->waiting){
-      //go and move if it's the clients turn
-      if(currentTurn != pid){
-        player_info = pack(pid, FALSE, currentTurn, -1, -1, TRUE);
-      }
-      else{
-        int * moves = findOtherMoves(player_info);
-        player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
-      }
-      send_to(player_info, reply_sock_fd);
-   while(player_info->waiting) {
+   //go and move if it's the clients turn
+   while(currentTurn != pid){
+   pthread_mutex_trylock(&whoTurn_access);
+    currentTurn = whoTurn;
+   pthread_mutex_unlock(&whoTurn_access);
+   }
+    while(player_info->waiting) {
+    if( (read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
+      break;
+    sleep(3);
+    printf("%d\n", read_count);
     if(currentTurn != pid) 
       player_info = pack(pid, FALSE, currentTurn, -1, -1, TRUE);
     else{
       int *moves = findOtherMoves(player_info);
+      player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
+      free(moves);
     }
-   
-   
-   }
+    send_to(player_info, reply_sock_fd);
+  }
     
+
+    //add the move to the board, and to the respective client arrays keeping track of
+    //each players moves
+    addMove(player_info->move_a, player_info->move_b, player_info->pid);
+
+    currentTurn = turn(player_info);
+
+    //send OTHER players moves
+    //send other PID
+    //send  players turn
+    //check/sends isWin
+    
+    if(pid == 1){
+      //i hope this is OK because i'm using pass by value, and the actual 'pack' function
+      //only modifies copies of values locally
+      //pack a gips player with turns of other player, other players pid, current turn,
+      //and waiting set to TRUE
+      pthread_mutex_lock(&play2Moves);
+      other_player = pack(other_pid, FALSE, currentTurn, (char)play2[0], (char)play2[1], TRUE);
+      pthread_mutex_unlock(&play2Moves);
+    }
+    else {
+      pthread_mutex_lock(&play1Moves);
+      other_player = pack(other_pid, FALSE, currentTurn, (char)play1[0], (char)play1[1], TRUE);
+      pthread_mutex_unlock(&play1Moves);
+    }
+
+    //switch the turn global var
+    pthread_mutex_lock(&whoTurn_access);
+    whoTurn = currentTurn;
+    pthread_mutex_unlock(&whoTurn_access);
+   
+    
+
+    //most up-to-date moves are this player 
+    if(pid % 2 == 0){
+      p2win = check_for_win_server(p2board);
+
     }else{
-
-      //add the move to the board, and to the respective client arrays keeping track of
-      //each players moves
-      addMove(player_info->move_a, player_info->move_b, player_info->pid);
-
-      currentTurn = turn(player_info);
-
-      //send OTHER players moves
-      //send other PID
-      //send  players turn
-      //check/sends isWin
-      
-      if(pid == 1){
-        //i hope this is OK because i'm using pass by value, and the actual 'pack' function
-        //only modifies copies of values locally
-        //pack a gips player with turns of other player, other players pid, current turn,
-        //and waiting set to TRUE
-        pthread_mutex_lock(&play2Moves);
-        other_player = pack(other_pid, FALSE, currentTurn, (char)play2[0], (char)play2[1], TRUE);
-        pthread_mutex_unlock(&play2Moves);
-      }
-      else {
-        pthread_mutex_lock(&play1Moves);
-        other_player = pack(other_pid, FALSE, currentTurn, (char)play1[0], (char)play1[1], TRUE);
-        pthread_mutex_unlock(&play1Moves);
-      }
-
-      //switch the turn global var
-      pthread_mutex_lock(&whoTurn_access);
-      whoTurn = currentTurn;
-      pthread_mutex_unlock(&whoTurn_access);
-     
-      
-
-      //most up-to-date moves are this player 
-      if(pid % 2 == 0){
-        p2win = check_for_win_server(p2board);
-
-      }else{
-        p1win = check_for_win_server(p1board);
-      }
-      //if it's a win send a packet with other players moves
-      //and isWin set to pid of winner
-      //return from gameLoop
-      if((p1win) || (p2win)){
-        other_player->isWin = pid;
-        send_to(other_player, reply_sock_fd);
-        return other_player->isWin;
-      } else {
-        send_to(other_player, reply_sock_fd);
-      }
+      p1win = check_for_win_server(p1board);
+    }
+    //if it's a win send a packet with other players moves
+    //and isWin set to pid of winner
+    //return from gameLoop
+    if((p1win) || (p2win)){
+      other_player->isWin = pid;
+      send_to(other_player, reply_sock_fd);
+      return other_player->isWin;
+    } else {
+      send_to(other_player, reply_sock_fd);
     }
 
   } while(read_count != 0 || read_count != -1);
