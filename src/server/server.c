@@ -317,7 +317,7 @@ int gameLoop(int reply_sock_fd, char pid){
       whoTurn = turn(player_info);
       pthread_mutex_lock(&whoTurn_access);
 
-      if(pid == 1){
+      if(pid % 2 == 0){
         check_for_win_server(p1board);
 
       }else{
