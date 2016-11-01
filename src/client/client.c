@@ -25,9 +25,46 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-void send_move(int a, int b, char **board, int sock, char player);
-char **get_move(char **board, int sock, char which_player);
-void display_board(char **board);
+void send_move(int a, int b, char **board, int sock, char player, char whoTurn, gips *player_info) {
+  board[a][b] = 'x';
+  // Send the move to the other guy.
+  gips *z = malloc(sizeof(gips));
+
+  if(player_info->pid == player && player_info->waiting == TRUE){
+    z = pack(player, 0, whoTurn, a, b, TRUE) ;
+  }else{
+    z = pack(player, 0, whoTurn, a, b, FALSE);
+  }
+  send_to(z, sock);
+}
+
+char **get_move(char **board, gips *z) {
+   // Get an x and y coordinate from the gips packet.
+    if (z->isWin != 0) {
+        // This needs to be changed to the current player's number.
+        if (z->isWin == z->pid) {
+            printf("You won!");
+        } else {
+            printf("You lost.");
+        }
+        return NULL;
+    }
+    // Check if the game is over.
+    // Otherwise we just decode
+    board[(int)z->move_a][(int)z->move_b] = 'B';
+    return board;
+}
+
+void display_board(char **board) {
+    int i;
+    int j;
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+            printf("%c", board[i][j]);
+        }
+        printf("\n");
+    }
+}
 
 int main() {
     char *name = malloc(sizeof(char) * 15);
@@ -53,54 +90,18 @@ int main() {
         exit(0);
     }
     while (board != NULL) {
-        printf("%s> ", name);
-        scanf("%d%d", &move_x, &move_y);
-        send_move(move_x, move_y, board, sock, player_info.pid);
-        board = get_move(board, sock, player_info.pid);
-        display_board(board);
-        board = get_move(board, sock, player_info.pid);
-        display_board(board);
+        if (player_info.waiting == FALSE) {
+            printf("%s> ", name);
+            scanf("%d%d", &move_x, &move_y);
+            send_move(move_x, move_y, board, sock, player_info.pid, player_info.whoTurn, &player_info);
+        } else {
+    recv(sock, &player_info, sizeof(player_info), 0);
+                board = get_move(board, &player_info);
+            display_board(board);
+        }
     }
     close(sock);
     free(board);
     free(name);
 }
 
-void send_move(int a, int b, char **board, int sock, char player) {
-    board[a][b] = 'x';
-    // Send the move to the other guy.
-    gips *z = pack(player, 0, !player, a, b, 1);
-    send_to(z, sock);
-}
-
-char **get_move(char **board, int sock, char which_player) {
-    gips *z = malloc(sizeof(gips));
-    recv(sock, z, sizeof(z), 0); // FIXME The client hangs here
-    //FIXME while waiting for a server response.
-
-    // Get an x and y coordinate from the gips packet.
-    if (z->isWin != 0) {
-        // This needs to be changed to the current player's number.
-        if (z->isWin == which_player) {
-            printf("You won!");
-        } else {
-            printf("You lost.");
-        }
-        return NULL;
-    }
-    // Check if the game is over.
-    // Otherwise we just decode
-    board[(int)z->move_a][(int)z->move_b] = 'B';
-    return board;
-}
-
-void display_board(char **board) {
-    int i;
-    int j;
-    for (i = 0; i < 8; i++) {
-        for (j = 0; j < 8; j++) {
-            printf("%c", board[i][j]);
-        }
-        printf("\n");
-    }
-}

@@ -292,12 +292,14 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_lock(&whoTurn_access);
       player_info = pack(pid, FALSE, whoTurn, -1, -1, FALSE);
       pthread_mutex_unlock(&whoTurn_access);
+      send_to(player_info, reply_sock_fd);
+
     }else{
 
       //add the move to the board, and to the respective client arrays keeping track of
       //each players moves
       addMove(player_info->move_a, player_info->move_b, player_info->pid);
-
+      currentTurn = turn(player_info);
 
       //send OTHER players moves
       //send other PID
@@ -308,21 +310,20 @@ int gameLoop(int reply_sock_fd, char pid){
         //i hope this is OK because i'm using pass by value, and the actual 'pack' function
         //only modifies copies of values locally
         pthread_mutex_lock(&play2Moves);
-        other_player = pack(other_pid, 0, turn(player_info), (char)play2[0], (char)play2[1], TRUE);
+        other_player = pack(other_pid, 0, currentTurn, (char)play2[0], (char)play2[1], TRUE);
         pthread_mutex_unlock(&play2Moves);
       }
       else {
         pthread_mutex_lock(&play1Moves);
-        other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
+        other_player = pack(other_pid, 0, currentTurn, (char)play1[0], (char)play1[1], TRUE);
         pthread_mutex_unlock(&play1Moves);
       }
 
-
-      //switch the turn
+      //switch the turn global var
       pthread_mutex_lock(&whoTurn_access);
-      whoTurn = turn(player_info);
-      pthread_mutex_lock(&whoTurn_access);
-      //printf("%d\n", whoTurn);
+      whoTurn = currentTurn;
+      pthread_mutex_unlock(&whoTurn_access);
+      
       if(pid % 2 == 0){
         check_for_win_server(p1board);
 
@@ -336,8 +337,8 @@ int gameLoop(int reply_sock_fd, char pid){
       else{
        send_to(other_player, reply_sock_fd);
       }
-
     }
+
   } while(read_count != 0 || read_count != -1);
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
