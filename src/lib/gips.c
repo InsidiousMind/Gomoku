@@ -46,7 +46,8 @@ gips *pack(char pid,char isWin, char whoTurn, char move_a, char move_b, char wai
 
 //Some functions to compress what we send over the nets
 //gets packed int a long long (64bits/8bytes)
-
+//this was a earlier idea that was switched out for the new gips
+// structure. It stays commented since we have some idea for it in the future
 // ((i*HEIGHT) + j ) to get the right pos of a 2d array
 //packs positions of player into a long long
 /*gips *to_long(char **pos, short player){
