@@ -269,7 +269,7 @@ int gameLoop(int reply_sock_fd, char pid){
   //first packet sent to respective client concerns
   //the own players board, every packet after that is
   //about the OTHER players board
-  if(pid == 1) 
+  if(pid == 1)
     player_info = pack(pid, FALSE, (char)currentTurn, 3, 3, TRUE);
   else
     player_info = pack(pid, FALSE, (char)currentTurn, 3, 3, FALSE);
@@ -315,8 +315,8 @@ int gameLoop(int reply_sock_fd, char pid){
         other_player = pack(other_pid, 0, turn(player_info), (char)play1[0], (char)play1[1], TRUE);
         pthread_mutex_unlock(&play1Moves);
       }
-    
-    
+
+
       //switch the turn
       pthread_mutex_lock(&whoTurn_access);
       whoTurn = turn(player_info);
@@ -328,7 +328,7 @@ int gameLoop(int reply_sock_fd, char pid){
       }else{
         check_for_win_server(p2board);
       }
-      
+
       if(player_info->isWin != 0){
         return player_info->isWin;
       }

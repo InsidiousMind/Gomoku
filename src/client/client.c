@@ -54,7 +54,7 @@ int main() {
     printf("%d\n", errno);
     exit(0);
   }
-  while (1) {
+  while (board != NULL) {
     //TODO check this loop
     printf("%s> ", name);
     scanf("%d%d", &move_x, &move_y);
@@ -63,6 +63,8 @@ int main() {
     display_board(board);
   }
   close(sock);
+  free(board);
+  free(name);
 }
 
 void send_move(int a, int b, char **board, int sock, char player) {
@@ -86,6 +88,7 @@ char **get_move(char **board, int sock, char which_player) {
     } else {
       printf("You lost.");
     }
+    return NULL;
   }
   // Check if the game is over.
   // Otherwise we just decode
