@@ -15,6 +15,7 @@ make:
 	mkdir -p build
 	mkdir -p build/server
 	mkdir -p build/client
+	mkdir -p build/lib
 	$(CCO) $(CLIE_SRC) -o build/client/client.o
 	$(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
@@ -25,6 +26,7 @@ make:
 client:
 	mkdir -p build
 	mkdir -p build/client
+	mkdir -p build/lib
 	$(CCO) $(CLIE_SRC) -o build/client/client.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
 	$(CCO) src/lib/network.c -o build/lib/network.o
@@ -34,6 +36,7 @@ client:
 server:
 	mkdir -p build
 	mkdir -p build/server
+	mkdir -p build/lib
 	$(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
 	$(CCO) src/lib/network.c -o build/lib/network.o
@@ -45,6 +48,7 @@ debug:
 	mkdir -p debug
 	mkdir -p debug/server
 	mkdir -p debug/client
+	mkdir -p debug/lib
 	$(CCO) $(CLIE_SRC) $(CDEBUG) -o debug/client/client.o
 	$(CCO) $(SERV_SRC) $(CDEBUG) -o debug/server/server.o
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
