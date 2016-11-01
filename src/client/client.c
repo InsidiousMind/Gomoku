@@ -68,6 +68,17 @@ void display_board(char **board) {
         printf("\n");
     }
 }
+char **init_board(char **board){
+  int i,j;
+  for(i = 0; i < HEIGHT; i++){
+    for(j=0;j<DEPTH;j++) {
+      board[i][j] = 'o'; 
+    
+    }
+  
+  }
+  return board;
+}
 
 int main() {
     char *name = malloc(sizeof(char) * 15);
@@ -80,6 +91,7 @@ int main() {
     for (i = 0; i < HEIGHT; i++) {
         board[i] = malloc(DEPTH * sizeof(char *));
     }
+    board = init_board(board);
     int sock = connect_to_server();
     printf("Gomoku Client for Linux\n");
 
@@ -88,6 +100,7 @@ int main() {
         scanf("%s", name);
         send_mesg(name, sock);
         recv(sock, &player_info, sizeof(player_info), 0);
+        get_move(board, &player_info);
         pid = player_info.pid;
     } else { // Does this go through correctly in the first place?
         printf("Couldn't connect to the server. Error number: ");
@@ -102,6 +115,7 @@ int main() {
       send_wait(sock, &player_info, pid);
       recv(sock, &player_info, sizeof(player_info), 0);
     }
+    display_board(board);
     printf("Now you can move\n");
     printf("%s> ", name);
     scanf("%d%d", &move_x, &move_y);

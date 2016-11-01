@@ -329,12 +329,12 @@ int gameLoop(int reply_sock_fd, char pid){
         //pack a gips player with turns of other player, other players pid, current turn,
         //and waiting set to TRUE
         pthread_mutex_lock(&play2Moves);
-        other_player = pack(other_pid, 0, currentTurn, (char)play2[0], (char)play2[1], TRUE);
+        other_player = pack(other_pid, FALSE, currentTurn, (char)play2[0], (char)play2[1], TRUE);
         pthread_mutex_unlock(&play2Moves);
       }
       else {
         pthread_mutex_lock(&play1Moves);
-        other_player = pack(other_pid, 0, currentTurn, (char)play1[0], (char)play1[1], TRUE);
+        other_player = pack(other_pid, FALSE, currentTurn, (char)play1[0], (char)play1[1], TRUE);
         pthread_mutex_unlock(&play1Moves);
       }
 

@@ -16,7 +16,7 @@ int check_for_win_server(char **board) {
   int i; 
   find_starts(board);
   
-  for(i = 0; i < (signed)(sizeof(start_pos_x)/sizeof(char)); i++){
+  for(i = 0; i < (signed)(sizeof(start_pos_x)/sizeof(int)); i++){
     isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
   }
   return isWin;
