@@ -5,7 +5,7 @@
 
 CC = cc
 CCO = cc -c
-CDEBUG = -g -Wall -Wextra -Werror
+CDEBUG = -g -Wall -Wextra
 SERV_SRC = src/server/server.c
 CLIE_SRC = src/client/client.c
 DBG_DEPS = debug/lib/gips.o debug/lib/network.o debug/lib/glogic.o

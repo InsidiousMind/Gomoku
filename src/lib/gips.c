@@ -40,7 +40,7 @@ gips *pack(char pid,char isWin, char whoTurn, char move_a, char move_b, char wai
   info.whoTurn = whoTurn; //0 for nothing, 1 if player 1 turn, 2 if player 2 turn
   info.move_a = move_a; //move || first board == own player turn,
   info.move_b = move_b;  //move         EVERY OTHER board === OTHER PLAYER move
-  info.waiting = waiting;
+  info.waiting = waiting; //a boolean
   return &info;
 }
 
