@@ -30,7 +30,7 @@ void start_subserver(int reply_sock_fd, int client_count); //starts subserver
 int gameLoop(int reply_sock_fd, char pid);
 void addMove(char move_x, char move_y, char pid);
 char **initBoard(char **board);
-int turn(gips *info);
+int turn();
 int * findOtherMoves(gips *player_info);
 
 
@@ -267,17 +267,17 @@ int gameLoop(int reply_sock_fd, char pid){
   //                                                 (middle of the board)
 
   pthread_mutex_lock(&whoTurn_access);
-  whoTurn = 2;
-  currentTurn = whoTurn;
+    whoTurn = 2;
+    currentTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
 
   //first packet sent to respective client concerns
   //the own players board, every packet after that is
   //about the OTHER players board
   if(pid == 1)
-    player_info = pack(pid, FALSE, (char)currentTurn, 3, 3, TRUE);
+    player_info = pack(pid, FALSE, 3, 3);
   else
-    player_info = pack(pid, FALSE, (char)currentTurn, 3, 3, FALSE);
+    player_info = pack(pid, FALSE, 3, 3);
 
   //send the first instantiated game board with
   //player1 moved on a center piece
@@ -297,32 +297,19 @@ int gameLoop(int reply_sock_fd, char pid){
     //once the client receives a packer with waiting set to FALSE then that gips packet
     //will contain the other players moves
    //go and move if it's the clients turn
-   while(currentTurn != pid){
-   pthread_mutex_trylock(&whoTurn_access);
-    currentTurn = whoTurn;
-   pthread_mutex_unlock(&whoTurn_access);
-   }
-    while(player_info->waiting) {
-    if( (read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
-      break;
-    sleep(3);
-    printf("%d\n", read_count);
-    if(currentTurn != pid) 
-      player_info = pack(pid, FALSE, currentTurn, -1, -1, TRUE);
-    else{
-      int *moves = findOtherMoves(player_info);
-      player_info = pack(pid, FALSE, currentTurn, moves[0], moves[1], FALSE);
-      free(moves);
+    while(currentTurn != pid){
+      pthread_mutex_lock(&whoTurn_access);
+        currentTurn = whoTurn;
+      pthread_mutex_unlock(&whoTurn_access);
     }
-    send_to(player_info, reply_sock_fd);
-  }
+    send(reply_sock_fd, "10", 2, 0);
+    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
     
-
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     addMove(player_info->move_a, player_info->move_b, player_info->pid);
 
-    currentTurn = turn(player_info);
+    //currentTurn = turn(player_info);
 
     //send OTHER players moves
     //send other PID
@@ -335,20 +322,16 @@ int gameLoop(int reply_sock_fd, char pid){
       //pack a gips player with turns of other player, other players pid, current turn,
       //and waiting set to TRUE
       pthread_mutex_lock(&play2Moves);
-      other_player = pack(other_pid, FALSE, currentTurn, (char)play2[0], (char)play2[1], TRUE);
+      other_player = pack(other_pid, FALSE, (char)play2[0], (char)play2[1]);
       pthread_mutex_unlock(&play2Moves);
     }
     else {
       pthread_mutex_lock(&play1Moves);
-      other_player = pack(other_pid, FALSE, currentTurn, (char)play1[0], (char)play1[1], TRUE);
+      other_player = pack(other_pid, FALSE, (char)play1[0], (char)play1[1]);
       pthread_mutex_unlock(&play1Moves);
     }
 
-    //switch the turn global var
-    pthread_mutex_lock(&whoTurn_access);
-    whoTurn = currentTurn;
-    pthread_mutex_unlock(&whoTurn_access);
-   
+    
     
 
     //most up-to-date moves are this player 
@@ -368,6 +351,10 @@ int gameLoop(int reply_sock_fd, char pid){
     } else {
       send_to(other_player, reply_sock_fd);
     }
+   //switch the turn global var
+    pthread_mutex_lock(&whoTurn_access);
+      whoTurn = turn();
+    pthread_mutex_unlock(&whoTurn_access);
 
   } while(read_count != 0 || read_count != -1);
 
@@ -437,9 +424,13 @@ void addMove(char move_a, char move_b, char pid){
 
 //checks if it is this
 //make sure turn logic works out
-int turn(gips *player_info){
+int turn(){
+  int tempTurn;
 
-  if(player_info->whoTurn == 1)
+  tempTurn = whoTurn;
+  pthread_mutex_unlock(&whoTurn_access);
+
+  if(tempTurn == 1)
   return 2;
   else return 1;
 }
@@ -461,12 +452,12 @@ char **initBoard(char **board){
 int * findOtherMoves(gips *player_info){
   int *moves = malloc(2 * sizeof(int));
   if(player_info->pid == 1){
-    pthread_mutex_trylock(&play2Moves);
+    pthread_mutex_lock(&play2Moves);
       moves[0] = play2[0];
       moves[1] = play2[1];
     pthread_mutex_unlock(&play2Moves);
   }else if (player_info->pid == 2){
-    pthread_mutex_trylock(&play1Moves);
+    pthread_mutex_lock(&play1Moves);
       moves[0] = play1[0];
       moves[1] = play1[1];
     pthread_mutex_unlock(&play1Moves);

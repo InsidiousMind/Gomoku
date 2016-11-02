@@ -62,7 +62,7 @@ int send_to(gips *info, int sock) {
     bytesleft -= n; //bytes left to send
   }
   len = total; // number of bytes actually sent
-  return n == -1? -1:0; //-1 on fail 0 on success
+  return n == -1? -1:total; //-1 on fail 0 on success
 }
 
 int send_mesg(char *str, int sock){
@@ -82,5 +82,5 @@ int send_mesg(char *str, int sock){
     bytesleft -= n;
   }
   len = total;
-  return n == -1? -1:0;
+  return n == -1? -1:total;
 }
