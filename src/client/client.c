@@ -96,7 +96,7 @@ int main() {
     *dumbBuff = 0;
     printf("Wait your turn!\n");
     //read_count = read(sock, dumbBuff, 3);
-    readBytes(sock, ) 
+    readBytes(sock,3, dumbBuff ) ;
     read_count = recv(sock, dumbBuff, 3 , MSG_PEEK);
     printf("Now you can move\n");
     display_board(board);
