@@ -28,22 +28,22 @@ int start_server(int serv_socket, int backlog);  //starts listening on port for 
 int accept_client(int serv_sock); //accepts incoming connection
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
 int gameLoop(int reply_sock_fd, char pid);
-void addMove(char move_x, char move_y, char pid);
+char **addMove(char move_x, char move_y, char pid, char **board);
 char **initBoard(char **board);
 int turn();
 int * findOtherMoves(gips *player_info);
 
 
+
 //shouldn't need a mutext lock for these because they are only accessed by their respective threads
 
-char **p1board;
-char **p2board;
 //just for storing args which are going to be passed to pthread_create
 
-pthread_mutex_t play1Moves = PTHREAD_MUTEX_INITIALIZER;
-int play1[2];
-pthread_mutex_t play2Moves = PTHREAD_MUTEX_INITIALIZER;
-int play2[2];
+pthread_mutex_t play1Moves_access = PTHREAD_MUTEX_INITIALIZER;
+int play1Moves[2];
+
+pthread_mutex_t play2Moves_access = PTHREAD_MUTEX_INITIALIZER;
+int play2Moves[2];
 
 pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
 int whoTurn;
@@ -54,15 +54,10 @@ struct arg_s{
 };
 
 int main(void) {
-
-
-  p1board = initBoard(p1board);
-  p2board = initBoard(p2board);
-
+  
   int sock_fd;
   int reply_sock_fd;
   int client_count = 0;
-  int i;
   /*
    * int yes; This patches a compiler error that prevented compiling
    * with the current compiler settings that complained about it being
@@ -91,13 +86,6 @@ int main(void) {
     }
 
   }
-
-  for(i = 0; i < HEIGHT; i++){
-    free(p1board[i]);
-    free(p2board[i]);
-  }
-  free(p1board);
-  free(p2board);
 }
 
 
@@ -242,9 +230,14 @@ void *subserver(void *arguments) {
  *   client so that the client can update the gameboard
  */
 int gameLoop(int reply_sock_fd, char pid){
+  int i; 
+  int p1win = FALSE;
+  int p2win = FALSE;
+  char **playerBoard = calloc(HEIGHT, sizeof(char*));
+  for(i = 0; i < HEIGHT; i++){
+    playerBoard[i] = calloc(DEPTH, sizeof(char));
+  }
 
-  int p1win;
-  int p2win; 
   //for the first time, white goes first (Player 2)
   gips *player_info;
   gips *other_player;
@@ -254,11 +247,12 @@ int gameLoop(int reply_sock_fd, char pid){
   char other_pid;
   if(pid == 1){
     other_pid = 2;
-    pthread_mutex_lock(&play1Moves);
-    play1[0] = 3;
-    play1[1] = 3;
-    pthread_mutex_unlock(&play1Moves);
-    p1board[3][3] = 'x';
+    pthread_mutex_lock(&play1Moves_access);
+    play1Moves[0] = 3;
+    play1Moves[1] = 3;
+    pthread_mutex_unlock(&play1Moves_access);
+
+    playerBoard[3][3] = 'x';
   }else if(pid == 2) {
     other_pid = 1;
   }
@@ -309,7 +303,7 @@ int gameLoop(int reply_sock_fd, char pid){
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
-    addMove(player_info->move_a, player_info->move_b, player_info->pid);
+    playerBoard = addMove(player_info->move_a, player_info->move_b, player_info->pid, playerBoard);
 
     //currentTurn = turn(player_info);
 
@@ -322,28 +316,27 @@ int gameLoop(int reply_sock_fd, char pid){
       //i hope this is OK because i'm using pass by value, and the actual 'pack' function
       //only modifies copies of values locally
       //pack a gips player with turns of other player, other players pid, current turn,
-      //and waiting set to TRUE
-      pthread_mutex_lock(&play2Moves);
-      other_player = pack(other_pid, FALSE, (char)play2[0], (char)play2[1]);
-      pthread_mutex_unlock(&play2Moves);
+      pthread_mutex_lock(&play2Moves_access);
+      other_player = pack(other_pid, FALSE, (char)play2Moves[0], (char)play2Moves[1]);
+      pthread_mutex_unlock(&play2Moves_access);
     }
     else {
-      pthread_mutex_lock(&play1Moves);
-      other_player = pack(other_pid, FALSE, (char)play1[0], (char)play1[1]);
-      pthread_mutex_unlock(&play1Moves);
+      pthread_mutex_lock(&play1Moves_access);
+      other_player = pack(other_pid, FALSE, (char)play1Moves[0], (char)play1Moves[1]);
+      pthread_mutex_unlock(&play1Moves_access);
     }
 
     //most up-to-date moves are this player 
     if(pid % 2 == 0){
-      p2win = check_for_win_server(p2board);
+      p2win = check_for_win_server(playerBoard);
 
     }else{
-      p1win = check_for_win_server(p1board);
+      p1win = check_for_win_server(playerBoard);
     }
     //if it's a win send a packet with other players moves
     //and isWin set to pid of winner
     //return from gameLoop
-    if((p1win) || (p2win)){
+    if((p1win == TRUE) || (p2win == TRUE)){
       other_player->isWin = pid;
       send_to(other_player, reply_sock_fd);
       return other_player->isWin;
@@ -357,6 +350,11 @@ int gameLoop(int reply_sock_fd, char pid){
     pthread_mutex_unlock(&whoTurn_access);
 
   } while(read_count != 0 || read_count != -1);
+
+  for(i =0; i < HEIGHT; i++){
+    free(playerBoard[i]);
+  }
+  free(playerBoard);
 
   return read_count == -1? -1:0; //-1 on fail 0 on success
 
@@ -401,25 +399,23 @@ void *get_in_addr(struct sockaddr * sa) {
   }
 }
 
-void addMove(char move_a, char move_b, char pid){
+char **addMove(char move_a, char move_b, char pid, char **board){
 
   if(pid == 1){
-    p1board[(int)move_a][(int)move_b] = 'x';
-
-    pthread_mutex_lock(&play1Moves);
-    play1[0] = (int)move_a;
-    play1[1] = (int)move_b;
-    pthread_mutex_unlock(&play2Moves);
+    board[(int)move_a][(int)move_b] = 'x';
+    pthread_mutex_lock(&play1Moves_access);
+    play1Moves[0] = (int)move_a;
+    play1Moves[1] = (int)move_b;
+    pthread_mutex_unlock(&play2Moves_access);
   }
   else if (pid == 2){
-    p2board[(int)move_a][(int)move_b] = 'x';
-
-    pthread_mutex_lock(&play2Moves);
-    play2[0] = (int)move_a;
-    play2[1] = (int)move_b;
-    pthread_mutex_unlock(&play2Moves);
+    board[(int)move_a][(int)move_b] = 'x';
+    pthread_mutex_lock(&play2Moves_access);
+    play2Moves[0] = (int)move_a;
+    play2Moves[1] = (int)move_b;
+    pthread_mutex_unlock(&play2Moves_access);
   }
-  return;
+  return board;
 }
 
 //checks if it is this
@@ -439,29 +435,27 @@ int turn(){
 char **initBoard(char **board){
   int i;
   //instantiate board
-  board = malloc(HEIGHT * sizeof(char *));
-
   for(i = 0; i < HEIGHT; i++){
-    board[i] = malloc(DEPTH);
-    memset(&board[i], 0, sizeof(board[i])* strlen(board[i]));
+    board[i] = malloc(DEPTH * sizeof(char));
+    memset(&board[i], 0, sizeof(board[i])); //had * strlen(board[i]) don't think that's necessary
   }
 
   board[3][3] = 'x';
   return board;
-}
+} 
 
 int * findOtherMoves(gips *player_info){
   int *moves = malloc(2 * sizeof(int));
   if(player_info->pid == 1){
-    pthread_mutex_lock(&play2Moves);
-    moves[0] = play2[0];
-    moves[1] = play2[1];
-    pthread_mutex_unlock(&play2Moves);
+    pthread_mutex_lock(&play2Moves_access);
+    moves[0] = play2Moves[0];
+    moves[1] = play2Moves[1];
+    pthread_mutex_unlock(&play2Moves_access);
   }else if (player_info->pid == 2){
-    pthread_mutex_lock(&play1Moves);
-    moves[0] = play1[0];
-    moves[1] = play1[1];
-    pthread_mutex_unlock(&play1Moves);
+    pthread_mutex_lock(&play1Moves_access);
+    moves[0] = play1Moves[0];
+    moves[1] = play1Moves[1];
+    pthread_mutex_unlock(&play1Moves_access);
   }
 
   return moves;
