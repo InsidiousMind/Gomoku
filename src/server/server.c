@@ -76,7 +76,7 @@ int main(void) {
     exit(1);
   }
 
-  while(1) {
+  while(TRUE) {
     if ((reply_sock_fd = accept_client(sock_fd)) == -1) {
       continue;
     }else{
@@ -353,6 +353,7 @@ int gameLoop(int reply_sock_fd, char pid){
     //switch the turn global var
     pthread_mutex_lock(&whoTurn_access);
     whoTurn = turn();
+    currentTurn = whoTurn;
     pthread_mutex_unlock(&whoTurn_access);
 
   } while(read_count != 0 || read_count != -1);
