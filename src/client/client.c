@@ -1,5 +1,5 @@
 /*
- * Client utilizing the Gomoku Inter Process Shuttle (GIPS) protocol designed by Sean Batzel and Andrew Plaza.
+ * Client utilizing the Gomoku Inter Process Shuttle (GIPS) protocol
  *
  */
 
