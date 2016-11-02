@@ -64,10 +64,10 @@ int main(void) {
   int client_count = 0;
   int i;
   /*
-  * int yes; This patches a compiler error that prevented compiling
-  * with the current compiler settings that complained about it being
-  * unused.
-  */
+   * int yes; This patches a compiler error that prevented compiling
+   * with the current compiler settings that complained about it being
+   * unused.
+   */
 
   sock_fd = get_server_socket(HOST, HTTPPORT);
 
@@ -120,53 +120,53 @@ int get_server_socket(char *hostname, char *port) {
 
   for (p = servinfo; p != NULL; p = p ->ai_next) {
     if ((server_socket = socket(p->ai_family, p->ai_socktype,
-      p->ai_protocol)) == -1) {
-        printf("socket socket \n");
-        continue;
-      }
-      if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-        printf("socket option\n");
-        continue;
-      }
-
-      if (bind(server_socket, p->ai_addr, p->ai_addrlen) == -1) {
-        printf("socket bind \n");
-        continue;
-      }
-      break;
+            p->ai_protocol)) == -1) {
+      printf("socket socket \n");
+      continue;
     }
-    print_ip(servinfo);
-    freeaddrinfo(servinfo);
-    return server_socket;
-  }
-
-  int start_server(int serv_socket, int backlog) {
-    int status = 0;
-    if ((status = listen(serv_socket, backlog)) == -1) {
-      printf("socket listen error\n");
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+      printf("socket option\n");
+      continue;
     }
-    return status;
+
+    if (bind(server_socket, p->ai_addr, p->ai_addrlen) == -1) {
+      printf("socket bind \n");
+      continue;
+    }
+    break;
   }
+  print_ip(servinfo);
+  freeaddrinfo(servinfo);
+  return server_socket;
+}
 
-  int accept_client(int serv_sock) {
-    int reply_sock_fd = -1;
-    socklen_t sin_size = sizeof(struct sockaddr_storage);
-    struct sockaddr_storage client_addr;
-    char client_printable_addr[INET6_ADDRSTRLEN];
+int start_server(int serv_socket, int backlog) {
+  int status = 0;
+  if ((status = listen(serv_socket, backlog)) == -1) {
+    printf("socket listen error\n");
+  }
+  return status;
+}
 
-    // 157 is the last line that GDB reports.
-    if ((reply_sock_fd = accept(serv_sock,
-      (struct sockaddr *)&client_addr, &sin_size)) == -1) {
-        perror("socket accept error\n");
-      }
-      else {
-        inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr),
+int accept_client(int serv_sock) {
+  int reply_sock_fd = -1;
+  socklen_t sin_size = sizeof(struct sockaddr_storage);
+  struct sockaddr_storage client_addr;
+  char client_printable_addr[INET6_ADDRSTRLEN];
+
+  // 157 is the last line that GDB reports.
+  if ((reply_sock_fd = accept(serv_sock,
+          (struct sockaddr *)&client_addr, &sin_size)) == -1) {
+    perror("socket accept error\n");
+  }
+  else {
+    inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *)&client_addr),
         client_printable_addr, sizeof client_printable_addr);
-        printf("server: connection from %s at port %d\n", client_printable_addr,
+    printf("server: connection from %s at port %d\n", client_printable_addr,
         ((struct sockaddr_in*)&client_addr)->sin_port);
-      }
-      return reply_sock_fd;
-    }
+  }
+  return reply_sock_fd;
+}
 
 void start_subserver(int reply_sock_fd, int client_count) {
 
@@ -176,9 +176,9 @@ void start_subserver(int reply_sock_fd, int client_count) {
   args.arg1 = reply_sock_fd_long;
 
   if(client_count % 2 == 0)
-  args.arg2 = 1;
+    args.arg2 = 1;
   else if(client_count % 2 == 1)
-  args.arg2 = 2;
+    args.arg2 = 2;
 
   if (pthread_create(&pthread, NULL, (void*)subserver, (void*)&args) != 0) {
     printf("failed to start subserver\n");
@@ -220,11 +220,11 @@ void *subserver(void *arguments) {
   }
 
   if(win == 1 && pid == 1)
-  send_mesg("You Win!", reply_sock_fd);
+    send_mesg("You Win!", reply_sock_fd);
   else if (win == 2 && pid == 2)
-  send_mesg("You Win!", reply_sock_fd);
+    send_mesg("You Win!", reply_sock_fd);
   else
-  send_mesg("You Lose :-(", reply_sock_fd);
+    send_mesg("You Lose :-(", reply_sock_fd);
 
   close(reply_sock_fd);
   return NULL;
@@ -233,16 +233,16 @@ void *subserver(void *arguments) {
 
 
 /*This is where the magic happens, once the client and server
-* all this function does so far is keep receiving stuff it gets from
-* the client and keep checking for a win
-*
-* TODO: send back the other players move
-*   this requires: a shared resource with the other thread to determine
-*   the other players move, and send it back to this specific subservers
-*   client so that the client can update the gameboard
-*/
+ * all this function does so far is keep receiving stuff it gets from
+ * the client and keep checking for a win
+ *
+ * TODO: send back the other players move
+ *   this requires: a shared resource with the other thread to determine
+ *   the other players move, and send it back to this specific subservers
+ *   client so that the client can update the gameboard
+ */
 int gameLoop(int reply_sock_fd, char pid){
- 
+
   int p1win;
   int p2win; 
   //for the first time, white goes first (Player 2)
@@ -267,8 +267,8 @@ int gameLoop(int reply_sock_fd, char pid){
   //                                                 (middle of the board)
 
   pthread_mutex_lock(&whoTurn_access);
-    whoTurn = 2;
-    currentTurn = whoTurn;
+  whoTurn = 2;
+  currentTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
 
   //first packet sent to respective client concerns
@@ -288,7 +288,7 @@ int gameLoop(int reply_sock_fd, char pid){
 
   do {
     //receive board of client we are conversing with
-    
+
 
     //Waiting: if it's not the clients turn, the server will send a gips packet with
     //the clients own PID and waiting set to 1 (true). 
@@ -296,16 +296,17 @@ int gameLoop(int reply_sock_fd, char pid){
     //that the other player is making a move
     //once the client receives a packer with waiting set to FALSE then that gips packet
     //will contain the other players moves
-   //go and move if it's the clients turn
+    //go and move if it's the clients turn
     while(currentTurn != pid){
       pthread_mutex_lock(&whoTurn_access);
-        currentTurn = whoTurn;
+      currentTurn = whoTurn;
       pthread_mutex_unlock(&whoTurn_access);
+      sleep(3);
     }
     send(reply_sock_fd, "10\x00", 3, 0);
     ///send_mesg("10\x00", reply_sock_fd);
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
-    
+
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     addMove(player_info->move_a, player_info->move_b, player_info->pid);
@@ -316,7 +317,7 @@ int gameLoop(int reply_sock_fd, char pid){
     //send other PID
     //send  players turn
     //check/sends isWin
-    
+
     if(pid == 1){
       //i hope this is OK because i'm using pass by value, and the actual 'pack' function
       //only modifies copies of values locally
@@ -349,9 +350,9 @@ int gameLoop(int reply_sock_fd, char pid){
     } else {
       send_to(other_player, reply_sock_fd);
     }
-   //switch the turn global var
+    //switch the turn global var
     pthread_mutex_lock(&whoTurn_access);
-      whoTurn = turn();
+    whoTurn = turn();
     pthread_mutex_unlock(&whoTurn_access);
 
   } while(read_count != 0 || read_count != -1);
@@ -425,11 +426,12 @@ void addMove(char move_a, char move_b, char pid){
 int turn(){
   int tempTurn;
 
+  pthread_mutex_lock(&whoTurn_access);
   tempTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
 
   if(tempTurn == 1)
-  return 2;
+    return 2;
   else return 1;
 }
 
@@ -451,13 +453,13 @@ int * findOtherMoves(gips *player_info){
   int *moves = malloc(2 * sizeof(int));
   if(player_info->pid == 1){
     pthread_mutex_lock(&play2Moves);
-      moves[0] = play2[0];
-      moves[1] = play2[1];
+    moves[0] = play2[0];
+    moves[1] = play2[1];
     pthread_mutex_unlock(&play2Moves);
   }else if (player_info->pid == 2){
     pthread_mutex_lock(&play1Moves);
-      moves[0] = play1[0];
-      moves[1] = play1[1];
+    moves[0] = play1[0];
+    moves[1] = play1[1];
     pthread_mutex_unlock(&play1Moves);
   }
 

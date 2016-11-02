@@ -1,6 +1,8 @@
 #
 Gomoku
 
+Sean and Andrew's Implementation
+
 ## DUE 10/31/2016
 
 ### Building
