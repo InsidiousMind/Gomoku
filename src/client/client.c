@@ -97,8 +97,8 @@ int main() {
     printf("Wait your turn!\n");
     //read_count = read(sock, dumbBuff, 3);
     read_count = recv(sock, dumbBuff, 3, 0);
-    printf("Now you can move\n");
     display_board(board);
+    printf("Now you can move\n");
     printf("%s_> ", name);
     scanf("%d%d", &move_x, &move_y);
     send_move(move_x, move_y, board, sock, pid);
