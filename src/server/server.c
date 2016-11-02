@@ -426,6 +426,7 @@ void addMove(char move_a, char move_b, char pid){
 int turn(){
   int tempTurn;
 
+  pthread_mutex_lock(&whoTurn_access);
   tempTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
 
