@@ -34,16 +34,6 @@ void send_move(int a, int b, char **board, int sock, char player) {
 }
 
 char **get_move(char **board, gips *z) {
-  // Get an x and y coordinate from the gips packet.
-  if (z->isWin != 0) {
-    // This needs to be changed to the current player's number.
-    if (z->isWin == z->pid) {
-      printf("You won!");
-    } else {
-      printf("You lost.");
-    }
-      return NULL;
-  }
   // Check if the game is over.
   // Otherwise we just decode
   board[(int)z->move_a][(int)z->move_b] = 'B';
@@ -101,15 +91,12 @@ int main() {
     printf("%d\n", errno);
     exit(0);
   }
-  char dumbBuff[11]; 
+  char dumbBuff[2];
   while(board != NULL) {
+    *dumbBuff = 0;
     printf("Wait your turn!\n");
-    read_count = recv(sock, dumbBuff, 10, MSG_PEEK);
-    if(read_count == -1)
-      read_count = recv(sock, dumbBuff, 2, 0) ;
-    else
-      read_count = recv(sock, dumbBuff, read_count, 0);
-    dumbBuff[read_count] = '\0';
+    //read_count = read(sock, dumbBuff, 3);
+    read_count = recv(sock, dumbBuff, 3 , MSG_PEEK);
     printf("Now you can move\n");
     display_board(board);
     printf("%s_> ", name);
