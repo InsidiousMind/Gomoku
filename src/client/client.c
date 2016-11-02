@@ -65,7 +65,7 @@ char **init_board(char **board){
 
 int main() {
   char *name = malloc(sizeof(char) * 15);
-  gips player_info;
+  gips *player_info = malloc(8 * sizeof(char));
   int move_x;
   int move_y;
   char pid;
@@ -83,9 +83,9 @@ int main() {
     printf("Enter your name: ");
     scanf("%s", name);
     send_mesg(name, sock);
-    read_count = recv(sock, &player_info, sizeof(player_info), 0);
-    board = get_move(board, &player_info);
-    pid = player_info.pid;
+    read_count = recv(sock, player_info, sizeof(player_info), 0);
+    board = get_move(board, player_info);
+    pid = player_info->pid;
   } else { // Does this go through correctly in the first place?
     printf("Couldn't connect to the server. Error number: ");
     printf("%d\n", errno);
@@ -102,11 +102,12 @@ int main() {
     printf("%s_> ", name);
     scanf("%d%d", &move_x, &move_y);
     send_move(move_x, move_y, board, sock, pid);
-    recv(sock, &player_info, sizeof(player_info), 0);
-    board = get_move(board, &player_info);
+    recv(sock, player_info, sizeof(player_info), 0);
+    board = get_move(board, player_info);
   }
   close(sock);
   free(board);
   free(name);
+  free(player_info);
 }
 

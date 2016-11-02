@@ -303,7 +303,7 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_unlock(&whoTurn_access);
     }
     send(reply_sock_fd, "10\0", 3, 0);
-    send_mesg("10\0", reply_sock_fd);
+    send_mesg("10\x00", reply_sock_fd);
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
     
     //add the move to the board, and to the respective client arrays keeping track of
