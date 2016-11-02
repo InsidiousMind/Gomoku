@@ -88,7 +88,7 @@ int send_mesg(char *str, int sock){
 int readBytes(int sock, unsigned int x, void *buffer){
   int bytes_read = 0, result;
   
-  while (bytes_read < x)
+  while (bytes_read < (signed)x)
   {       
     
     //can use read here too
