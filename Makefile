@@ -20,6 +20,7 @@ make:
 	$(CCO) $(SERV_SRC) -o build/server/server.o
 	$(CCO) src/lib/gips.c -o build/lib/gips.o
 	$(CCO) src/lib/network.c -o build/lib/network.o
+	$(CCO) src/lib/glogic.c -o build/lib/glogic.o
 	$(CC) $(PRD_DEPS) $(SERV_SRC) -lpthread -o build/server/server
 	$(CC) $(PRD_DEPS) $(CLIE_SRC) -o build/client/client
 
