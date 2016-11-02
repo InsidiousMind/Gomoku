@@ -332,9 +332,6 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_unlock(&play1Moves);
     }
 
-    
-    
-
     //most up-to-date moves are this player 
     if(pid % 2 == 0){
       p2win = check_for_win_server(p2board);

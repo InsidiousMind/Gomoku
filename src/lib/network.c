@@ -84,3 +84,19 @@ int send_mesg(char *str, int sock){
   len = total;
   return n == -1? -1:total;
 }
+
+int readBytes(int sock, unsigned int x, void *buffer){
+  int bytes_read = 0, result;
+  
+  while (bytes_read < x)
+  {       
+    
+    //can use read here too
+    result = recv(sock, buffer + bytes_read, x - bytes_read, 0);
+    if(result < 1){
+      perror("[!!!] read error");
+    }
+    bytes_read += result;
+  }
+  return bytes_read;
+}
