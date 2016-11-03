@@ -8,7 +8,7 @@
  - October 31, 2016
 
 ## GitHub Repository
- - InsidiousMind/Gomoku
+ - [InsidiousMind/Gomoku](https://github.com/InsidiousMind/Gomoku)
 
 ## File Names:
  - asgn6-client.c 
