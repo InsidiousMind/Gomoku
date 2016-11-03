@@ -7,6 +7,7 @@
 #include "network.h"
 #include <string.h>
 #include <unistd.h>
+#include <errno.h> 
 
 int connect_to_server() {
     // FIXME This is the source for the connection subroutine in the example.
@@ -34,7 +35,7 @@ int connect_to_server() {
 
         if ((status = connect(serverfd, p->ai_addr, p->ai_addrlen)) == -1) {
             close(serverfd);
-            printf("socket connect \n");
+            perror("socket connect \n");
             continue;
         }
         break;

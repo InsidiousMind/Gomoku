@@ -52,11 +52,7 @@ int gameLoop(int reply_sock_fd, char pid);
 
 char **addMove(char move_x, char move_y, char pid, char **board);
 
-char **initBoard(char **board);
-
 int turn();
-
-int *findOtherMoves(gips *player_info);
 
 void sendMoves(char pid, char other_pid, int sockfd);
 
@@ -488,33 +484,4 @@ int turn() {
         pthread_mutex_unlock(&whoTurn_access);
         return 1;
     }
-}
-
-char **initBoard(char **board) {
-    int i;
-    //instantiate board
-    for (i = 0; i < HEIGHT; i++) {
-        board[i] = malloc(DEPTH * sizeof(char));
-        memset(&board[i], 0, sizeof(board[i])); //had * strlen(board[i]) don't think that's necessary
-    }
-
-    board[3][3] = 'x';
-    return board;
-}
-
-int *findOtherMoves(gips *player_info) {
-    int *moves = malloc(2 * sizeof(int));
-    if (player_info->pid == 1) {
-        pthread_mutex_lock(&play2Moves_access);
-        moves[0] = play2Moves[0];
-        moves[1] = play2Moves[1];
-        pthread_mutex_unlock(&play2Moves_access);
-    } else if (player_info->pid == 2) {
-        pthread_mutex_lock(&play1Moves_access);
-        moves[0] = play1Moves[0];
-        moves[1] = play1Moves[1];
-        pthread_mutex_unlock(&play1Moves_access);
-    }
-
-    return moves;
 }
