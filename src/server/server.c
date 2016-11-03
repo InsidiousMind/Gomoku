@@ -32,7 +32,8 @@ char **addMove(char move_x, char move_y, char pid, char **board);
 char **initBoard(char **board);
 int turn();
 int * findOtherMoves(gips *player_info);
-int sendMoves_checkWin(char pid, char other_pid, char **playerBoard, int sockfd);
+void sendMoves(char pid, char other_pid, int sockfd);
+int checkWin(char **board, char pid, int sockfd);
 
 
 
@@ -48,6 +49,9 @@ int play2Moves[2];
 
 pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
 int whoTurn;
+
+pthread_mutex_t playerWin_access = PTHREAD_MUTEX_INITIALIZER;
+int playerWin;
 
 struct arg_s{
   long arg1;
@@ -188,7 +192,7 @@ void *subserver(void *arguments) {
   struct arg_s *args =  arguments;
   long reply_sock_fd_long = args->arg1;
   char pid = args->arg2;
-
+  gips *player_info;
 
   int read_count = -1;
   int win;
@@ -208,13 +212,13 @@ void *subserver(void *arguments) {
     perror("[!!!] error: Game Loop Fail");
   }
 
-  if(win == 1 && pid == 1)
-    send_mesg("You Win!", reply_sock_fd);
-  else if (win == 2 && pid == 2)
-    send_mesg("You Win!", reply_sock_fd);
-  else
-    send_mesg("You Lose :-(", reply_sock_fd);
-
+  if((win == 1 && pid == 1) || (win==2 && pid == 2))
+    send_mesg("You Win! :-)\x00", reply_sock_fd);
+  else{
+    player_info = pack(pid, TRUE, -1, -1);
+    send_to(player_info, reply_sock_fd);
+    send_mesg("You Lose :-(\x00", reply_sock_fd);
+  }
   close(reply_sock_fd);
   return NULL;
 
@@ -292,24 +296,37 @@ int gameLoop(int reply_sock_fd, char pid){
     //will contain the other players moves
     //go and move if it's the clients turn
     while(currentTurn != pid){
+      
       pthread_mutex_lock(&whoTurn_access);
       currentTurn = whoTurn;
       pthread_mutex_unlock(&whoTurn_access);
+
+      pthread_mutex_lock(&playerWin_access);
+      if(playerWin != 0){
+        pthread_mutex_unlock(&playerWin_access);
+        return 0; 
+      }
+      pthread_mutex_unlock(&playerWin_access);
       sleep(1);
     }
 
     //send other players moves and check for win 
-    isWin = sendMoves_checkWin(pid, other_pid, playerBoard, reply_sock_fd);
-    if(isWin != 0)
-      return isWin;
+    sendMoves(pid, other_pid, reply_sock_fd);
 
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
-    playerBoard = addMove(player_info->move_a, player_info->move_b, player_info->pid, playerBoard);
+    playerBoard = addMove(player_info->move_a, player_info->move_b, 
+                                      player_info->pid, playerBoard);
 
-    
+    isWin = checkWin(playerBoard, pid, reply_sock_fd);
+
+    //if it's a win, change the turn and return from the gameLoop
+    if(isWin != 0){
+      return isWin;
+    }
+   
     //switch the turn global var and set currentTurn to it
     currentTurn = turn();
 
@@ -328,9 +345,7 @@ int gameLoop(int reply_sock_fd, char pid){
 //send OTHER players moves
 //send other PID
 //send  players turn
-//check/sends isWin
-int sendMoves_checkWin(char pid, char other_pid, char **playerBoard, int sockfd){
-    int p1win = 0, p2win = 0; 
+void sendMoves(char pid, char other_pid, int sockfd){
     gips *other_player; 
     if(pid == 1){
       //pack a gips player with turns of other player, other players pid, current turn,
@@ -344,27 +359,33 @@ int sendMoves_checkWin(char pid, char other_pid, char **playerBoard, int sockfd)
       pthread_mutex_unlock(&play1Moves_access);
     }
 
+    send_to(other_player, sockfd);
+
+}
+
+//checks for a win using "check for win" in glogic library
+int checkWin(char **board, char pid, int sockfd){
+    int p1win = 0, p2win = 0;
+    int npid = (int)pid;
+    int noWin = 0;
+
     //most up-to-date moves are this player 
     if(pid % 2 == 0){
-      p2win = check_for_win_server(playerBoard);
-
+      p2win = check_for_win_server(board);
     }else{
-      p1win = check_for_win_server(playerBoard);
+      p1win = check_for_win_server(board);
     }
 
-    //if it's a win send a packet with other players moves
-    //and isWin set to pid of winner
-    //return from gameLoop
     if((p1win == TRUE) || (p2win == TRUE)){
-      other_player->isWin = pid;
-      send_to(other_player, sockfd);
-      return other_player->isWin;
+        send(sockfd, &npid, sizeof(int), 0);
+        pthread_mutex_lock(&playerWin_access);
+          playerWin = npid;
+        pthread_mutex_unlock(&playerWin_access);
+        return pid;
     } else {
-      send_to(other_player, sockfd);
-      return 0;
+        send(sockfd, &noWin, sizeof(int), 0);
+        return 0;
     }
-
-
 }
 
 void print_ip( struct addrinfo *ai) {

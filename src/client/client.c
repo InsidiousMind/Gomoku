@@ -65,10 +65,13 @@ char **init_board(char **board){
 
 int main() {
   char *name = malloc(sizeof(char) * 15);
+  char *win = malloc(sizeof(char) * 13);
   gips *player_info = malloc(8 * sizeof(char));
   int move_x, move_y, i;
   char pid;
+
   char **board = malloc(HEIGHT * sizeof(char*));
+  int isWin;
   for (i = 0; i < HEIGHT; i++) {
     board[i] = malloc(DEPTH * sizeof(char *));
   }
@@ -84,24 +87,42 @@ int main() {
     board = get_move(board, player_info);
     pid = player_info->pid;
     display_board(board);
-  } else { // Does this go through correctly in the first place?
+  }
+  else 
+  {
     printf("Couldn't connect to the server. Error number: ");
     printf("%d\n", errno);
     exit(0);
   }
+
   while(board != NULL) {
     printf("Wait your turn!\n");
+  
     recv(sock, player_info, sizeof(player_info), 0);
+    if(player_info->isWin != 0){
+      break; 
+    }
     board = get_move(board, player_info);
     display_board(board);
     printf("Now you can move\n");
     printf("%s_> ", name);
     scanf("%d%d", &move_x, &move_y);
     send_move(move_x, move_y, board, sock, pid);
+    //check for win
+    recv(sock, &isWin, sizeof(int), 0);
+    if(isWin != 0)
+      break;
   }
+  recv(sock, win, sizeof(char) * 14, 0);
+  printf("%s\n", win);
   close(sock);
+
+  for(i = 0; i < HEIGHT; i++){
+    free(board[i]);
+  }
   free(board);
   free(name);
+  free(win);
   free(player_info);
 }
 
