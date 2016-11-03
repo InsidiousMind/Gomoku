@@ -8,14 +8,14 @@
 
 //packs info needed for playing the game into a struct
 //using chars to make the package as small as possible
-gips *pack(char pid,char isWin, char move_a, char move_b){
-  static gips info;
+gips *pack(char pid, char isWin, char move_a, char move_b) {
+    static gips info;
 
-  info.pid = pid; //1 if player1, 2 if player2
-  info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
-  info.move_a = move_a; //move || first board == own player turn,
-  info.move_b = move_b;  //move         EVERY OTHER board === OTHER PLAYER move
-  return &info;
+    info.pid = pid; //1 if player1, 2 if player2
+    info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
+    info.move_a = move_a; //move || first board == own player turn,
+    info.move_b = move_b;  //move         EVERY OTHER board === OTHER PLAYER move
+    return &info;
 }
 
 //Some functions to compress what we send over the nets
