@@ -58,7 +58,15 @@ void sendMoves(char pid, char other_pid, int sockfd);
 
 int checkWin(char **board, char pid, int sockfd);
 
+struct game {
+  // This will serve as the linked list to keep two threads connected as one
+  // game. Andrew - check my syntax?
+  struct game *ref;
+  // pthread one;
+  // pthread two;
+};
 
+typedef struct game Game;
 
 //shouldn't need a mutext lock for these because they are only accessed by their respective threads
 
@@ -389,7 +397,7 @@ int checkWin(char **board, char pid, int sockfd) {
     int npid = (int) pid;
     int noWin = 0;
 
-    //most up-to-date moves are this player 
+    //most up-to-date moves are this player
     if (pid % 2 == 0) {
         p2win = check_for_win_server(board);
     } else {

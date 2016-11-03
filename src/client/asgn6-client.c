@@ -7,7 +7,7 @@
  * debug: gdb ./server
  *
  * A client program that communicates with a server in order to play
- * Gomoku (five in a row) 
+ * Gomoku (five in a row)
  *
  */
 
@@ -129,4 +129,3 @@ int main() {
     free(win);
     free(player_info);
 }
-
