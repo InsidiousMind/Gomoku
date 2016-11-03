@@ -6,8 +6,8 @@
 CC = cc
 CCO = cc -c
 CDEBUG = -g -Wall -Wextra
-SERV_SRC = src/server/server.c
-CLIE_SRC = src/client/client.c
+SERV_SRC = src/server/asgn6-server.c
+CLIE_SRC = src/client/asgn6-client.c
 DBG_DEPS = debug/lib/gips.o debug/lib/network.o debug/lib/glogic.o
 PRD_DEPS = build/lib/gips.o build/lib/network.o build/lib/glogic.o
 
@@ -76,7 +76,7 @@ server-debug:
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	${CCO} src/server/server.c $(CDEBUG) -o debug/server/server.o
+	${CCO} src/server/asgn6-server.c $(CDEBUG) -o debug/server/server.o
 	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
 
 run-client-debug:
