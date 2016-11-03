@@ -76,7 +76,7 @@ server-debug:
 	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
 	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
 	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	${CCO} src/server/server.c $(CDEBUG) -o debug/server/server.o
+	${CCO} src/server/asgn6-server.c $(CDEBUG) -o debug/server/server.o
 	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
 
 run-client-debug:
