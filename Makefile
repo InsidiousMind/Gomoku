@@ -6,8 +6,8 @@
 CC = cc
 CCO = cc -c
 CDEBUG = -g -Wall -Wextra
-SERV_SRC = src/server/server.c
-CLIE_SRC = src/client/client.c
+SERV_SRC = src/server/asgn6-server.c
+CLIE_SRC = src/client/asgn6-client.c
 DBG_DEPS = debug/lib/gips.o debug/lib/network.o debug/lib/glogic.o
 PRD_DEPS = build/lib/gips.o build/lib/network.o build/lib/glogic.o
 
