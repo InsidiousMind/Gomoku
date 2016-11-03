@@ -60,10 +60,10 @@ int IsWithinBoard(int x, int y) {
 
 
 void find_starts(char **board) {
-    int k = 0, l = 0;
+    int i, j, k = 0, l = 0;
 
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < DEPTH; j++) {
+    for (i = 0; i < HEIGHT; i++) {
+        for (j = 0; j < DEPTH; j++) {
             if (board[i][j] == 'x') {
                 start_pos_x[k] = i;
                 start_pos_y[l] = j;
