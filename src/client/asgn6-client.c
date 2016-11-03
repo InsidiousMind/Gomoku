@@ -1,5 +1,13 @@
-/*
- * Client utilizing the Gomoku Inter Process Shuttle (GIPS) protocol
+/*Author: Sean Batzel and Andrew Plaza
+ * Date: October 31 2016
+ * Github: https://github.com/InsidiousMind/Gomoku
+ * File name: asgn6-client.c
+ * compile: make server
+ * run ./server
+ * debug: gdb ./server
+ *
+ * A client program that communicates with a server in order to play
+ * Gomoku (five in a row) 
  *
  */
 
@@ -18,9 +26,7 @@
 #include <pthread.h>
 #include "../lib/network.h"
 #include "../lib/gips.h"
-#include "../lib/glogic.h"
 #include <errno.h>
-// This file compiles with glogic.h
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
