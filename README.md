@@ -1,11 +1,36 @@
-#
-Gomoku
+## Program: 
+ - Programming Assignment 6, A Networked Gomoku Game
 
-## DUE 10/31/2016
+## Author: 
+  - Andrew Plaza and Sean Batzel
 
-### Building
-To build the entire game, run make. To only build the client, make client. To build the server, make server. Make clean will clear the build directory to start from scratch.
+## Date: 
+ - October 31, 2016
 
-"That's not a feature. That's definitely a bug. There's no doubt about it." - Sean Batzel
+## File Names:
+ - asgn6-client.c 
+ - asgn6-server.c 
+ - src/lib/glogic.c+h 
+ - src/lib/gips.c+h 
+ - src/lib/network.c+h
 
-![gomoku](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Gomoku-game-1.svg/2000px-Gomoku-game-1.svg.png)
+## Compile: 
+ - make server to compile server, 
+ - make client to compile client, 
+ - make to compile server and client
+
+## run: 
+ - build/client/./asgn6-client.c
+ - build/server/./asgn6-server.c
+
+
+### Wiki
+[Wiki](https://github.com/InsidiousMind/Gomoku/wiki)
+
+# What is Gomoku?
+
+Go means 5, moku is a word for pieces, and narabe a word for line up
+
+So it's basically just Five-In-A-Row.
+
+In this variation of Gomoku, player 1 (black) goes first and always places their piece in the middle

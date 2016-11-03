@@ -1,11 +1,27 @@
 #include "glogic.h"
 #include "gips.h"
 
-void check_for_win_server(gips *x, char **board) {
-    // Set x->is_win to 0 if nobody won, otherwise set it to the
-    // Player number of the winner.
 
-    x->isWin = crawl_board(board);
+int start_pos_x[HEIGHT];
+int start_pos_y[DEPTH];
+
+void find_starts(char **board);
+
+int IsWithinBoard(int x, int y);
+
+int crawl_board(char **board, int startx, int starty);
+
+
+int check_for_win_server(char **board) {
+    int isWin = 0;
+    int i;
+    find_starts(board);
+
+    for (i = 0; i < (signed) (sizeof(start_pos_x) / sizeof(int)); i++) {
+        isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
+    }
+    return isWin;
+
 
 }
 
@@ -14,48 +30,47 @@ void check_for_win_server(gips *x, char **board) {
 //two fors w/ two whiles might be possible to avoid
 //
 /*
- * Maybe something like this? instead of iterating through the entire board, we can just check if the latest move results in five-in-a-row.
- * this sets up two arrays with the directoins we need, and loops in that direction until it hits five-in-a-row or the edge of the board
- * needs some modification but basically this code:
- *
- *  static const int xdirs[] = {0,1,1,1,0,-1,-1,-1}; //these are the eight directions that we need to check (up down right left diagnals)
- *  static const int ydirs[] = {-1,-1,0,1,1,1,0,-1};
- *  for (int i=0; i<8; i++)  {
- *     int x = startx, y = starty, numInARow=0;
- *     for (int j = 0; j < 5 && IsWithinBoard(x, y); j++)
- *     {
- *       // Test this cell here, maybe increment numInARow 
- * 
- *      x += xdirs[i];
- *      y += ydirs[i];
- *     }
- *  }
- *
- *
- *
- *
- *
+ * Maybe something like this? instead of iterating through the entire board, 
+ * we can just check if the latest move results in five-in-a-row.
+ * this sets up two arrays with the directoins we need, 
+ * and loops in that direction until it hits five-in-a-row or the edge of the board
  */
-//also we can always use ints and just return a casted (char)int
-//might be more proper
-char crawl_board(char **board, int startx, int starty, int pid) { 
+int crawl_board(char **board, int startx, int starty) {
     int i;
-    int j;
-    static const int xdirs[] = {0,1,1,1,0,-1,-1,-1}; //these are the eight directions that we need to check (up down right left diagnals)
-    static const int ydirs[] = {-1,-1,0,1,1,1,0,-1};
-    for ( i=0; i<8; i++)  {
-        int x = startx, y = starty, numInARow=0;
-        for (int j = 0; j < 8 && IsWithinBoard(x, y); j++)
-        {
+    int j;                    //the eight directions
+    static const int xdirs[] = {0, 1, 1, 1, 0, -1, -1, -1};
+    static const int ydirs[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+    for (i = 0; i < HEIGHT; i++) {
+        int x = startx, y = starty, numInARow = 0;
+        for (j = 0; j < DEPTH && IsWithinBoard(x, y); j++) {
             // Test this cell here, maybe increment numInARow 
-            // Does this file compile?
-            if (board[i + x][j + y] == pid) numInARow++;
+            if (numInARow == 5) return TRUE;
+            if (board[x][y] == 'x') numInARow++;
             x += xdirs[i];
             y += ydirs[i];
         }
     }
+
+    return FALSE;
 }
 
-int IsWithinBoard(int x, int y){
-    return (x < 8 && x >= 0 && y < 8 && y >= 0)
+int IsWithinBoard(int x, int y) {
+    return (x < 8 && x >= 0 && y < 8 && y >= 0);
 }
+
+
+void find_starts(char **board) {
+    int k = 0, l = 0;
+
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < DEPTH; j++) {
+            if (board[i][j] == 'x') {
+                start_pos_x[k] = i;
+                start_pos_y[l] = j;
+                ++k;
+                ++j;
+            }
+        }
+    }
+}
+
