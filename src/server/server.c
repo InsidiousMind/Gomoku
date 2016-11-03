@@ -32,6 +32,7 @@ char **addMove(char move_x, char move_y, char pid, char **board);
 char **initBoard(char **board);
 int turn();
 int * findOtherMoves(gips *player_info);
+int sendMoves_checkWin(char pid, char other_pid, char **playerBoard, int sockfd);
 
 
 
@@ -230,9 +231,9 @@ void *subserver(void *arguments) {
  *   client so that the client can update the gameboard
  */
 int gameLoop(int reply_sock_fd, char pid){
+  int isWin; 
   int i; 
-  int p1win = FALSE;
-  int p2win = FALSE;
+
   char **playerBoard = calloc(HEIGHT, sizeof(char*));
   for(i = 0; i < HEIGHT; i++){
     playerBoard[i] = calloc(DEPTH, sizeof(char));
@@ -240,7 +241,6 @@ int gameLoop(int reply_sock_fd, char pid){
 
   //for the first time, white goes first (Player 2)
   gips *player_info;
-  gips *other_player;
   int currentTurn;
   //make variables to keep track of the other player
 
@@ -295,26 +295,44 @@ int gameLoop(int reply_sock_fd, char pid){
       pthread_mutex_lock(&whoTurn_access);
       currentTurn = whoTurn;
       pthread_mutex_unlock(&whoTurn_access);
-      sleep(3);
+      sleep(1);
     }
-    send(reply_sock_fd, "10\x00", 3, 0);
-    ///send_mesg("10\x00", reply_sock_fd);
+
+    //send other players moves and check for win 
+    isWin = sendMoves_checkWin(pid, other_pid, playerBoard, reply_sock_fd);
+    if(isWin != 0)
+      return isWin;
+
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b, player_info->pid, playerBoard);
 
-    //currentTurn = turn(player_info);
+    
+    //switch the turn global var and set currentTurn to it
+    currentTurn = turn();
 
-    //send OTHER players moves
-    //send other PID
-    //send  players turn
-    //check/sends isWin
 
+  } while(read_count != 0 || read_count != -1);
+
+  for(i =0; i < HEIGHT; i++){
+    free(playerBoard[i]);
+  }
+  free(playerBoard);
+
+  return read_count == -1? -1:0; //-1 on fail 0 on success
+
+}
+
+//send OTHER players moves
+//send other PID
+//send  players turn
+//check/sends isWin
+int sendMoves_checkWin(char pid, char other_pid, char **playerBoard, int sockfd){
+    int p1win = 0, p2win = 0; 
+    gips *other_player; 
     if(pid == 1){
-      //i hope this is OK because i'm using pass by value, and the actual 'pack' function
-      //only modifies copies of values locally
       //pack a gips player with turns of other player, other players pid, current turn,
       pthread_mutex_lock(&play2Moves_access);
       other_player = pack(other_pid, FALSE, (char)play2Moves[0], (char)play2Moves[1]);
@@ -333,30 +351,19 @@ int gameLoop(int reply_sock_fd, char pid){
     }else{
       p1win = check_for_win_server(playerBoard);
     }
+
     //if it's a win send a packet with other players moves
     //and isWin set to pid of winner
     //return from gameLoop
     if((p1win == TRUE) || (p2win == TRUE)){
       other_player->isWin = pid;
-      send_to(other_player, reply_sock_fd);
+      send_to(other_player, sockfd);
       return other_player->isWin;
     } else {
-      send_to(other_player, reply_sock_fd);
+      send_to(other_player, sockfd);
+      return 0;
     }
-    //switch the turn global var
-    pthread_mutex_lock(&whoTurn_access);
-    whoTurn = turn();
-    currentTurn = whoTurn;
-    pthread_mutex_unlock(&whoTurn_access);
 
-  } while(read_count != 0 || read_count != -1);
-
-  for(i =0; i < HEIGHT; i++){
-    free(playerBoard[i]);
-  }
-  free(playerBoard);
-
-  return read_count == -1? -1:0; //-1 on fail 0 on success
 
 }
 
@@ -406,7 +413,7 @@ char **addMove(char move_a, char move_b, char pid, char **board){
     pthread_mutex_lock(&play1Moves_access);
     play1Moves[0] = (int)move_a;
     play1Moves[1] = (int)move_b;
-    pthread_mutex_unlock(&play2Moves_access);
+    pthread_mutex_unlock(&play1Moves_access);
   }
   else if (pid == 2){
     board[(int)move_a][(int)move_b] = 'x';
@@ -420,16 +427,26 @@ char **addMove(char move_a, char move_b, char pid, char **board){
 
 //checks if it is this
 //make sure turn logic works out
+//set whoTurn
 int turn(){
   int tempTurn;
 
   pthread_mutex_lock(&whoTurn_access);
   tempTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
-
-  if(tempTurn == 1)
+  
+  if(tempTurn == 1){
+    pthread_mutex_lock(&whoTurn_access);
+     whoTurn = 2;
+    pthread_mutex_unlock(&whoTurn_access);
     return 2;
-  else return 1;
+  }
+  else{
+    pthread_mutex_lock(&whoTurn_access);
+      whoTurn = 1;
+    pthread_mutex_unlock(&whoTurn_access);
+    return 1;
+  }
 }
 
 char **initBoard(char **board){
