@@ -1,20 +1,21 @@
 /*
- * Author: Sean Batzel
- * Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
- * Modified to add commands to modify the list during runtime.
- * Modified to add file persistence to the database.
- * Modified to remove the "delete" command.
- * Compile: cc asgn1-batzels4.c -o asgn4
- * Input:
- * 	Add a new player:	+ userid lastname firstname wins losses ties
- *	Update existing:	* userid wins losses ties
- *	Find a player:		? userid
- *	Stop the program:	# <prints all entries>
- * Note:
- * 	If a userid already exists and is added to the database, output will be "ERROR - userid exists."
- *	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
- */
+* Author: Sean Batzel
+* Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
+* Modified to add commands to modify the list during runtime.
+* Modified to add file persistence to the database.
+* Modified to remove the "delete" command.
+* Compile: cc asgn1-batzels4.c -o asgn4
+* Input:
+*  Add a new player:	+ userid lastname firstname wins losses ties
+*	Update existing:	* userid wins losses ties
+*	Find a player:		? userid
+*	Stop the program:	# <prints all entries>
+* Note:
+*  If a userid already exists and is added to the database, output will be "ERROR - userid exists."
+*	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
+*/
 
+#include "database.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -67,7 +68,7 @@ void insert(int id, int fd, Player *player, Node **head) {
 		free(x);
 		return;
 	}
-	else if (*head == NULL || (*head)->player_id > x->player_id){
+	else if (*head == NULL || (*head)->player_id > x->player_id) {
 		x->next = *head;
 		*head = x;
 		write(fd, player, sizeof(Player));
@@ -113,8 +114,8 @@ void update(int id, int fd, Player *player, Node *head) {
 
 void query(int id, int fd, Node *head) {
 	Node *tmp = head;
-	while (tmp != NULL){
-		if (tmp->player_id == id){
+	while (tmp != NULL) {
+		if (tmp->player_id == id) {
 			Player *tmp2 = (Player *)malloc(sizeof(Player));
 			lseek(fd, tmp->index, SEEK_SET);
 			read(fd, tmp2, sizeof(Player));
@@ -131,7 +132,7 @@ void query(int id, int fd, Node *head) {
 void print_list(Node *head) {
 	printf("The linked list: ");
 	Node *tmp = head;
-	while (tmp != NULL){
+	while (tmp != NULL) {
 		printf("(%d, %d), ", tmp->player_id, tmp->index);
 		tmp = tmp->next;
 	}
@@ -142,7 +143,7 @@ void print_file(int fd) {
 	printf("Players:\n");
 	lseek(fd, 0, SEEK_SET);
 	Player *p = (Player *)malloc(sizeof(Player));
-	while (read(fd, p, sizeof(Player)) != 0){
+	while (read(fd, p, sizeof(Player)) != 0) {
 		printf("%d, %s, %s, %d, %d, %d\n", p->userid, p->last, p->first, p->wins, p->losses, p->ties);
 	}
 	free(p);
@@ -159,38 +160,4 @@ Player *create_player_up() {
 	Player *x = (Player *)malloc(sizeof(Player));
 	scanf("%d%d%d%d", &(x->userid), &(x->wins), &(x->losses), &(x->ties));
 	return x;
-}
-
-int main(int argc, char *argv[]) {
-	if (argc != 2){
-		printf("Usage: asgn4 filename\n");
-		exit(0);
-	}
-	Node *head = NULL;
-	int fd = open(argv[1], O_RDWR|O_CREAT, 0666);
-	char cmd = ' ';
-	while (cmd != '#') {
-		cmd = getchar();
-		if (cmd == '+') {
-			Player *p = create_player();
-			insert(p->userid, fd, p, &head);
-			free(p);
-		}
-		if (cmd == '*') {
-			Player *p = create_player_up();
-			update(p->userid, fd, p, head);
-			free(p);
-		}
-		if (cmd == '?') {
-			int id;
-			scanf("%d", &id);
-			query(id, fd, head);
-		}
-	}
-	close(fd);
-	int fd2 = open(argv[1], O_RDWR);
-	print_list(head);
-	print_file(fd2);
-	close(fd2);
-	return 0;
 }
