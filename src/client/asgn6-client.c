@@ -1,15 +1,15 @@
 /*Author: Sean Batzel and Andrew Plaza
- * Date: October 31 2016
- * Github: https://github.com/InsidiousMind/Gomoku
- * File name: asgn6-client.c
- * compile: make server
- * run ./server
- * debug: gdb ./server
- *
- * A client program that communicates with a server in order to play
- * Gomoku (five in a row)
- *
- */
+* Date: October 31 2016
+* Github: https://github.com/InsidiousMind/Gomoku
+* File name: asgn6-client.c
+* compile: make server
+* run ./server
+* debug: gdb ./server
+*
+* A client program that communicates with a server in order to play
+* Gomoku (five in a row)
+*
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +30,16 @@
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
+
+int login() {
+  // The server needs logic to check if the database already contains a user,
+  // and to assign the client a pid. pid_from_server should return a pid that
+  // the client was sent from the server.
+  char *username = malloc(sizeof(char) * 20);
+  printf("Player username: ");
+  scanf("%s", username);
+  int pid = pid_from_server(username); // We should implement this in network.h
+}
 
 void send_move(int a, int b, char **board, int sock, char player) {
         // Send the move to the other guy.
@@ -101,7 +111,6 @@ int main() {
 
         while (board != NULL) {
                 printf("Wait your turn!\n");
-
                 recv(sock, player_info, sizeof(player_info), 0);
                 if (player_info->isWin != 0) {
                         break;
