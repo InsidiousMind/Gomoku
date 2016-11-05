@@ -72,6 +72,15 @@ typedef struct game Game;
 
 //just for storing args which are going to be passed to pthread_create
 
+
+struct moves{
+  int play1Moves[2];
+  int play2Moves[2];
+
+  int whoTurn;
+} pmoves;
+
+
 pthread_mutex_t play1Moves_access = PTHREAD_MUTEX_INITIALIZER;
 int play1Moves[2];
 
