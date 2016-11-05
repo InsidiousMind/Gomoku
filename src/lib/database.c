@@ -161,3 +161,37 @@ Player *create_player_up() {
 	scanf("%d%d%d%d", &(x->userid), &(x->wins), &(x->losses), &(x->ties));
 	return x;
 }
+
+void readp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player),0);
+  if(read(fd, play, sizeof(Player)) == -1)
+    die("[ERROR] read failed");
+}
+
+void persist(int fd, int *index, Node **head, char *filename){
+  int size, i;
+  int temp_i = *index; 
+
+  Node *temp = *head;
+  struct stat st;
+  struct player rec;
+
+  //stat file size, convert to index
+  stat(filename, &st);
+  size = st.st_size/sizeof(Player);
+  if (size == 0) return;
+  
+  for(i = 0; i < (size); i++){
+    Node *newn = (Node *)malloc(sizeof(Node));
+    memset(newn,0,sizeof(*newn));
+    
+    readp(fd, temp_i, &rec);
+    newn->userid = rec.userid;
+    newn->index = temp_i;
+    insert(&temp, newn);
+    temp_i++;
+  }
+  *index = temp_i;
+  *head = temp;
+}
+
