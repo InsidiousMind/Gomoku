@@ -30,14 +30,15 @@ BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
 # MAKE RULES
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
+dir: 
+	mkdir -p build/lib/
+	mkdir -p build/server/
+	mkdir -p build/client/
 
 server: $(SRV_OBJ) $(DEP_OBJ)
-	mkdir -p build/lib/
-	mkdir -p build/server/ 
 	$(CC) -o build/server/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 client: $(CLIENT_OBJ) $(DEP_OBJ)
-	mkdir -p build/client/
 	$(CC) -o build/client/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 all: server client
