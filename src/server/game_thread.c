@@ -17,36 +17,6 @@ void sendMoves(char pid, char other_pid, int sockfd);
 int checkWin(char **board, char pid, int sockfd);
 
 
-struct game {
-  // This will serve as the linked list to keep two threads connected as one
-  // game. Andrew - check my syntax?
-  struct game *ref;
-  // pthread one;
-  // pthread two;
-};
-
-typedef struct game Game;
-
-//shouldn't need a mutext lock for these because 
-//they are only accessed by their respective threads
-
-//just for storing args which are going to be passed to pthread_create
-
-
-struct moves{
-  int play1Moves[2];
-  int play2Moves[2];
-
-  int whoTurn;
-} pmoves;
-
-
-//args to pass to game_thread
-struct arg_s {
-  long arg1;
-  char arg2;
-};
-
 
 pthread_mutex_t play1Moves_access = PTHREAD_MUTEX_INITIALIZER;
 int play1Moves[2];
@@ -63,51 +33,45 @@ int playerWin;
 
 
 //starts each parallel thread, as programmed in game_thread.c
-void start_subserver(int reply_sock_fd, int client_count) 
+void start_subserver(int reply_sock_fd, int client_count)
 {
 
-  struct arg_s args;
+  pargs args;
   pthread_t pthread;
-  long reply_sock_fd_long = reply_sock_fd;
-  args.arg1 = reply_sock_fd_long;
+  args.socket = reply_sock_fd;
 
   if (client_count % 2 == 0)
-    args.arg2 = 1;
+    args.pid = 1;
   else if (client_count % 2 == 1)
-    args.arg2 = 2;
+    args.pid = 2;
 
-  if (pthread_create(&pthread, NULL, (void *) subserver, (void *) &args) != 0) 
+  if (pthread_create(&pthread, NULL, (void *) subserver, (void *) &args) != 0)
     printf("failed to start subserver\n");
-  else 
+  else
     printf("subserver %lu started\n", (unsigned long) pthread);
 }
 
 void *subserver(void *arguments) {
-  // TODO
-  // NEED to implement a "wait" function so that if only one client is connected
-  // they don't play the game themselves
-  //
-  // If someone connects while two clients are already connected
-  // need to kill connection and tell them that two players are already playing
+
   //get the arguments
-  struct arg_s *args = arguments;
-  long reply_sock_fd_long = args->arg1;
-  char pid = args->arg2;
+  pargs *args = arguments;
+
+  int reply_sock_fd = args->socket;
+  char pid = args->pid;
+
   gips *player_info;
 
   int read_count = -1;
   int win;
-  
+
   int BUFFERSIZE = 256;
   char buffer[BUFFERSIZE + 1];
 
-  int reply_sock_fd = (int) reply_sock_fd_long;
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
   read_count = readBytes(reply_sock_fd, BUFFERSIZE, &buffer);
   buffer[read_count] = '\0';
-
   printf("%s\n", buffer);
 
   if ((win = gameLoop(reply_sock_fd, pid)) == -1) {
@@ -121,22 +85,14 @@ void *subserver(void *arguments) {
     send_to(player_info, reply_sock_fd);
     send_mesg("You Lose :-(\x00", reply_sock_fd);
   }
- 
- 
+
   close(reply_sock_fd);
   return NULL;
 
 }
 
 
-/*This is where the magic happens, once the client and server
- * all this function does so far is keep receiving stuff it gets from
- * the client and keep checking for a win
- *
- * TODO: send back the other players move
- *   this requires: a shared resource with the other thread to determine
- *   the other players move, and send it back to this specific subservers
- *   client so that the client can update the gameboard
+/*This is where the magic happens, conversation between client->server server->client
  */
 int gameLoop(int reply_sock_fd, char pid) {
   int isWin;
@@ -222,27 +178,20 @@ int gameLoop(int reply_sock_fd, char pid) {
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b,
-        player_info->pid, playerBoard);
+                          player_info->pid, playerBoard);
 
     isWin = checkWin(playerBoard, pid, reply_sock_fd);
 
-    //if it's a win, change the turn and return from the gameLoop
-    if (isWin != 0) {
-      return isWin;
-    }
-
     //switch the turn global var and set currentTurn to it
     currentTurn = turn();
+  } while (isWin != 0);
 
-
-  } while (read_count != 0 || read_count != -1);
-
-  for (i = 0; i < HEIGHT; i++) {
+  for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-  free(playerBoard);
 
-  return read_count == -1 ? -1 : 0; //-1 on fail 0 on success
+  free(playerBoard);
+  return isWin;
 
 }
 

@@ -11,6 +11,7 @@ int IsWithinBoard(int x, int y);
 int crawl_board(char **board, int startx, int starty);
 
 int check_for_win_server(char **board) {
+  char  
   int isWin = 0;
   int i;
   find_starts(board);

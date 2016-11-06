@@ -2,15 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <netdb.h>
-#include <errno.h>
-#include <signal.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../lib/network.h"
