@@ -79,6 +79,9 @@ char **init_board(char **board) {
   return board;
 }
 
+
+
+//make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
 int main() {
   char *name = malloc(sizeof(char) * 15);
   char *win = malloc(sizeof(char) * 13);

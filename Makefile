@@ -6,10 +6,28 @@
 CC = cc
 CCO = cc -c
 CDEBUG = -g -Wall -Wextra
+
 SERV_SRC = src/server/asgn6-server.c
+
 CLIE_SRC = src/client/asgn6-client.c
-DBG_DEPS = debug/lib/gips.o debug/lib/network.o debug/lib/glogic.o
+
+
+DBG_DEPS = debug/lib/gips.h debug/lib/network.h debug/lib/glogic.h
+DBG_OBJ = debug/lib/gips.o debug/lib/network.o debug/lib.glogic.o
+
 PRD_DEPS = build/lib/gips.o build/lib/network.o build/lib/glogic.o
+
+SRV_OBJ = src/server/game_thread.o src/server/asgn6-server.o 
+SRV_DEPS = src/server/game_thread.h src/server/asgn6-server.h
+
+
+%.o: %.c $(DBG_DEPS) $(SRV_DEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+dir:
+	mkdir -p debug
+	mkdir -p debug/server
+	mkdir -p debug/lib
 
 make:
 	mkdir -p build
@@ -68,16 +86,11 @@ client-debug:
 	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
 	$(CC) debug/client/client.o $(DBG_DEPS) $(CDEBUG) -o debug/client/client
 
-server-debug:
-	mkdir -p debug
-	mkdir -p debug/server
-	mkdir -p debug/lib/
-	${CCO} $(SERV_SRC) $(CDEBUG) -o debug/server/server.o
-	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
-	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
-	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	${CCO} src/server/asgn6-server.c $(CDEBUG) -o debug/server/server.o
-	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
+
+server-debug: $(SRV_OBJ)
+	gcc $(CFLAGS) -o $@ $^
+			
+
 
 run-client-debug:
 	gdb debug/client/client
