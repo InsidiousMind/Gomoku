@@ -19,7 +19,7 @@
  *
  */
 
-#include "asgn6-server.c"
+#include "asgn6-server.h"
 
 
 int main(void) {

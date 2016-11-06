@@ -9,19 +9,17 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <pthread.h>
 #include <errno.h>
 #include <signal.h>
+#include "asgn6-server.h"
 #include "game_thread.h"
 #include "../lib/network.h"
-#include "asgn6-server.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
 int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
-
 
 void server_loop(int *client_count)
 {

@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
 #include "../lib/glogic.h"
-
+#include "game_thread.h"
 
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
 void *subserver(void *args); //starts subserver

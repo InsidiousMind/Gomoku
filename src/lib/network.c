@@ -3,11 +3,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include "gips.h"
-#include "network.h"
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include "gips.h"
+#include "network.h"
 
 
 //maybe put this in a private functions b/c this function is not being shared

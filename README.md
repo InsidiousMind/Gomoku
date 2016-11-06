@@ -1,5 +1,5 @@
 ## Program: 
- - Programming Assignment 6, A Networked Gomoku Game
+ - A Networked Gomoku Game
 
 ## Author:
   - Andrew Plaza and Sean Batzel

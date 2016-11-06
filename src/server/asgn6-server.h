@@ -1,5 +1,3 @@
-void server_loop(int *client_count);
-
 #ifndef BACKLOG
 #define BACKLOG 10
 #endif
@@ -7,4 +5,5 @@ void server_loop(int *client_count);
 #define NUM_THREADS 2
 #endif
 
+void server_loop(int *client_count);
 
