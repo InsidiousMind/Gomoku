@@ -1,15 +1,15 @@
 /*Author: Sean Batzel and Andrew Plaza
-* Date: October 31 2016
-* Github: https://github.com/InsidiousMind/Gomoku
-* File name: asgn6-client.c
-* compile: make server
-* run ./server
-* debug: gdb ./server
-*
-* A client program that communicates with a server in order to play
-* Gomoku (five in a row)
-*
-*/
+ * Date: October 31 2016
+ * Github: https://github.com/InsidiousMind/Gomoku
+ * File name: asgn6-client.c
+ * compile: make server
+ * run ./server
+ * debug: gdb ./server
+ *
+ * A client program that communicates with a server in order to play
+ * Gomoku (five in a row)
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,7 +124,7 @@ int main() {
     //check for win
     recv(sock, &isWin, sizeof(int), 0);
     if (isWin != 0)
-    break;
+      break;
   }
   recv(sock, win, sizeof(char) * 14, 0);
   printf("%s\n", win);
