@@ -1,19 +1,19 @@
 /*
-* Author: Sean Batzel
-* Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
-* Modified to add commands to modify the list during runtime.
-* Modified to add file persistence to the database.
-* Modified to remove the "delete" command.
-* Compile: cc asgn1-batzels4.c -o asgn4
-* Input:
-*  Add a new player:	+ userid lastname firstname wins losses ties
-*	Update existing:	* userid wins losses ties
-*	Find a player:		? userid
-*	Stop the program:	# <prints all entries>
-* Note:
-*  If a userid already exists and is added to the database, output will be "ERROR - userid exists."
-*	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
-*/
+ * Author: Sean Batzel
+ * Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
+ * Modified to add commands to modify the list during runtime.
+ * Modified to add file persistence to the database.
+ * Modified to remove the "delete" command.
+ * Compile: cc asgn1-batzels4.c -o asgn4
+ * Input:
+ *  Add a new player:	+ userid lastname firstname wins losses ties
+ *	Update existing:	* userid wins losses ties
+ *	Find a player:		? userid
+ *	Stop the program:	# <prints all entries>
+ * Note:
+ *  If a userid already exists and is added to the database, output will be "ERROR - userid exists."
+ *	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
+ */
 
 #include "database.h"
 #include <stdio.h>
@@ -163,35 +163,35 @@ Player *create_player_up() {
 }
 
 void readp(int fd, int index, Player *play){
-  lseek(fd, index*sizeof(Player),0);
-  if(read(fd, play, sizeof(Player)) == -1)
-    die("[ERROR] read failed");
+	lseek(fd, index*sizeof(Player),0);
+	if(read(fd, play, sizeof(Player)) == -1)
+		die("[ERROR] read failed");
 }
 
 void persist(int fd, int *index, Node **head, char *filename){
-  int size, i;
-  int temp_i = *index; 
+	int size, i;
+	int temp_i = *index; 
 
-  Node *temp = *head;
-  struct stat st;
-  struct player rec;
+	Node *temp = *head;
+	struct stat st;
+	struct player rec;
 
-  //stat file size, convert to index
-  stat(filename, &st);
-  size = st.st_size/sizeof(Player);
-  if (size == 0) return;
-  
-  for(i = 0; i < (size); i++){
-    Node *newn = (Node *)malloc(sizeof(Node));
-    memset(newn,0,sizeof(*newn));
-    
-    readp(fd, temp_i, &rec);
-    newn->userid = rec.userid;
-    newn->index = temp_i;
-    insert(&temp, newn);
-    temp_i++;
-  }
-  *index = temp_i;
-  *head = temp;
+	//stat file size, convert to index
+	stat(filename, &st);
+	size = st.st_size/sizeof(Player);
+	if (size == 0) return;
+
+	for(i = 0; i < (size); i++){
+		Node *newn = (Node *)malloc(sizeof(Node));
+		memset(newn,0,sizeof(*newn));
+
+		readp(fd, temp_i, &rec);
+		newn->userid = rec.userid;
+		newn->index = temp_i;
+		insert(&temp, newn);
+		temp_i++;
+	}
+	*index = temp_i;
+	*head = temp;
 }
 
