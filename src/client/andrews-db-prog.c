@@ -11,9 +11,9 @@
  * '* userid wins losses ties' to update
  * '? userid' to query
  * '#' to terminate program
- * Records are read and then written in binary form to a file. 
- * There is an option to load this file the next time the program is run. 
- * The program keeps data relating to where each record is in a file with a linked list (struct node). 
+ * Records are read and then written in binary form to a file.
+ * There is an option to load this file the next time the program is run.
+ * The program keeps data relating to where each record is in a file with a linked list (struct node).
  * Upon termination the records and linked list are printed.
  */
 
@@ -73,11 +73,11 @@ void die(const char *message);
 
 int main(int argc, char *argv[]) {
 
-  int index = 0, fd = 0; 
+  int index = 0, fd = 0;
   char *filename;
   Node *head = NULL; //head node initialized in main
 
- 
+
   if (argc <= 1){
     fprintf(stderr, "Usage: './asgn4.out filename'\n");
     exit(1);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     // y/n, if it's not y or Y then it's assumed to be no
     printf("Load data from previous file (if it exists)? [Y/n] ");
-    char c = getchar(); 
+    char c = getchar();
 
     if(c == 'y' || c == 'Y'){
       //allocate memory so avoid buffer overflow, need filename for stat
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
       fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
       persist(fd, &index, &head, filename);
       free(filename);
-       
+
      //if no add O_TRUNC to clear any previous data
     }else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
   }
@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
   if( fd < 0) die("[ERROR] open failed");
 
 
- 
+
   ask_input(fd, index, &head);
-  
+
   //end sequence
   close(fd);
   print_nodes(&head);
@@ -130,7 +130,7 @@ void writep(int fd, int index, Player *play){
 
 void persist(int fd, int *index, Node **head, char *filename){
   int size, i;
-  int temp_i = *index; 
+  int temp_i = *index;
 
   Node *temp = *head;
   struct stat st;
@@ -140,11 +140,11 @@ void persist(int fd, int *index, Node **head, char *filename){
   stat(filename, &st);
   size = st.st_size/sizeof(Player);
   if (size == 0) return;
-  
+
   for(i = 0; i < (size); i++){
     Node *newn = (Node *)malloc(sizeof(Node));
     memset(newn,0,sizeof(*newn));
-    
+
     readp(fd, temp_i, &rec);
     newn->userid = rec.userid;
     newn->index = temp_i;
@@ -181,12 +181,12 @@ void print_players(int fd, Node **head){
 void printp(int fd, int index){
   struct player play;
   readp(fd, index, &play);
-  
-  printf("%d, %s, %s, %d, %d, %d \n", play.userid, 
-                                      play.last, 
-                                      play.first, 
-                                      play.wins, 
-                                      play.losses, 
+
+  printf("%d, %s, %s, %d, %d, %d \n", play.userid,
+                                      play.last,
+                                      play.first,
+                                      play.wins,
+                                      play.losses,
                                       play.ties);
   return;
 
@@ -196,16 +196,16 @@ void printp(int fd, int index){
 //get first character in input,
 //go to method to do what user asks
 void ask_input(int fd, int index, Node **head){
-  
+
   Node *temp = *head;
   char c;
 
-  //make input look nicer 
+  //make input look nicer
   printf("> ");
 
   do{
     c = getchar();
-    
+
     if(c == '+'){
       *head = add(fd, index, &temp);
       index++;
@@ -213,7 +213,7 @@ void ask_input(int fd, int index, Node **head){
     else if(c == '*')
       update(fd, &temp);
     else if (c == '?')
-      query(fd, &temp); 
+      query(fd, &temp);
     else if (c == '\n');
       //ignore newline chars, reduced 'Error Invalid Input'
     else if (c == '#'){
@@ -227,15 +227,15 @@ void ask_input(int fd, int index, Node **head){
 }
 
 Node* add(int fd, int index, Node **head){
-  
+
   Node *temp = *head;
   struct player prec;
   //initialize mem to 0
   memset(&prec, 0, sizeof(prec));
   //scan in the rest of the line
-  scanf("%d%s%s%d%d%d", &prec.userid, prec.last, prec.first, 
+  scanf("%d%s%s%d%d%d", &prec.userid, prec.last, prec.first,
                         &prec.wins, &prec.losses, &prec.ties);
-  
+
   while(temp != NULL){
     if(temp->userid == prec.userid){
       printf("ERROR - userid exists.\n");
@@ -248,24 +248,24 @@ Node* add(int fd, int index, Node **head){
   //reset temp after iterating through LL
   temp = *head;
 
-  prec.index = index; 
-  //write node to binary file 
+  prec.index = index;
+  //write node to binary file
   writep(fd, index, &prec);
-     
+
   printf("%s", "ADD: ");
   printp(fd, prec.index);
-  
+
   Node *newNode = (Node*)malloc(sizeof(Node));
   memset(newNode, 0, sizeof(*newNode));
 
   newNode->userid = prec.userid;
   newNode->index = prec.index;
-  
+
   insert(&temp, newNode);
   *head = temp;
-  //make input look nicer 
+  //make input look nicer
   printf("> ");
-  
+
   return *head;
 }
 
@@ -276,7 +276,7 @@ void insert(Node **head, Node *newNode){
     *head = newNode;
     return;
   }
- 
+
   if(newNode->userid < temp->userid) {
     //if need to move head back must do it outside loop
     newNode->next = *head;
@@ -284,13 +284,13 @@ void insert(Node **head, Node *newNode){
     return;
   }
 
-  //else we can just insert it into the right pos in the list 
+  //else we can just insert it into the right pos in the list
   Node *curr;
   curr = temp;
 
   while(temp->next !=NULL) {
     temp = temp -> next;
-    
+
     if(newNode->userid < temp->userid) {
       curr->next = newNode;
       newNode->next=temp;
@@ -314,8 +314,8 @@ void update(int fd, Node **head){
   struct player prec;
 
   scanf("%d%d%d%d", &userid, &wins, &losses, &ties);
-   
-  //find data for playerid user entered, change info 
+
+  //find data for playerid user entered, change info
   while(temp != NULL){
     if(temp->userid == userid) {
       printf("%s", "BEFORE: ");
@@ -331,8 +331,8 @@ void update(int fd, Node **head){
 
       printf("%s", "AFTER: ");
       printp(fd, temp->index);
-      //make input look nicer 
-      
+      //make input look nicer
+
       printf("> ");
       return;
     }else{
@@ -341,7 +341,7 @@ void update(int fd, Node **head){
   }
   printf("ERROR - player does not exist.");
 
-  //make input look nicer 
+  //make input look nicer
   printf("> ");
   return;
 }
@@ -357,7 +357,7 @@ void query(int fd, Node **head){
     if(temp->userid == userid) {
       printf("QUERY: ");
       printp(fd, temp->index);
-      //make input look nicer 
+      //make input look nicer
       printf("> ");
 
       return;
@@ -368,7 +368,7 @@ void query(int fd, Node **head){
   //ERROR
   printf("%s\n", "ERROR - player does not exist.");
 
-  //make input look nicer 
+  //make input look nicer
   printf("> ");
 
   return;
@@ -376,11 +376,11 @@ void query(int fd, Node **head){
 
 //free memory starting from head
 void kill(Node **head){
-  Node *node = *head; 
+  Node *node = *head;
   Node *temp;
   while(node != NULL) {
     temp = node;
-    node = node->next;    
+    node = node->next;
     temp->next = NULL;
     free(temp);
   }

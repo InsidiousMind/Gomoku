@@ -24,21 +24,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
-
-typedef struct player {
-	int userid;
-	char first[20];
-	char last[20];
-	int wins;
-	int losses;
-	int ties;
-} Player;
-
-typedef struct node {
-	int player_id;
-	int index;
-	struct node *next;
-} Node;
+#include <string.h>
 
 void insert(int id, int fd, Player *player, Node **head) {
 	printf("ADD %d, %s, %s, %d, %d, %d\n", player->userid, player->last, player->first, player->wins, player->losses, player->ties);
@@ -171,7 +157,7 @@ void readp(int fd, int index, Player *play){
 
 void persist(int fd, int *index, Node **head, char *filename){
 	int size, i;
-	int temp_i = *index; 
+	int temp_i = *index;
 
 	Node *temp = *head;
 	struct stat st;
@@ -187,12 +173,15 @@ void persist(int fd, int *index, Node **head, char *filename){
 		memset(newn,0,sizeof(*newn));
 
 		readp(fd, temp_i, &rec);
-		newn->userid = rec.userid;
+		newn->player_id = rec.userid;
 		newn->index = temp_i;
-		insert(&temp, newn);
+		insert(fd, *index, &rec, &temp);
 		temp_i++;
 	}
 	*index = temp_i;
 	*head = temp;
 }
 
+int get_database() {
+	return open("player_database", O_RDWR);
+}
