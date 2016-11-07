@@ -35,7 +35,6 @@ int playerWin;
 //starts each parallel thread, as programmed in game_thread.c
 void start_subserver(int reply_sock_fd, int client_count)
 {
-
   pargs args;
   pthread_t pthread;
   args.socket = reply_sock_fd;
