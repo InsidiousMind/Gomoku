@@ -1,10 +1,11 @@
 /*
  * Author: Sean Batzel
+ * Functions from Andrew Plaza also included.
  * Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
  * Modified to add commands to modify the list during runtime.
  * Modified to add file persistence to the database.
  * Modified to remove the "delete" command.
- * Compile: cc asgn1-batzels4.c -o asgn4
+ * Compile: Included in linking in the makefile.
  * Input:
  *  Add a new player:	+ userid lastname firstname wins losses ties
  *	Update existing:	* userid wins losses ties
