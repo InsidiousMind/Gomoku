@@ -103,8 +103,7 @@ int main() {
     printf("Enter your name: ");
     scanf("%s", name);
     send_mesg(name, sock);
-    recv(sock, player_info, sizeof(player_info), 0);
-    pid = player_info->pid;
+    recv(sock, &pid, sizeof(char), 0);
     if(pid == 1){
       stone = 'B';
       otherStone = 'W';
@@ -113,9 +112,6 @@ int main() {
       stone = 'W';
       otherStone = 'B';
     }
-
-    board = get_move(board, player_info, pid, 'B');
-    display_board(board);
   } else {
     printf("Couldn't connect to the server. Error number: ");
     printf("%d\n", errno);
@@ -127,8 +123,10 @@ int main() {
     recv(sock, player_info, sizeof(player_info), 0);
     if (player_info->isWin != 0) {
       break;
-    }
-    board = get_move(board, player_info, pid, otherStone);
+    }//stop from accepting -1 if first move
+    else if ((player_info->move_a == -1) && (player_info->move_b == -1));
+    else
+      board = get_move(board, player_info, pid, otherStone);
     display_board(board);
     printf("Now you can move\n");
     printf("%s_> ", name);

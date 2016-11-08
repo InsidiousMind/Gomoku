@@ -95,8 +95,7 @@ void *subserver(void *arguments) {
 /*This is where the magic happens, conversation between client->server server->client
  */
 int gameLoop(int reply_sock_fd, char pid) {
-  int isWin;
-  int i;
+  int i, isWin, numTurns = 0;
 
   char **playerBoard = calloc(HEIGHT, sizeof(char *));
   for (i = 0; i < HEIGHT; i++) {
@@ -104,57 +103,36 @@ int gameLoop(int reply_sock_fd, char pid) {
   }
 
   //for the first time, white goes first (Player 2)
-  gips *player_info;
+  gips *player_info =calloc(sizeof(gips), sizeof(gips*));
   int currentTurn;
   //make variables to keep track of the other player
 
   char other_pid;
-  if (pid == 1) {
+  if (pid == 1)
     other_pid = 2;
-    pthread_mutex_lock(&play1Moves_access);
-    play1Moves[0] = 3;
-    play1Moves[1] = 3;
-    pthread_mutex_unlock(&play1Moves_access);
-
-    playerBoard[3][3] = 'x';
-  } else if (pid == 2) {
+  else if (pid == 2)
     other_pid = 1;
-  }
 
   //game starts with player2's turn, player 1 automatically starts at 3,3
   //                                                 (middle of the board)
 
   pthread_mutex_lock(&whoTurn_access);
-  whoTurn = 2;
+  whoTurn = 1;
   currentTurn = whoTurn;
   pthread_mutex_unlock(&whoTurn_access);
 
   //first packet sent to respective client concerns
-  //the own players board, every packet after that is
-  //about the OTHER players board
+  //the own players PID, every packet after that is
+  //GIPS about the OTHER players board
   if (pid == 1)
-    player_info = pack(pid, FALSE, 3, 3);
+    send(reply_sock_fd, &pid, sizeof(char), 0);
   else
-    player_info = pack(pid, FALSE, 3, 3);
-
-  //send the first instantiated game board with
-  //player1 moved on a center piece
-  send_to(player_info, reply_sock_fd);
+    send(reply_sock_fd, &pid, sizeof(char), 0);
 
   int read_count = -1;
 
 
   do {
-    //receive board of client we are conversing with
-
-
-    //Waiting: if it's not the clients turn, the server will send a gips packet with
-    //the clients own PID and waiting set to 1 (true).
-    //while the client is waiting, it should keep itself in a loop, while printing to the user
-    //that the other player is making a move
-    //once the client receives a packer with waiting set to FALSE then that gips packet
-    //will contain the other players moves
-    //go and move if it's the clients turn
     while (currentTurn != pid) {
 
       pthread_mutex_lock(&whoTurn_access);
@@ -171,7 +149,11 @@ int gameLoop(int reply_sock_fd, char pid) {
     }
 
     //send other players moves and check for win
-    sendMoves(pid, other_pid, reply_sock_fd);
+    if(numTurns == 0 && pid == 1){
+      gips *other_player = pack(other_pid, FALSE, -1, -1);
+      send_to(other_player, reply_sock_fd);
+    } else
+      sendMoves(pid, other_pid, reply_sock_fd);
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     //add the move to the board, and to the respective client arrays keeping track of
@@ -189,6 +171,7 @@ int gameLoop(int reply_sock_fd, char pid) {
   }
 
   free(playerBoard);
+  free(player_info);
   return isWin;
 
 }
@@ -228,14 +211,12 @@ int checkWin(char **board, char pid, int sockfd) {
 
   if ((p1win == TRUE) || (p2win == TRUE)) {
     send(sockfd, &npid, sizeof(int), 0);
-    //send(sockfd, &npid, sizeof(int), 0);
     pthread_mutex_lock(&playerWin_access);
     playerWin = npid;
     pthread_mutex_unlock(&playerWin_access);
     return pid;
   } else {
     send(sockfd, &noWin, sizeof(int), 0);
-    //send(sockfd, &noWin, sizeof(int), 0);
     return 0;
   }
 }
