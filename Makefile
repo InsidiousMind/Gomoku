@@ -36,12 +36,13 @@ dir:
 	mkdir -p build/lib/
 	mkdir -p build/server/
 	mkdir -p build/client/
+	mkdir -p build/bin/
 
 server: $(SRV_OBJ) $(DEP_OBJ)
-	$(CC) -o build/server/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
+	$(CC) -o build/bin/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 client: $(CLIENT_OBJ) $(DEP_OBJ)
-	$(CC) -o build/client/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
+	$(CC) -o build/bin/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 all: dir server client
 
