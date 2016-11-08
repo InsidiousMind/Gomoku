@@ -16,8 +16,7 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 
-pthread_t* server_loop(int *client_count)
-{
+pthread_t* server_loop(int *client_count) {
   int sock_fd;
   int reply_sock_fd;
   pthread_t *id = calloc(2, sizeof(pthread_t));
