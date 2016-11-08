@@ -53,19 +53,32 @@ char **get_move(char **board, gips *z, char pid, char stone) {
     // Check if the game is over.
     // Otherwise we just decode
     board[(int) z->move_a][(int) z->move_b] = stone;
-
     return board;
 }
 
 void display_board(char **board) {
     int i;
     int j;
+    printf("#");
+    for (i = 1; i <= 8; i++) {
+        printf(" %d ", i);
+    }
+    printf("#");
+    printf("\n");
     for (i = 0; i < 8; i++) {
+        printf("%d", i+1);
         for (j = 0; j < 8; j++) {
-            printf("%c%c%c",' ', board[i][j], ' ');
+            printf(" %c ", board[i][j]);
         }
+        printf("%d", i+1);
         printf("\n");
     }
+    printf("#");
+    for (i = 1; i <= 8; i++) {
+        printf(" %d ", i);
+    }
+    printf("#");
+    printf("\n");
 }
 
 char **init_board(char **board) {
@@ -73,13 +86,10 @@ char **init_board(char **board) {
     for (i = 0; i < HEIGHT; i++) {
         for (j = 0; j < DEPTH; j++) {
             board[i][j] = 'o';
-
         }
-
     }
     return board;
 }
-
 
 
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
@@ -140,7 +150,7 @@ int main() {
                 valid = 1;
             }
         }
-        send_move(move_x, move_y, board, sock, pid, stone);
+        send_move(--move_x, --move_y, board, sock, pid, stone);
         //check for win
         display_board(board);
         recv(sock, &isWin, sizeof(int), 0);
