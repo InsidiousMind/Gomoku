@@ -50,22 +50,25 @@ int check_for_win_server(char **board) {
 * and loops in that direction until it hits five-in-a-row or the edge of the board
 */
 int crawl_board(char **board, int startx, int starty) {
-  int i;
-  int j;                //the eight directions
+  int i, j, x, y, numInARow;
+
   static const int xdirs[] = {0, 1, 1, 1, 0, -1, -1, -1};
   static const int ydirs[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+
+  
+
   for (i = 0; i < HEIGHT; i++) {
-    int x = startx, y = starty, numInARow = 0;
-    for (j = 0; j < DEPTH && IsWithinBoard(x, y); j++) {
+ 
+    x = startx, y = starty, numInARow = 0;
+  
+  
+    for (j = 0; j < 5 && IsWithinBoard(x, y); j++) {
       // Test this cell here, maybe increment numInARow
-      if (numInARow == 5) return TRUE;
       if (board[x][y] == 'x') numInARow++;
+      if (numInARow == 5) return TRUE;
       x += xdirs[i];
       y += ydirs[i];
     }
-    x = startx;
-    y = starty;
-    numInARow = 0;
   }
   return FALSE;
 }
