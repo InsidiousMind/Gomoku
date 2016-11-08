@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../lib/network.h"
@@ -16,8 +17,8 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 
-pthread_t* server_loop(int *client_count)
-{
+
+pthread_t* server_loop(int *client_count){
   int sock_fd;
   int reply_sock_fd;
   pthread_t *id = calloc(2, sizeof(pthread_t));
@@ -26,8 +27,8 @@ pthread_t* server_loop(int *client_count)
     perror("[!!!] error on server start");
     exit(1);
   }
-  
   while(TRUE){
+    
     if ((reply_sock_fd = accept_client(sock_fd)) == -1)
       continue;
     else{
@@ -37,8 +38,6 @@ pthread_t* server_loop(int *client_count)
   }
   return id;
 }
-
-
 
 int get_server_socket(char *hostname, char *port) {
   struct addrinfo hints, *servinfo, *p;

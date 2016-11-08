@@ -42,130 +42,130 @@ int pid = pid_from_server(username); // We should implement this in network.h
 }*/
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
-    // Send the move to the other guy.
-    gips *z = malloc(sizeof(gips));
-    board[a][b] = stone;
-    z = pack(player, FALSE, a, b);
-    send_to(z, sock);
+  // Send the move to the other guy.
+  gips *z = malloc(sizeof(gips));
+  board[a][b] = stone;
+  z = pack(player, FALSE, a, b);
+  send_to(z, sock);
 }
 
 char **get_move(char **board, gips *z, char pid, char stone) {
-    // Check if the game is over.
-    // Otherwise we just decode
-    board[(int) z->move_a][(int) z->move_b] = stone;
-    return board;
+  // Check if the game is over.
+  // Otherwise we just decode
+  board[(int) z->move_a][(int) z->move_b] = stone;
+  return board;
 }
 
 void display_board(char **board) {
-    int i;
-    int j;
-    printf("#");
-    for (i = 1; i <= 8; i++) {
-        printf(" %d ", i);
+  int i;
+  int j;
+  printf("#");
+  for (i = 1; i <= 8; i++) {
+    printf(" %d ", i);
+  }
+  printf("#");
+  printf("\n");
+  for (i = 0; i < 8; i++) {
+    printf("%d", i+1);
+    for (j = 0; j < 8; j++) {
+      printf(" %c ", board[i][j]);
     }
-    printf("#");
+    printf("%d", i+1);
     printf("\n");
-    for (i = 0; i < 8; i++) {
-        printf("%d", i+1);
-        for (j = 0; j < 8; j++) {
-            printf(" %c ", board[i][j]);
-        }
-        printf("%d", i+1);
-        printf("\n");
-    }
-    printf("#");
-    for (i = 1; i <= 8; i++) {
-        printf(" %d ", i);
-    }
-    printf("#");
-    printf("\n");
+  }
+  printf("#");
+  for (i = 1; i <= 8; i++) {
+    printf(" %d ", i);
+  }
+  printf("#");
+  printf("\n");
 }
 
 char **init_board(char **board) {
-    int i, j;
-    for (i = 0; i < HEIGHT; i++) {
-        for (j = 0; j < DEPTH; j++) {
-            board[i][j] = 'o';
-        }
+  int i, j;
+  for (i = 0; i < HEIGHT; i++) {
+    for (j = 0; j < DEPTH; j++) {
+      board[i][j] = 'o';
     }
-    return board;
+  }
+  return board;
 }
 
 
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
 int main() {
-    char *name = malloc(sizeof(char) * 15);
-    char *win = malloc(sizeof(char) * 13);
-    gips *player_info = calloc(sizeof(gips), sizeof(gips*));
-    int move_x, move_y, i;
-    char pid, stone, otherStone;
+  char *name = malloc(sizeof(char) * 15);
+  char *win = malloc(sizeof(char) * 13);
+  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
+  int move_x, move_y, i;
+  char pid, stone, otherStone;
 
-    char **board = malloc(HEIGHT * sizeof(char *));
-    int isWin;
-    for (i = 0; i < HEIGHT; i++) {
-        board[i] = malloc(DEPTH * sizeof(char *));
+  char **board = malloc(HEIGHT * sizeof(char *));
+  int isWin;
+  for (i = 0; i < HEIGHT; i++) {
+    board[i] = malloc(DEPTH * sizeof(char *));
+  }
+  board = init_board(board);
+  int sock = connect_to_server();
+  printf("Gomoku Client for Linux\n");
+
+  if (sock != -1) {
+    printf("Enter your name: ");
+    scanf("%s", name);
+    send_mesg(name, sock);
+    recv(sock, &pid, sizeof(char), 0);
+    if(pid == 1) {
+      stone = 'B';
+      otherStone = 'W';
     }
-    board = init_board(board);
-    int sock = connect_to_server();
-    printf("Gomoku Client for Linux\n");
+    else{
+      stone = 'W';
+      otherStone = 'B';
+    }
+  } else {
+    printf("Couldn't connect to the server. Error number: ");
+    printf("%d\n", errno);
+    exit(0);
+  }
 
-    if (sock != -1) {
-        printf("Enter your name: ");
-        scanf("%s", name);
-        send_mesg(name, sock);
-        recv(sock, &pid, sizeof(char), 0);
-        if(pid == 1) {
-            stone = 'B';
-            otherStone = 'W';
-        }
-        else{
-            stone = 'W';
-            otherStone = 'B';
-        }
+  while (board != NULL) {
+    printf("Wait your turn!\n");
+    recv(sock, player_info, sizeof(player_info), 0);
+    if (player_info->isWin != 0) {
+      break;
+    } else if ((player_info->move_a == -1) && (player_info->move_b == -1)){
     } else {
-        printf("Couldn't connect to the server. Error number: ");
-        printf("%d\n", errno);
-        exit(0);
+      board = get_move(board, player_info, pid, otherStone);
     }
+    display_board(board);
+    printf("Now you can move\n");
+    int valid = 0;
+    while(!valid) {
+      printf("\n%s_> ", name);
+      scanf("%d%d", &move_x, &move_y);
+      if (move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8) {
+        valid = 0;
+        printf("Invalid input.");
+      } else {
+        valid = 1;
+      }
+    }
+    send_move(--move_x, --move_y, board, sock, pid, stone);
+    //check for win
+    display_board(board);
+    recv(sock, &isWin, sizeof(int), 0);
+    if (isWin != 0)
+      break;
+  }
+  recv(sock, win, sizeof(char) * 14, 0);
+  printf("%s\n", win);
+  close(sock);
 
-    while (board != NULL) {
-        printf("Wait your turn!\n");
-        recv(sock, player_info, sizeof(player_info), 0);
-        if (player_info->isWin != 0) {
-            break;
-        } else if ((player_info->move_a == -1) && (player_info->move_b == -1)){
-        } else {
-            board = get_move(board, player_info, pid, otherStone);
-        }
-        display_board(board);
-        printf("Now you can move\n");
-        int valid = 0;
-        while(!valid) {
-            printf("\n%s_> ", name);
-            scanf("%d%d", &move_x, &move_y);
-            if (move_x < 0 || move_y < 0 || move_x > 7 || move_y > 7) {
-                valid = 0;
-                printf("Invalid input.");
-            } else {
-                valid = 1;
-            }
-        }
-        send_move(--move_x, --move_y, board, sock, pid, stone);
-        //check for win
-        display_board(board);
-        recv(sock, &isWin, sizeof(int), 0);
-        if (isWin != 0)
-            break;
-    }
-    recv(sock, win, sizeof(char) * 14, 0);
-    printf("%s\n", win);
-    close(sock);
-
-    for (i = 0; i < HEIGHT; i++) {
-        free(board[i]);
-    }
-    free(board);
-    free(name);
-    free(win);
-    free(player_info);
+  for (i = 0; i < HEIGHT; i++) {
+    free(board[i]);
+  }
+  free(board);
+  free(name);
+  free(win);
+  free(player_info);
 }
