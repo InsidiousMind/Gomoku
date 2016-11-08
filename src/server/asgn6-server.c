@@ -16,11 +16,11 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 
-void server_loop(int *client_count)
+pthread_t* server_loop(int *client_count)
 {
   int sock_fd;
   int reply_sock_fd;
-
+  pthread_t *id = calloc(2, sizeof(pthread_t));
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
@@ -31,10 +31,11 @@ void server_loop(int *client_count)
     if ((reply_sock_fd = accept_client(sock_fd)) == -1)
       continue;
     else{
-       start_subserver(reply_sock_fd, *client_count);
+       id[(*client_count)%2] = start_subserver(reply_sock_fd, *client_count);
         (*client_count)++;
     }
   }
+  return id;
 }
 
 

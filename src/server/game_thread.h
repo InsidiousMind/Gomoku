@@ -23,4 +23,4 @@ typedef struct pthread_args {
 
 
 
-void start_subserver(int reply_sock_fd, int client_count); //starts subserver
+pthread_t start_subserver(int reply_sock_fd, int client_count); //starts subserver

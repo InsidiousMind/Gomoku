@@ -9,13 +9,18 @@
 #include "../lib/glogic.h"
 #include "game_thread.h"
 
-void start_subserver(int reply_sock_fd, int client_count); //starts subserver
+pthread_t start_subserver(int reply_sock_fd, int client_count); //starts subserver
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid);
 char **addMove(char move_x, char move_y, char pid, char **board);
 int turn();
-void sendMoves(char pid, char other_pid, int sockfd);
+void sendOtherPlayerGIPS(char pid, char other_pid, int sockfd);
 int checkWin(char **board, char pid, int sockfd);
+char getThisPlayersPID(int client_count);
+char getOtherPlayersPID(char pid);
+void sendPID(char pid, int reply_sock_fd);
+void isMyTurn(int *currentTurn);
+void sendMoves(int reply_sock_fd, int numTurns, char pid);
 
 
 
@@ -26,7 +31,7 @@ pthread_mutex_t play2Moves_access = PTHREAD_MUTEX_INITIALIZER;
 int play2Moves[2];
 
 pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
-int whoTurn;
+int whoTurn = 1;
 
 pthread_mutex_t playerWin_access = PTHREAD_MUTEX_INITIALIZER;
 int playerWin;
@@ -34,20 +39,20 @@ int playerWin;
 
 
 //starts each parallel thread, as programmed in game_thread.c
-void start_subserver(int reply_sock_fd, int client_count){
+pthread_t start_subserver(int reply_sock_fd, int client_count){
   pargs args;
   pthread_t pthread;
+
+
   args.socket = reply_sock_fd;
 
-  if (client_count % 2 == 0)
-    args.pid = 1;
-  else if (client_count % 2 == 1)
-    args.pid = 2;
+  args.pid = getThisPlayersPID(client_count);
 
   if (pthread_create(&pthread, NULL, (void *) subserver, (void *) &args) != 0)
-    printf("failed to start subserver\n");
+    perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
+  return pthread;
 }
 
 void *subserver(void *arguments) {
@@ -86,77 +91,48 @@ void *subserver(void *arguments) {
   }
 
   close(reply_sock_fd);
-  return NULL;
-
+  pthread_exit(NULL);
 }
 
 
 /*This is where the magic happens, conversation between client->server server->client
- */
+*/
 int gameLoop(int reply_sock_fd, char pid) {
-  int i, isWin, numTurns = 0;
+  
+  int i, isWin, numTurns = 0, currentTurn = 1;
 
+  //initialize and calloc board
   char **playerBoard = calloc(HEIGHT, sizeof(char *));
   for (i = 0; i < HEIGHT; i++) {
     playerBoard[i] = calloc(DEPTH, sizeof(char));
   }
+  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
 
-  //for the first time, white goes first (Player 2)
-  gips *player_info =calloc(sizeof(gips), sizeof(gips*));
-  int currentTurn;
-  //make variables to keep track of the other player
+  //variables to keep track of the other player
 
-  char other_pid;
-  if (pid == 1)
-    other_pid = 2;
-  else if (pid == 2)
-    other_pid = 1;
-
-
-  pthread_mutex_lock(&whoTurn_access);
-  whoTurn = 1;
-  currentTurn = whoTurn;
-  pthread_mutex_unlock(&whoTurn_access);
-
-  //first packet sent to respective client concerns
-  //the own players PID, every packet after that is
-  //GIPS about the OTHER players board
-  if (pid == 1)
-    send(reply_sock_fd, &pid, sizeof(char), 0);
-  else
-    send(reply_sock_fd, &pid, sizeof(char), 0);
+  sendPID(pid, reply_sock_fd);
 
   int read_count = -1;
 
 
   do {
-    while (currentTurn != pid) {
-
-      pthread_mutex_lock(&whoTurn_access);
-      currentTurn = whoTurn;
-      pthread_mutex_unlock(&whoTurn_access);
-
-      pthread_mutex_lock(&playerWin_access);
-      if (playerWin != 0) {
-        pthread_mutex_unlock(&playerWin_access);
-        return 0;
-      }
-      pthread_mutex_unlock(&playerWin_access);
+      //wait until other players turn is over,
+      //can't play the game all at once!
+    while (currentTurn != pid){
+      isMyTurn(&currentTurn);
+      if(currentTurn == 0) return 0;
       sleep(1);
     }
 
-    //send other players moves and check for win
-    if(numTurns == 0 && pid == 1){
-      gips *other_player = pack(other_pid, FALSE, -1, -1);
-      send_to(other_player, reply_sock_fd);
-    } else
-      sendMoves(pid, other_pid, reply_sock_fd);
+    //send other players moves
+    sendMoves(reply_sock_fd, numTurns, pid);
+
     read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b,
-                          player_info->pid, playerBoard);
+        player_info->pid, playerBoard);
 
     isWin = checkWin(playerBoard, pid, reply_sock_fd);
     //switch the turn global var and set currentTurn to it
@@ -170,52 +146,73 @@ int gameLoop(int reply_sock_fd, char pid) {
 
   free(playerBoard);
   free(player_info);
+
   return isWin;
 
+}
+
+//check for what moves to send
+//if no one has moved yet (IE player 1 to move first)
+//a dummy gips packet with -1 -1 is sent
+void sendMoves(int reply_sock_fd, int numTurns, char pid){
+  char otherPID = getOtherPlayersPID(pid);
+
+  if(numTurns == 0 && pid == 1)
+    send_to(pack(otherPID, FALSE, -1,-1), reply_sock_fd);
+  else
+    sendOtherPlayerGIPS(pid, otherPID, reply_sock_fd);
 }
 
 //send OTHER players moves
 //send other PID
 //send  players turn
-void sendMoves(char pid, char other_pid, int sockfd) {
-  gips *other_player;
+void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd) {
+  
   if (pid == 1) {
+
     //pack a gips player with turns of other player, other players pid, current turn,
     pthread_mutex_lock(&play2Moves_access);
-    other_player = pack(other_pid, FALSE, (char) play2Moves[0], (char) play2Moves[1]);
+    send_to(pack(otherPID, FALSE, (char) play2Moves[0], (char) play2Moves[1]), sockfd);
     pthread_mutex_unlock(&play2Moves_access);
+
   } else {
+
     pthread_mutex_lock(&play1Moves_access);
-    other_player = pack(other_pid, FALSE, (char) play1Moves[0], (char) play1Moves[1]);
+    send_to(pack(otherPID, FALSE, (char) play1Moves[0], (char) play1Moves[1]), sockfd);
     pthread_mutex_unlock(&play1Moves_access);
+
   }
-
-  send_to(other_player, sockfd);
-
 }
 
 //checks for a win using "check for win" in glogic library
 int checkWin(char **board, char pid, int sockfd) {
+ 
   int p1win = 0, p2win = 0;
   int npid = (int) pid;
   int noWin = 0;
 
-  //most up-to-date moves are this player
-  if (pid % 2 == 0) {
+  //call on checkForWin from glogic for subsequent PID's. 
+  //have to do it seperately
+  if (pid % 2 == 0) 
     p2win = check_for_win_server(board);
-  } else {
+  else
     p1win = check_for_win_server(board);
-  }
 
   if ((p1win == TRUE) || (p2win == TRUE)) {
+
     send(sockfd, &npid, sizeof(int), 0);
     pthread_mutex_lock(&playerWin_access);
     playerWin = npid;
     pthread_mutex_unlock(&playerWin_access);
+
     return pid;
+
   } else {
+
     send(sockfd, &noWin, sizeof(int), 0);
+
     return 0;
+
   }
 }
 
@@ -236,6 +233,7 @@ char **addMove(char move_a, char move_b, char pid, char **board) {
     pthread_mutex_unlock(&play2Moves_access);
   }
   return board;
+
 }
 
 //checks if it is this
@@ -261,3 +259,41 @@ int turn() {
     return 1;
   }
 }
+
+char getThisPlayersPID(int client_count){
+  if (client_count % 2 == 0)
+    return 1; 
+  else
+    return 2;
+}
+
+char getOtherPlayersPID(char pid){
+  if (pid == 1)
+    return 2;
+  else
+    return 1;
+}
+
+void sendPID(char pid, int reply_sock_fd){
+  if (pid == 1)
+    send(reply_sock_fd, &pid, sizeof(char), 0);
+  else
+    send(reply_sock_fd, &pid, sizeof(char), 0);
+}
+
+//function to check for turns
+void isMyTurn(int *currentTurn){
+    
+  pthread_mutex_lock(&whoTurn_access);
+    (*currentTurn) = whoTurn;
+    pthread_mutex_unlock(&whoTurn_access);
+
+    pthread_mutex_lock(&playerWin_access);
+    if (playerWin != 0) {
+      pthread_mutex_unlock(&playerWin_access);
+      (*currentTurn) = 0;
+      return;
+    }
+    pthread_mutex_unlock(&playerWin_access);
+}
+

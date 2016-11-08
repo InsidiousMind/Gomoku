@@ -20,14 +20,17 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "asgn6-server.h"
 
 
 int main(void) {
+  pthread_t *id;
   int client_count = 0;
-  server_loop(&client_count);
-  if(client_count != 0)
-    printf("%s%d\n", "It's not zero!", client_count);
-  else
-    printf("It's zero.");
+  
+  id = server_loop(&client_count);
+  
+  pthread_join(id[0], NULL);
+  pthread_join(id[1], NULL);
+  free(id);
 }

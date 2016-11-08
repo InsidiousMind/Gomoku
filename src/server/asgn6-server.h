@@ -5,5 +5,5 @@
 #define NUM_THREADS 2
 #endif
 
-void server_loop(int *client_count);
+pthread_t* server_loop(int *client_count);
 
