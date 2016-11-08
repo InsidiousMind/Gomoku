@@ -31,4 +31,3 @@ int main(void) {
   else
     printf("It's zero.");
 }
-

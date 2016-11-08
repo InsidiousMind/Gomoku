@@ -53,7 +53,7 @@ int connect_to_server() {
 }
 
 int send_to(gips *info, int sock) {
-  
+
   int total = 0;
   int bytesleft = sizeof(info), n;
   int len = sizeof(info);
@@ -97,7 +97,7 @@ int send_misc(void *thing, int sock){
   int bytesleft = sizeof(*thing);
   int n;
   int len = bytesleft;
-  
+
   while( total < len){
     n = send(sock, thing + total, bytesleft, MSG_NOSIGNAL);
     if (n == -1){

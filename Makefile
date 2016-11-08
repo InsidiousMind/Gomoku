@@ -6,7 +6,7 @@
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
 
 CC = gcc
-CFLAGS = -Wall -lpthread -g
+CFLAGS = -Wextra -Wall -lpthread -g
 
 #Server
 
@@ -30,7 +30,9 @@ BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
 # MAKE RULES
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
-dir: 
+make: dir server client
+
+dir:
 	mkdir -p build/lib/
 	mkdir -p build/server/
 	mkdir -p build/client/
@@ -41,10 +43,11 @@ server: $(SRV_OBJ) $(DEP_OBJ)
 client: $(CLIENT_OBJ) $(DEP_OBJ)
 	$(CC) -o build/client/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-all: server client
+all: dir server client
 
-clean: 
+clean:
 	rm -rf build
+	rm -rf vgcore.*
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
@@ -56,7 +59,7 @@ clean:
 main.o: $(SRV_SRC)main.c $(SRV_SRC)asgn6-server.h
 	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
-asgn6-server.o: $(SRV_SRC)asgn6-server.c $(LIB_SRC)network.h $(SRV_SRC)game_thread.h $(SRV_SRC)asgn6-server.h 
+asgn6-server.o: $(SRV_SRC)asgn6-server.c $(LIB_SRC)network.h $(SRV_SRC)game_thread.h $(SRV_SRC)asgn6-server.h
 	$(CC) -c src/server/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_SRC)game_thread.h
@@ -64,7 +67,7 @@ game_thread.o: $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_SRC
 
 #Client Objects
 
-asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)gips.h 
+asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)gips.h
 	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o $(CFLAGS)
 
 #Library Objects

@@ -3,7 +3,7 @@
 
 //keep track of games and game information
 typedef struct game_s {
-  int play1Moves[2]; 
+  int play1Moves[2];
   int play2Moves[2];
   int whoTurn;
   struct game *ref;
@@ -24,4 +24,3 @@ typedef struct pthread_args {
 
 
 void start_subserver(int reply_sock_fd, int client_count); //starts subserver
-
