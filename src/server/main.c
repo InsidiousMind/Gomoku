@@ -18,12 +18,17 @@
  * libraries to run. They are linked when running make server
  *
  */
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "asgn6-server.h"
 
 
 int main(void) {
-  int client_count;
+  int client_count = 0;
   server_loop(&client_count);
+  if(client_count != 0)
+    printf("%s%d\n", "It's not zero!", client_count);
+  else
+    printf("It's zero.");
 }
 

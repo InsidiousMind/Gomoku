@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include <pthread.h>
 #include "../lib/gips.h"
 #include "../lib/network.h"
@@ -69,7 +70,7 @@ void *subserver(void *arguments) {
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-  read_count = readBytes(reply_sock_fd, BUFFERSIZE, &buffer);
+  read_count = recv(reply_sock_fd, &buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
   printf("%s\n", buffer);
 

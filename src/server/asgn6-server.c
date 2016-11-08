@@ -34,17 +34,8 @@ void server_loop(int *client_count)
       continue;
     else
     {
-      if(*client_count > 1) 
-      {
-        send_mesg("Gomoku already has two players, sorry! \n", reply_sock_fd);
-        close(reply_sock_fd);
-        continue;
-      }
-      else
-      {
-        start_subserver(reply_sock_fd, *client_count);
-        *client_count++;
-      }
+       start_subserver(reply_sock_fd, *client_count);
+        (*client_count)++;
     }
   }
 }

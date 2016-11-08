@@ -31,7 +31,7 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-int login() {
+/*int login() {
   // The server needs logic to check if the database already contains a user,
   // and to assign the client a pid. pid_from_server should return a pid that
   // the client was sent from the server.
@@ -39,7 +39,7 @@ int login() {
   printf("Player username: ");
   scanf("%s", username);
   int pid = pid_from_server(username); // We should implement this in network.h
-}
+}*/
 
 void send_move(int a, int b, char **board, int sock, char player) {
   // Send the move to the other guy.
@@ -85,7 +85,7 @@ char **init_board(char **board) {
 int main() {
   char *name = malloc(sizeof(char) * 15);
   char *win = malloc(sizeof(char) * 13);
-  gips *player_info = malloc(8 * sizeof(char));
+  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   int move_x, move_y, i;
   char pid;
 

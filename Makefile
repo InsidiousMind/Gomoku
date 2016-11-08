@@ -6,7 +6,7 @@
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
 
 CC = gcc
-CFLAGS = -g -Wall -Werror -std=c99 -lpthread
+CFLAGS = -Wall -lpthread -g
 
 #Server
 
@@ -54,26 +54,26 @@ clean:
 #Server Objects
 
 main.o: $(SRV_SRC)main.c $(SRV_SRC)asgn6-server.h
-	$(CC) -c src/server/main.c -o build/server/main.o
+	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
 asgn6-server.o: $(SRV_SRC)asgn6-server.c $(LIB_SRC)network.h $(SRV_SRC)game_thread.h $(SRV_SRC)asgn6-server.h 
-	$(CC) -c src/server/asgn6-server.c -o build/server/asgn6-server.o
+	$(CC) -c src/server/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_SRC)game_thread.h
-	$(CC) -c src/server/game_thread.c -o build/server/game_thread.o
+	$(CC) -c src/server/game_thread.c -o build/server/game_thread.o $(CFLAGS)
 
 #Client Objects
 
 asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)gips.h 
-	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o
+	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o $(CFLAGS)
 
 #Library Objects
 
 gips.o: $(LIB_SRC)gips.c $(LIB_SRC)gips.h
-	$(CC) -c src/lib/gips.c -o build/lib/gips.o
+	$(CC) -c src/lib/gips.c -o build/lib/gips.o $(CFLAGS)
 
 glogic.o: $(LIB_SRC)glogic.c $(LIB_SRC)gips.h $(LIB_SRC)glogic.h
-	$(CC) -c src/lib/glogic.c -o build/lib/glogic.o
+	$(CC) -c src/lib/glogic.c -o build/lib/glogic.o $(CFLAGS)
 
 network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
-	$(CC) -c src/lib/network.c -o build/lib/network.o
+	$(CC) -c src/lib/network.c -o build/lib/network.o $(CFLAGS)
