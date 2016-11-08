@@ -133,7 +133,7 @@ int main() {
         while(!valid) {
             printf("\n%s_> ", name);
             scanf("%d%d", &move_x, &move_y);
-            if (move_x < 0 || move_y < 0 || move_x > 8 || move_y > 8) {
+            if (move_x < 0 || move_y < 0 || move_x > 7 || move_y > 7) {
                 valid = 0;
                 printf("Invalid input.");
             } else {

@@ -112,8 +112,6 @@ int gameLoop(int reply_sock_fd, char pid) {
   else if (pid == 2)
     other_pid = 1;
 
-  //game starts with player2's turn, player 1 automatically starts at 3,3
-  //                                                 (middle of the board)
 
   pthread_mutex_lock(&whoTurn_access);
   whoTurn = 1;
@@ -163,6 +161,7 @@ int gameLoop(int reply_sock_fd, char pid) {
     isWin = checkWin(playerBoard, pid, reply_sock_fd);
     //switch the turn global var and set currentTurn to it
     currentTurn = turn();
+    numTurns++;
   } while (isWin == 0);
 
   for(i = 0; i < HEIGHT; i++){
