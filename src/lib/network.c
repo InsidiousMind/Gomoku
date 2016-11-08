@@ -112,22 +112,3 @@ int send_misc(void *thing, int sock){
 
   return n == -1 ? -1 : total;
 }
-
-
-int readBytes(int sock, unsigned int x, void *buffer) {
- 
-  int bytes_read = 0, result;
-
-  while (bytes_read < (signed) x) {
-
-    //can use read here too
-    result = recv(sock, buffer + bytes_read, x - bytes_read, 0);
-    if (result < 1) {
-      perror("[!!!] read error");
-    }
-    bytes_read += result;
-  }
-  return bytes_read;
-}
-
-

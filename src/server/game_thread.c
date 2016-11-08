@@ -172,8 +172,7 @@ int gameLoop(int reply_sock_fd, char pid) {
 
     //send other players moves and check for win
     sendMoves(pid, other_pid, reply_sock_fd);
-
-    read_count = readBytes(reply_sock_fd, sizeof(player_info), player_info);
+    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
@@ -181,10 +180,9 @@ int gameLoop(int reply_sock_fd, char pid) {
                           player_info->pid, playerBoard);
 
     isWin = checkWin(playerBoard, pid, reply_sock_fd);
-
     //switch the turn global var and set currentTurn to it
     currentTurn = turn();
-  } while (isWin != 0);
+  } while (isWin == 0);
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
@@ -229,14 +227,14 @@ int checkWin(char **board, char pid, int sockfd) {
   }
 
   if ((p1win == TRUE) || (p2win == TRUE)) {
-    send_misc(&npid, sockfd);
+    send(sockfd, &npid, sizeof(int), 0);
     //send(sockfd, &npid, sizeof(int), 0);
     pthread_mutex_lock(&playerWin_access);
     playerWin = npid;
     pthread_mutex_unlock(&playerWin_access);
     return pid;
   } else {
-    send_misc(&noWin, sockfd);
+    send(sockfd, &noWin, sizeof(int), 0);
     //send(sockfd, &noWin, sizeof(int), 0);
     return 0;
   }
