@@ -5,8 +5,8 @@
 #include "glogic.h"
 #include "gips.h"
 
-int start_pos_x[HEIGHT];
-int start_pos_y[DEPTH];
+int start_pos_x[HEIGHT*DEPTH];
+int start_pos_y[DEPTH*HEIGHT];
 
 void find_starts(char **board);
 
@@ -19,21 +19,24 @@ int main() {
   for (int i = 0; i < HEIGHT; i++) {
     board[i] = malloc(DEPTH);
   }
-  board[3][3] = 'x';
-  board[2][2] = 'x';
-  board[3][4] = 'x';
+  board[0][1] = 'x';
+  board[0][2] = 'x';
+  board[0][3] = 'x';
+  board[0][4] = 'x';
+  board[0][5] = 'x';
+
   printf("%d\n", check_for_win_server(board));
 }
 
 int check_for_win_server(char **board) {
   int isWin = 0;
+  int i;
   find_starts(board);
 
-  // Set x->is_win to 0 if nobody won, otherwise set it to the
-  // Player number of the winner.
-  //
-  for (int i = 0; i < (sizeof(start_pos_x) / sizeof(char)); i++) {
+  for (i = 0; i < (signed) (sizeof(start_pos_x) / sizeof(int)); i++) {
     isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
+    if(isWin == 1)
+      break;
   }
   return isWin;
 }
@@ -55,11 +58,14 @@ int crawl_board(char **board, int startx, int starty) {
     int x = startx, y = starty, numInARow = 0;
     for (j = 0; j < DEPTH && IsWithinBoard(x, y); j++) {
       // Test this cell here, maybe increment numInARow
-      if (board[x][y] == 'x') numInARow++;
       if (numInARow == 5) return TRUE;
+      if (board[x][y] == 'x') numInARow++;
       x += xdirs[i];
       y += ydirs[i];
     }
+    x = startx;
+    y = starty;
+    numInARow = 0;
   }
   return FALSE;
 }
@@ -69,15 +75,14 @@ int IsWithinBoard(int x, int y) {
 }
 
 void find_starts(char **board) {
-  int k = 0, l = 0;
+  int i = 0, j = 0, k = 0;
 
-  for (int i = 0; i < HEIGHT; i++) {
-    for (int j = 0; j < DEPTH; j++) {
+  for (i = 0; i < HEIGHT; i++) {
+    for (j = 0; j < DEPTH; j++) {
       if (board[i][j] == 'x') {
         start_pos_x[k] = i;
-        start_pos_y[l] = j;
-        ++k;
-        ++j;
+        start_pos_y[k] = j;
+        k++;
       }
     }
   }

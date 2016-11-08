@@ -17,6 +17,8 @@ int check_for_win_server(char **board) {
 
   for (i = 0; i < (signed) (sizeof(start_pos_x) / sizeof(int)); i++) {
     isWin = crawl_board(board, start_pos_x[i], start_pos_y[i]);
+    if(isWin == 1)
+      break;
   }
   return isWin;
 }
@@ -43,8 +45,10 @@ int crawl_board(char **board, int startx, int starty) {
       x += xdirs[i];
       y += ydirs[i];
     }
+    x = startx;
+    y = starty;
+    numInARow = 0;
   }
-
   return FALSE;
 }
 
@@ -53,15 +57,14 @@ int IsWithinBoard(int x, int y) {
 }
 
 void find_starts(char **board) {
-  int i, j, k = 0, l = 0;
+  int i = 0, j = 0, k = 0;
 
   for (i = 0; i < HEIGHT; i++) {
     for (j = 0; j < DEPTH; j++) {
       if (board[i][j] == 'x') {
         start_pos_x[k] = i;
-        start_pos_y[l] = j;
-        ++k;
-        ++j;
+        start_pos_y[k] = j;
+        k++;
       }
     }
   }
