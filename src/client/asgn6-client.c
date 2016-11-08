@@ -41,18 +41,19 @@
   int pid = pid_from_server(username); // We should implement this in network.h
 }*/
 
-void send_move(int a, int b, char **board, int sock, char player) {
+void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
   gips *z = malloc(sizeof(gips));
-  board[a][b] = 'W';
+  board[a][b] = stone;
   z = pack(player, FALSE, a, b);
   send_to(z, sock);
 }
 
-char **get_move(char **board, gips *z) {
+char **get_move(char **board, gips *z, char pid, char stone) {
   // Check if the game is over.
   // Otherwise we just decode
-  board[(int) z->move_a][(int) z->move_b] = 'B';
+  board[(int) z->move_a][(int) z->move_b] = stone;
+
   return board;
 }
 
@@ -61,7 +62,7 @@ void display_board(char **board) {
   int j;
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 8; j++) {
-      printf("%c", board[i][j]);
+      printf("%c%c%c",' ', board[i][j], ' ');
     }
     printf("\n");
   }
@@ -87,7 +88,7 @@ int main() {
   char *win = malloc(sizeof(char) * 13);
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   int move_x, move_y, i;
-  char pid;
+  char pid, stone, otherStone;
 
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
@@ -103,8 +104,17 @@ int main() {
     scanf("%s", name);
     send_mesg(name, sock);
     recv(sock, player_info, sizeof(player_info), 0);
-    board = get_move(board, player_info);
     pid = player_info->pid;
+    if(pid == 1){
+      stone = 'B';
+      otherStone = 'W';
+    }
+    else{
+      stone = 'W';
+      otherStone = 'B';
+    }
+
+    board = get_move(board, player_info, pid, 'B');
     display_board(board);
   } else {
     printf("Couldn't connect to the server. Error number: ");
@@ -118,12 +128,12 @@ int main() {
     if (player_info->isWin != 0) {
       break;
     }
-    board = get_move(board, player_info);
+    board = get_move(board, player_info, pid, otherStone);
     display_board(board);
     printf("Now you can move\n");
     printf("%s_> ", name);
     scanf("%d%d", &move_x, &move_y);
-    send_move(move_x, move_y, board, sock, pid);
+    send_move(move_x, move_y, board, sock, pid, stone);
     //check for win
     recv(sock, &isWin, sizeof(int), 0);
     if (isWin != 0)
