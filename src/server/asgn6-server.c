@@ -20,7 +20,7 @@ int accept_client(int serv_sock); //accepts incoming connection
 void serverLoop(){
   int sock_fd;
   int reply_sock_fd[2];
-  int clientCount;
+  
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
@@ -30,12 +30,10 @@ void serverLoop(){
     
     if ((reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
-//    if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)
-//    continue;
-    start_subserver(reply_sock_fd[0], clientCount);
-    clientCount++;
-//  start_subserver(reply_sock_fd[1], clientCount);
-//  clientCount++;
+    if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)
+      continue;
+ 
+    start_subserver(reply_sock_fd);
   }
 }
 

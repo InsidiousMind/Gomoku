@@ -23,43 +23,63 @@ void sendMoves(int reply_sock_fd, int numTurns, char pid);
 
 
 
-pthread_mutex_t play1Moves_access = PTHREAD_MUTEX_INITIALIZER;
-int play1Moves[2];
-
-pthread_mutex_t play2Moves_access = PTHREAD_MUTEX_INITIALIZER;
-int play2Moves[2];
-
-pthread_mutex_t whoTurn_access = PTHREAD_MUTEX_INITIALIZER;
-int whoTurn = 1;
-
-pthread_mutex_t playerWin_access = PTHREAD_MUTEX_INITIALIZER;
-int playerWin;
-
-
 //starts each parallel thread, as programmed in game_thread.c
-void start_subserver(int reply_sock_fd, int clientCount){
-  pargs args;
+void start_subserver(int reply_sock_fd[2]){
+
+  game gameInfo; 
   pthread_t pthread;
+  pthread_t pthread2;
+
 
   //make the thread detached
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  args.socket = reply_sock_fd;
-  args.pid = getThisPlayersPID(clientCount);
-
-  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) &args) != 0)
+  
+  gameInfo.args.socket = reply_sock_fd[0];
+ 
+  gameInfo.args.socket2 = reply_sock_fd[1];
+  //lock global var. Whoever gets to it first is player 1. that person sets it to TRUE 
+  
+  pthread_mutex_init(&gameInfo.gameInfo_access, NULL);
+  //start two threads, one for each client 
+  gameInfo.player1Taken = FALSE;
+  
+  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) &gameInfo) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
+
+  if (pthread_create(&pthread2, &attr, (void *) subserver, (void *) &gameInfo) != 0)
+    perror("failed to start subserver\n");
+  else
+    printf("subserver %lu started\n", (unsigned long) pthread);
+
 }
+///\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
+//START OF THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\/\
 
 void *subserver(void *arguments) {
   //get the arguments
-  pargs *args = arguments;
-  int reply_sock_fd = args->socket;
-  char pid = args->pid;
+  char pid;
+  int reply_sock_fd; 
+  game *gameInfo = arguments;
+  
+  pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
+  
+  pthread_mutex_lock(&gameInfo_access);
+    if(gameInfo->player1Taken == FALSE){
+      pid = 1;
+      reply_sock_fd = gameInfo->args.socket;
+      gameInfo->player1Taken = TRUE;
+    }else{
+      pid = 2;
+      reply_sock_fd = gameInfo->args.socket2;
+    }
+  pthread_mutex_unlock(&gameInfo_access);
 
+ 
   gips *player_info;
 
   int read_count = -1;
