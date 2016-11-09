@@ -18,9 +18,10 @@ typedef struct game_s {
 typedef struct pthread_args {
   int socket;
   char pid;
+  int **clientCount;
 } pargs;
 #endif /* ARGS */
 
 
 
-pthread_t start_subserver(int reply_sock_fd, int client_count); //starts subserver
+void start_subserver(int reply_sock_fd, int client_count); //starts subserver

@@ -25,12 +25,5 @@
 
 
 int main(void) {
-  pthread_t *id;
-  int client_count = 0;
-  
-  id = server_loop(&client_count);
-  
-  pthread_join(id[0], NULL);
-  pthread_join(id[1], NULL);
-  free(id);
+  serverLoop();
 }

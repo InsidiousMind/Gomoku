@@ -9,7 +9,6 @@
 #include "../lib/glogic.h"
 #include "game_thread.h"
 
-pthread_t start_subserver(int reply_sock_fd, int client_count); //starts subserver
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid);
 char **addMove(char move_x, char move_y, char pid, char **board);
@@ -37,29 +36,27 @@ pthread_mutex_t playerWin_access = PTHREAD_MUTEX_INITIALIZER;
 int playerWin;
 
 
-
 //starts each parallel thread, as programmed in game_thread.c
-pthread_t start_subserver(int reply_sock_fd, int client_count){
+void start_subserver(int reply_sock_fd, int clientCount){
   pargs args;
   pthread_t pthread;
 
-
+  //make the thread detached
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   args.socket = reply_sock_fd;
+  args.pid = getThisPlayersPID(clientCount);
 
-  args.pid = getThisPlayersPID(client_count);
-
-  if (pthread_create(&pthread, NULL, (void *) subserver, (void *) &args) != 0)
+  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) &args) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
-  return pthread;
 }
 
 void *subserver(void *arguments) {
-
   //get the arguments
   pargs *args = arguments;
-
   int reply_sock_fd = args->socket;
   char pid = args->pid;
 
@@ -69,12 +66,12 @@ void *subserver(void *arguments) {
   int win;
 
   int BUFFERSIZE = 256;
-  char buffer[BUFFERSIZE + 1];
+  char *buffer = calloc(BUFFERSIZE, sizeof(char));
 
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-  read_count = recv(reply_sock_fd, &buffer, BUFFERSIZE, 0);
+  read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
   buffer[read_count] = '\0';
   printf("%s\n", buffer);
 
@@ -89,9 +86,10 @@ void *subserver(void *arguments) {
     send_to(player_info, reply_sock_fd);
     send_mesg("You Lose :-(\x00", reply_sock_fd);
   }
-
   close(reply_sock_fd);
+  free(buffer);
   pthread_exit(NULL);
+
 }
 
 
@@ -106,7 +104,7 @@ int gameLoop(int reply_sock_fd, char pid) {
   for (i = 0; i < HEIGHT; i++) {
     playerBoard[i] = calloc(DEPTH, sizeof(char));
   }
-  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
+  gips *player_info = calloc(sizeof(gips), sizeof(gips));
 
   //variables to keep track of the other player
 
