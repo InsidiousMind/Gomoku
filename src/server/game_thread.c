@@ -56,6 +56,7 @@ void start_subserver(int reply_sock_fd[2]){
     printf("subserver %lu started\n", (unsigned long) pthread);
 
 }
+
 ///\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
 //START OF THREAD
 ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\/\
@@ -314,4 +315,7 @@ void isMyTurn(int *currentTurn){
     }
     pthread_mutex_unlock(&playerWin_access);
 }
+///\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
+//END OF THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\/\
 
