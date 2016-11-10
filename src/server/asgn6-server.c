@@ -18,6 +18,7 @@ int start_server(int serv_socket, int backlog);  //starts listening on port for 
 int accept_client(int serv_sock); //accepts incoming connection
 
 void serverLoop(){
+
   int sock_fd;
   int reply_sock_fd[2];
   
@@ -28,6 +29,8 @@ void serverLoop(){
   }
   while(TRUE){
     
+    game *gameInfo = malloc(sizeof(game));
+
     if ((reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
     if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)

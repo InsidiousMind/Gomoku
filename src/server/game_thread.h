@@ -17,6 +17,7 @@ typedef struct game_s {
   //shared variables 
   int play1Moves[2];
   int play2Moves[2];
+ 
   int whoTurn;
   int playerWin;
   int player1Taken;

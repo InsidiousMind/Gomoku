@@ -26,6 +26,14 @@
 #include <sys/stat.h>
 #include <string.h>
 
+//typedefs, not having them in the h file is almost like
+//making the functions 'private'
+//
+void readp(int fd, int index, Player *play);
+void persist(int fd, int *index, Node **head, char *filename);
+void die(const char *message){
+
+
 void insert(int id, int fd, Player *player, Node **head) {
 	printf("ADD %d, %s, %s, %d, %d, %d\n", player->userid, player->last, player->first, player->wins, player->losses, player->ties);
 	Node *tmp = *head;
@@ -184,4 +192,14 @@ void persist(int fd, int *index, Node **head, char *filename){
 
 int get_database() {
 	return open("player_database", O_RDWR);
+}
+
+//throws a meaningful error message if something goes wrong
+//useful, especially in file I/O
+void die(const char *message){
+  if(errno)
+    perror(message);
+  else
+    printf("ERROR: %s\n", message);
+  exit(1);
 }

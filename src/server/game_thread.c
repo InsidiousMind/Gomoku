@@ -21,12 +21,9 @@ void sendPID(char pid, int reply_sock_fd);
 void isMyTurn(int *currentTurn);
 void sendMoves(int reply_sock_fd, int numTurns, char pid);
 
-
-
 //starts each parallel thread, as programmed in game_thread.c
 void start_subserver(int reply_sock_fd[2]){
-
-  game gameInfo; 
+  game gameInfo;
   pthread_t pthread;
   pthread_t pthread2;
 
@@ -63,6 +60,8 @@ void start_subserver(int reply_sock_fd[2]){
 
 void *subserver(void *arguments) {
   //get the arguments
+  
+  
   char pid;
   int reply_sock_fd; 
   game *gameInfo = arguments;
@@ -79,7 +78,6 @@ void *subserver(void *arguments) {
       reply_sock_fd = gameInfo->args.socket2;
     }
   pthread_mutex_unlock(&gameInfo_access);
-
  
   gips *player_info;
 
