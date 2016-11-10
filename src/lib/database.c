@@ -194,3 +194,19 @@ int main(int argc, char *argv[]) {
 	close(fd2);
 	return 0;
 }
+
+Player *get_player_by_name(char *username, int id, int fd, Node *head) {
+	Node *tmp = head;
+	while (tmp != NULL){
+		if (tmp->player_id == id){
+			Player *tmp2 = (Player *)malloc(sizeof(Player));
+			lseek(fd, tmp->index, SEEK_SET);
+			read(fd, tmp2, sizeof(Player));
+			printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last, tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
+			return tmp2;
+		} else {
+			tmp = tmp->next;
+		}
+	}
+	return NULL; 
+}
