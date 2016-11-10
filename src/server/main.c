@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "asgn6-server.h"
-#include "../lib/linkedList.h"
 
 int main(void) {
   serverLoop();
