@@ -23,7 +23,8 @@ void sendMoves(int reply_sock_fd, int numTurns, char pid, void ***args);
 
 //starts each parallel thread, as programmed in game_thread.c
 void start_subserver(int reply_sock_fd[2]){
-  game gameInfo;
+  game *gameInfo = malloc(sizeof(game));
+
   pthread_t pthread;
   pthread_t pthread2;
 
@@ -33,23 +34,23 @@ void start_subserver(int reply_sock_fd[2]){
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   
-  gameInfo.args.socket = reply_sock_fd[0];
+  gameInfo->args.socket = reply_sock_fd[0];
  
-  gameInfo.args.socket2 = reply_sock_fd[1];
+  gameInfo->args.socket2 = reply_sock_fd[1];
   //lock global var. Whoever gets to it first is player 1. that person sets it to TRUE 
   
-  pthread_mutex_init(&gameInfo.gameInfo_access, NULL);
+  pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
   //start two threads, one for each client 
-  gameInfo.player1Taken = FALSE;
-  gameInfo.whoTurn = 1;
-  gameInfo.playerWin = FALSE;
+  gameInfo->player1Taken = FALSE;
+  gameInfo->whoTurn = 1;
+  gameInfo->playerWin = FALSE;
   
-  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) &gameInfo) != 0)
+  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) gameInfo) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
-  if (pthread_create(&pthread2, &attr, (void *) subserver, (void *) &gameInfo) != 0)
+  if (pthread_create(&pthread2, &attr, (void *) subserver, (void *) gameInfo) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
@@ -177,8 +178,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 void sendMoves(int reply_sock_fd, int numTurns, char pid, void ***args){
   char otherPID = getOtherPlayersPID(pid);
   
-  game **temp_gameInfo = **args;
-  game *gameInfo = *temp_gameInfo; 
+  game *gameInfo = **((game ***) args);
   
 
   if(numTurns == 0 && pid == 1)
@@ -204,9 +204,8 @@ void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd, int play1Moves[2],
 
 //checks for a win using "check for win" in glogic library
 int checkWin(char **board, char pid, int sockfd, void ***args) {
-  game **temp_gameInfo = **args;
-  game *gameInfo = *temp_gameInfo; 
-
+  game *gameInfo = **((game ***) args);
+  
   int p1win = 0, p2win = 0;
   int npid = (int) pid;
   int noWin = 0;
@@ -240,10 +239,9 @@ int checkWin(char **board, char pid, int sockfd, void ***args) {
 
 
 char **addMove(char move_a, char move_b, char pid, char **board, void ***args) {
- 
-  game **temp_gameInfo = **args;
-  game *gameInfo = *temp_gameInfo; 
   
+  game *gameInfo = **((game ***) args);
+
   pthread_mutex_lock(&gameInfo->gameInfo_access);
   //lock
   if (pid == 1) {
@@ -270,9 +268,8 @@ char **addMove(char move_a, char move_b, char pid, char **board, void ***args) {
 //make sure turn logic works out
 //set whoTurn
 int turn(void ***args) {
- game **temp_gameInfo = **args;
- game *gameInfo = *temp_gameInfo; 
- 
+  game *gameInfo = **((game ***) args);
+
   pthread_mutex_lock(&gameInfo->gameInfo_access);
 
   if (gameInfo->whoTurn == 1) {
@@ -309,8 +306,7 @@ void sendPID(char pid, int reply_sock_fd){
 
 //function to check for turns
 void isMyTurn(int *currentTurn, void ***args){
- game **temp_gameInfo = **args;
- game *gameInfo = *temp_gameInfo; 
+  game *gameInfo = **((game ***) args);
 
   pthread_mutex_lock(&gameInfo->gameInfo_access);
     (*currentTurn) = gameInfo->whoTurn;
