@@ -55,6 +55,7 @@ void start_subserver(int reply_sock_fd[2]){
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
+  free(gameInfo);
 }
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
@@ -166,7 +167,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
 
   free(playerBoard);
-  free(player_info);
 
   return isWin;
 
