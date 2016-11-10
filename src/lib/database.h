@@ -1,4 +1,4 @@
-//should change these to reflect 
+//should change these to reflect
 //playerGameInfo
 
 typedef struct player {
@@ -19,4 +19,4 @@ typedef struct node {
 void insert(int id, int fd, Player *player, Node **head);
 void update(int id, int fd, Player *player, Node *head);
 void query(int id, int fd, Node *head);
-
+Player *get_player_by_name(char *username, int fd, Node *head);
