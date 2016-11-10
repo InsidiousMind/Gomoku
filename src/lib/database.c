@@ -147,7 +147,7 @@ void print_file(int fd) {
 
 Player *create_player() {
 	Player *x = (Player *)malloc(sizeof(Player));
-	scanf("%d%s%s%d%d%d", &(x->userid), x->first, x->last, &(x->wins), &(x->losses), &(x->ties));
+	scanf("%d%s%s%d%d%d", &(x->userid), x->name, &(x->wins), &(x->losses), &(x->ties));
 	return x;
 }
 
@@ -188,6 +188,21 @@ void persist(int fd, int *index, Node **head, char *filename){
 	}
 	*index = temp_i;
 	*head = temp;
+}
+
+player *get_player_by_name(char *username, fd, Node *head) {
+Node *tmp = head;
+	while (tmp != NULL) {
+		if (tmp->name == username) {
+			Player *tmp2 = (Player *)malloc(sizeof(Player));
+			lseek(fd, tmp->index, SEEK_SET);
+			read(fd, tmp2, sizeof(Player));
+			return tmp2;
+		} else {
+			tmp = tmp->next;
+		}
+	}
+	return 0;
 }
 
 int get_database() {
