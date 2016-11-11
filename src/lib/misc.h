@@ -1,5 +1,5 @@
 void INThandle(int sig);
-int readWord(char **tmp, int size);
+int readWord(void *tmp, int size, int isInt);
 int* readInts(int count);
 
 

@@ -116,7 +116,7 @@ int main() {
 
   if (sock != -1) {
     printf("Enter your name: ");
-    readWord(&name, 15);
+    readWord(name, 15, FALSE);
     send_mesg(name, sock);
     recv(sock, &pid, sizeof(char), 0);
     if(pid == 1) {
