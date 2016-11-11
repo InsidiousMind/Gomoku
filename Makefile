@@ -23,8 +23,8 @@ BUILD_CLIENT_OBJ = build/client/asgn6-client.o
 #Dependencies
 
 LIB_SRC = src/lib/
-DEP_OBJ = gips.o glogic.o network.o misc.o
-BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/misc.o
+DEP_OBJ = gips.o glogic.o network.o misc.o database.o usermgmt.o
+BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/misc.o build/lib/database.o build/lib/usermgmt.o
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
@@ -81,5 +81,12 @@ glogic.o: $(LIB_SRC)glogic.c $(LIB_SRC)gips.h $(LIB_SRC)glogic.h
 
 network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
 	$(CC) -c src/lib/network.c -o build/lib/network.o $(CFLAGS)
+
 misc.o: $(LIB_SRC)misc.c $(LIB_SRC)misc.h
 	$(CC) -c src/lib/misc.c -o build/lib/misc.o $(CFLAGS)
+
+database.o: $(LIB_SRC)database.c
+	$(CC) -c src/lib/database.c -o build/lib/database.o $(CFLAGS)
+
+usermgmt.o: $(LIB_SRC)usermgmt.c
+	$(CC) -c src/lib/usermgmt.c -o build/lib/usermgmt.o $(CFLAGS)

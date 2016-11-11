@@ -167,7 +167,12 @@ Player *get_player_by_name(char *username, int id, int fd, Node *head) {
 			read(fd, tmp2, sizeof(Player));
 			printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last,
 											tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
-			return tmp2;
+			if (tmp2->last == username){
+				return tmp2;
+			} else {
+				printf("That id number belongs to a different username.");
+				return NULL;
+			}
 		} else {
 			tmp = tmp->next;
 		}
