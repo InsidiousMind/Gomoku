@@ -19,3 +19,5 @@ int send_mesg(char *str, int sock);
 int readBytes(int sock, unsigned int x, void *buffer);
 
 int send_misc(void *str, int sock);
+
+gips *get_server_login(int sock, char *username);
