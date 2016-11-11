@@ -23,8 +23,8 @@ BUILD_CLIENT_OBJ = build/client/asgn6-client.o
 #Dependencies
 
 LIB_SRC = src/lib/
-DEP_OBJ = gips.o glogic.o network.o
-BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o
+DEP_OBJ = gips.o glogic.o network.o misc.o
+BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/misc.o
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
@@ -60,7 +60,7 @@ clean:
 main.o: $(SRV_SRC)main.c $(SRV_SRC)asgn6-server.h
 	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
-asgn6-server.o: $(SRV_SRC)asgn6-server.c $(LIB_SRC)network.h $(SRV_SRC)game_thread.h $(SRV_SRC)asgn6-server.h
+asgn6-server.o: $(SRV_SRC)asgn6-server.c $(LIB_SRC)network.h $(LIB_SRC)misc.h $(SRV_SRC)game_thread.h $(SRV_SRC)asgn6-server.h
 	$(CC) -c src/server/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_SRC)game_thread.h
@@ -68,7 +68,7 @@ game_thread.o: $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_SRC
 
 #Client Objects
 
-asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)gips.h
+asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)misc.h $(LIB_SRC)gips.h
 	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o $(CFLAGS)
 
 #Library Objects
@@ -81,3 +81,5 @@ glogic.o: $(LIB_SRC)glogic.c $(LIB_SRC)gips.h $(LIB_SRC)glogic.h
 
 network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
 	$(CC) -c src/lib/network.c -o build/lib/network.o $(CFLAGS)
+misc.o: $(LIB_SRC)misc.c $(LIB_SRC)misc.h
+	$(CC) -c src/lib/misc.c -o build/lib/misc.o $(CFLAGS)

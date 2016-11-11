@@ -24,12 +24,15 @@
 #include <sys/stat.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <errno.h>
+#include <signal.h>
 #include "../lib/network.h"
 #include "../lib/gips.h"
-#include <errno.h>
+#include "../lib/misc.h"
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
+
 
 /*int login() {
 // The server needs logic to check if the database already contains a user,
@@ -91,7 +94,6 @@ char **init_board(char **board) {
   return board;
 }
 
-
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
 int main() {
   char *name = malloc(sizeof(char) * 15);
@@ -128,6 +130,8 @@ int main() {
     exit(0);
   }
 
+  signal(SIGINT, INThandle);
+
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);
@@ -157,8 +161,12 @@ int main() {
     if (isWin != 0)
       break;
   }
-  recv(sock, win, sizeof(char) * 14, 0);
-  printf("%s\n", win);
+  
+  if(isWin != pid)
+    printf("You Lose! :-(\n");
+  else
+    printf("You Win!! :-)\n");
+
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {

@@ -7,9 +7,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <pthread.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../lib/network.h"
+#include "../lib/misc.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
@@ -20,22 +22,44 @@ int accept_client(int serv_sock); //accepts incoming connection
 void serverLoop(){
 
   int sock_fd;
-  int reply_sock_fd[2];
+  
+  pthread_t pthread; 
   
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
     exit(1);
   }
+
+
+  //make the thread detached
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  
+
+  /*once two clients connect init a game server
+  *              Game Server(detached)
+  *              /        \
+  *             /          \
+  *   Client Thread      Client Thread  ( both attached to game server)
+  *
+  *   this gives more control over client threads
+  *   For example, now we can use pthread_join in Game server
+  *   to wait for each client thread to finish
+  *  reducing memory leaks
+  */
+  signal(SIGINT, INThandle);
+
   while(TRUE){
-    
+    int *reply_sock_fd = malloc(2 * sizeof(int));
 
     if ((reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
     if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)
       continue;
- 
-    start_subserver(reply_sock_fd);
+    if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) reply_sock_fd)) != 0)
+      printf("Failed to start Game Server");
   }
 }
 
