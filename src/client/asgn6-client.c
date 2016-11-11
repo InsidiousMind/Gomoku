@@ -28,6 +28,7 @@
 #include <signal.h>
 #include "../lib/network.h"
 #include "../lib/gips.h"
+#include "../lib/misc.h"
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
@@ -93,27 +94,6 @@ char **init_board(char **board) {
   return board;
 }
 
-void INThandle(int sig){
-
-  char c;
-
-  signal(sig, SIG_IGN);
-
-  printf(" NO.\n");
-  printf("OMG..LIKE..NOOOO.. DID YOU?... oh no...");
-  printf("DID YOU REAAAAALLLLLLYY...like REALLLLYY just hit Ctrl-C?\n ");
-  printf("Do you REALLY want to quit? [y/n]");
-
-  c = getchar();
-
-  if(c == 'y' || c == 'Y')
-    exit(0);
-  else
-    signal(SIGINT, INThandle);
-  //grab the newline char so it doesn't screw stuff up
-  getchar();
-}
-
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
 int main() {
   char *name = malloc(sizeof(char) * 15);
@@ -149,7 +129,9 @@ int main() {
     printf("%d\n", errno);
     exit(0);
   }
+
   signal(SIGINT, INThandle);
+
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);

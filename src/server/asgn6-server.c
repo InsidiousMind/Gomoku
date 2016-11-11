@@ -11,6 +11,7 @@
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../lib/network.h"
+#include "../lib/misc.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
@@ -48,6 +49,7 @@ void serverLoop(){
   *   to wait for each client thread to finish
   *  reducing memory leaks
   */
+  signal(SIGINT, INThandle);
 
   while(TRUE){
     int *reply_sock_fd = malloc(2 * sizeof(int));
