@@ -157,8 +157,12 @@ int main() {
     if (isWin != 0)
       break;
   }
-  recv(sock, win, sizeof(char) * 14, 0);
-  printf("%s\n", win);
+  
+  if(isWin != pid)
+    printf("You Lose! :-(\n");
+  else
+    printf("You Win!! :-)\n");
+
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {
