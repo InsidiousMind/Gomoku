@@ -23,6 +23,7 @@ void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 
 //starts each parallel thread, as programmed in game_thread.c
 void start_subserver(int reply_sock_fd[2]){
+  
   game *gameInfo = malloc(sizeof(game));
 
   pthread_t pthread;
@@ -37,10 +38,10 @@ void start_subserver(int reply_sock_fd[2]){
   gameInfo->args.socket = reply_sock_fd[0];
 
   gameInfo->args.socket2 = reply_sock_fd[1];
-  //lock global var. Whoever gets to it first is player 1. that person sets it to TRUE 
-
+   
+  //create a mutex car to avoid race conditoins 
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
-  //start two threads, one for each client 
+ 
   gameInfo->player1Taken = FALSE;
   gameInfo->whoTurn = 1;
   gameInfo->playerWin = FALSE;
@@ -102,9 +103,10 @@ void *subserver(void *arguments) {
   }
 
   close(reply_sock_fd);
+
   free(buffer);
+  free(gameInfo);
   pthread_exit(NULL);
-  free(gameInfo) ;
 }
 
 
@@ -160,6 +162,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   } while (isWin == 0);
 
   printf("Game Ended. Performing cleanup...\n");
+  if(pid != isWin) pthread_mutex_destroy(&gameInfo->gameInfo_access);
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
@@ -167,6 +170,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   free(playerBoard);
   free(player_info);
+
   return isWin;
 
 }
@@ -175,14 +179,19 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 //if no one has moved yet (IE player 1 to move first)
 //a dummy gips packet with -1 -1 is sent
 void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
+
   char otherPID = getOtherPlayersPID(pid);
 
   if(numTurns == 0 && pid == 1)
+
     send_to(pack(otherPID, FALSE, -1,-1), reply_sock_fd);
+
   else{
+
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     sendOtherPlayerGIPS(pid, otherPID, reply_sock_fd, gameInfo->play1Moves, gameInfo->play2Moves, gameInfo->playerWin);
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
+
   }
 }
 
@@ -211,23 +220,24 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
     p2win = check_for_win_server(board);
   else
     p1win = check_for_win_server(board);
-
+    
+   
   if ((p1win == TRUE) || (p2win == TRUE)) {
-
+    
     send(sockfd, &npid, sizeof(int), 0);
-
+    
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     gameInfo->playerWin = npid;
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
-
+    
     return pid;
-
+    
   } else {
-
+    
     send(sockfd, &noWin, sizeof(int), 0);
-
+    
     return 0;
-
+    
   }
 }
 
@@ -306,7 +316,8 @@ int isMyTurn(game *gameInfo, char pid){
   else
     return FALSE;
 }
+
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-  //END OF THREAD
-  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+//END OF THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
