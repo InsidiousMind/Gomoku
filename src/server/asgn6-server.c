@@ -21,7 +21,6 @@ int accept_client(int serv_sock); //accepts incoming connection
 void serverLoop(){
 
   int sock_fd;
-  int *reply_sock_fd = malloc(2 * sizeof(int));
   
   pthread_t pthread; 
   
@@ -30,23 +29,34 @@ void serverLoop(){
     perror("[!!!] error on server start");
     exit(1);
   }
+
+
+  //make the thread detached
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  
+
   /*once two clients connect init a game server
-  *              Game Server
+  *              Game Server(detached)
   *              /        \
   *             /          \
-  *   Client Thread      Client Thread
+  *   Client Thread      Client Thread  ( both attached to game server)
   *
   *   this gives more control over client threads
   *   For example, now we can use pthread_join in Game server
   *   to wait for each client thread to finish
   *  reducing memory leaks
   */
+
   while(TRUE){
+    int *reply_sock_fd = malloc(2 * sizeof(int));
+
     if ((reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
     if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)
       continue;
-    if((pthread_create(&pthread, NULL, (void*) startGameServer, (void*) reply_sock_fd)) != 0)
+    if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) reply_sock_fd)) != 0)
       printf("Failed to start Game Server");
   }
 }

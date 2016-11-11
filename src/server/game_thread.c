@@ -33,16 +33,7 @@ void *startGameServer(void *args){
  
   game *gameInfo = malloc(sizeof(game));
   
-
-  pthread_t pthread;
-  pthread_t pthread2;
-
-
-  //make the thread detached
-/*  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  */
+  pthread_t pthread, pthread2;
 
   gameInfo->args.socket = reply_sock_fd[0];
 
@@ -65,11 +56,15 @@ void *startGameServer(void *args){
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
-  free(reply_sock_fd);
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-  return NULL;
+  
+  free(reply_sock_fd);
+  pthread_mutex_destroy(&gameInfo->gameInfo_access);
+  free(gameInfo);
+
+  pthread_exit(NULL);
 }
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
@@ -124,7 +119,6 @@ void *subserver(void *arguments) {
   close(reply_sock_fd);
 
   free(buffer);
-  free(gameInfo);
   pthread_exit(NULL);
 }
 
@@ -181,7 +175,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   } while (isWin == 0 && read_count != -1 && read_count != 0);
 
   printf("Game Ended. Performing cleanup...\n");
-  if(pid != isWin) pthread_mutex_destroy(&gameInfo->gameInfo_access);
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
