@@ -21,19 +21,28 @@ void sendPID(char pid, int reply_sock_fd);
 int isMyTurn(game *gameInfo, char pid);
 void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 
+
+/*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
+//START OF GAME THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+
 //starts each parallel thread, as programmed in game_thread.c
-void start_subserver(int reply_sock_fd[2]){
-  
+void *startGameServer(void *args){
+ 
+  int *reply_sock_fd = (int*)args;
+ 
   game *gameInfo = malloc(sizeof(game));
+  
 
   pthread_t pthread;
   pthread_t pthread2;
 
 
   //make the thread detached
-  pthread_attr_t attr;
+/*  pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  */
 
   gameInfo->args.socket = reply_sock_fd[0];
 
@@ -46,21 +55,31 @@ void start_subserver(int reply_sock_fd[2]){
   gameInfo->whoTurn = 1;
   gameInfo->playerWin = FALSE;
 
-  if (pthread_create(&pthread, &attr, (void *) subserver, (void *) gameInfo) != 0)
+  if (pthread_create(&pthread, NULL, (void *) subserver, (void *) gameInfo) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
-  if (pthread_create(&pthread2, &attr, (void *) subserver, (void *) gameInfo) != 0)
+  if (pthread_create(&pthread2, NULL, (void *) subserver, (void *) gameInfo) != 0)
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
+  free(reply_sock_fd);
+
+  pthread_join(pthread, NULL);
+  pthread_join(pthread2, NULL);
+  return NULL;
 }
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-  //START OF THREAD
-  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+//END OF GAME THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+
+
+/*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
+//START OF CLIENT THREAD
+///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
 void *subserver(void *arguments) {
   //get the arguments
@@ -159,7 +178,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
     numTurns++;
 
-  } while (isWin == 0);
+  } while (isWin == 0 && read_count != -1 && read_count != 0);
 
   printf("Game Ended. Performing cleanup...\n");
   if(pid != isWin) pthread_mutex_destroy(&gameInfo->gameInfo_access);
@@ -318,6 +337,6 @@ int isMyTurn(game *gameInfo, char pid){
 }
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-//END OF THREAD
+//END OF CLIENT THREAD
 ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 

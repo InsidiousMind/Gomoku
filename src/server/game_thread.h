@@ -29,4 +29,4 @@ typedef struct game_s {
 #endif /* GAME */
 
 
-void start_subserver(int reply_sock_fd[2]); //starts subserver
+void *startGameServer(void *args); //starts subserver
