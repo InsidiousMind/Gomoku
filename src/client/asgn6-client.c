@@ -26,6 +26,8 @@
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
+#include <ctype.h>
+
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/misc.h"
@@ -99,8 +101,9 @@ int main() {
   char *name = malloc(sizeof(char) * 15);
   char *win = malloc(sizeof(char) * 13);
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
-  int move_x, move_y, i;
+  int i;
   char pid, stone, otherStone;
+  int *inputInts;
 
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
@@ -113,7 +116,7 @@ int main() {
 
   if (sock != -1) {
     printf("Enter your name: ");
-    scanf("%s", name);
+    readWord(&name, 15);
     send_mesg(name, sock);
     recv(sock, &pid, sizeof(char), 0);
     if(pid == 1) {
@@ -146,15 +149,17 @@ int main() {
     int valid = 0;
     while(!valid) {
       printf("\n%s_> ", name);
-      scanf("%d%d", &move_x, &move_y);
-      if (move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8) {
+      inputInts = readInts(2);
+      if ((isdigit(inputInts[0]) && isdigit(inputInts[1])) && 
+          (inputInts[0] < 1 || inputInts[1] < 1 || inputInts[0] > 8 || inputInts[1] > 8)) {
         valid = 0;
         printf("Invalid input.");
       } else {
         valid = 1;
       }
     }
-    send_move(--move_x, --move_y, board, sock, pid, stone);
+    send_move(--inputInts[0], --inputInts[1], board, sock, pid, stone);
+   
     //check for win
     display_board(board);
     recv(sock, &isWin, sizeof(int), 0);
@@ -172,8 +177,10 @@ int main() {
   for (i = 0; i < HEIGHT; i++) {
     free(board[i]);
   }
+
   free(board);
   free(name);
   free(win);
+  free(inputInts);
   free(player_info);
 }
