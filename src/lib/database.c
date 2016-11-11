@@ -15,6 +15,10 @@
  *	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
  */
 
+ // Printf calls will be used on the server for debugging.
+ // Scanf calls should be replaced.
+
+#include "database.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,21 +26,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
-
-typedef struct player {
-	int userid;
-	char first[20];
-	char last[20];
-	int wins;
-	int losses;
-	int ties;
-} Player;
-
-typedef struct node {
-	int player_id;
-	int index;
-	struct node *next;
-} Node;
 
 void insert(int id, int fd, Player *player, Node **head) {
 	printf("ADD %d, %s, %s, %d, %d, %d\n", player->userid, player->last, player->first, player->wins, player->losses, player->ties);
@@ -149,50 +138,24 @@ void print_file(int fd) {
 	printf("End\n");
 }
 
-Player *create_player() {
+Player *create_player(int pid, char *first, char *last) {
 	Player *x = (Player *)malloc(sizeof(Player));
-	scanf("%d%s%s%d%d%d", &(x->userid), x->first, x->last, &(x->wins), &(x->losses), &(x->ties));
+	x->userid = pid;
+ 	x->first = first;
+	x->last = last;
+	x->wins = 0;
+	x->losses = 0;
+	x->ties = 0;
 	return x;
 }
 
-Player *create_player_up() {
+Player *create_player_up(int pid, int wins, int losses, int ties) {
 	Player *x = (Player *)malloc(sizeof(Player));
-	scanf("%d%d%d%d", &(x->userid), &(x->wins), &(x->losses), &(x->ties));
+	x->userid = pid;
+	x->wins = wins;
+	x->losses = losses;
+	x->ties = ties;
 	return x;
-}
-
-int main(int argc, char *argv[]) {
-	if (argc != 2){
-		printf("Usage: asgn4 filename\n");
-		exit(0);
-	}
-	Node *head = NULL;
-	int fd = open(argv[1], O_RDWR|O_CREAT, 0666);
-	char cmd = ' ';
-	while (cmd != '#') {
-		cmd = getchar();
-		if (cmd == '+') {
-			Player *p = create_player();
-			insert(p->userid, fd, p, &head);
-			free(p);
-		}
-		if (cmd == '*') {
-			Player *p = create_player_up();
-			update(p->userid, fd, p, head);
-			free(p);
-		}
-		if (cmd == '?') {
-			int id;
-			scanf("%d", &id);
-			query(id, fd, head);
-		}
-	}
-	close(fd);
-	int fd2 = open(argv[1], O_RDWR);
-	print_list(head);
-	print_file(fd2);
-	close(fd2);
-	return 0;
 }
 
 Player *get_player_by_name(char *username, int id, int fd, Node *head) {
@@ -202,11 +165,13 @@ Player *get_player_by_name(char *username, int id, int fd, Node *head) {
 			Player *tmp2 = (Player *)malloc(sizeof(Player));
 			lseek(fd, tmp->index, SEEK_SET);
 			read(fd, tmp2, sizeof(Player));
-			printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last, tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
+			printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last,
+											tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
 			return tmp2;
 		} else {
 			tmp = tmp->next;
 		}
 	}
-	return NULL; 
+	printf("Player with id %d not found.", id);
+	return NULL;
 }

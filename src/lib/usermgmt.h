@@ -1,6 +1,10 @@
 // This file will be used to handle user registration and
 // logging in to the server.
 
+// This file should contain subroutine/function definitions for handling
+// creating player objects and passing them between various functions for
+// handling by the client and server.
+
 // This should be used by the CLIENT to send newly-registered user or to
 // send/recieve an existing user
 // from the server.
