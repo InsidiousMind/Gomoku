@@ -117,11 +117,13 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   int i, isWin, numTurns = 0;
 
-  //initialize and calloc board
+  //initialize and calloc a game-board
+  //this board is on a per-player basis
   char **playerBoard = calloc(HEIGHT, sizeof(char *));
   for (i = 0; i < HEIGHT; i++) {
     playerBoard[i] = calloc(DEPTH, sizeof(char));
   }
+
   gips *player_info = calloc(sizeof(gips), sizeof(gips));
 
 
@@ -139,17 +141,22 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     //send other players moves
     sendMoves(reply_sock_fd, numTurns, pid, gameInfo);
 
-    read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0);
+    if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
+      perror("[!!!] ERROR: receive error in GameLoop");
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b,
         player_info->pid, playerBoard, gameInfo);
 
+    //check for a win 
     isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
-    //switch the turn global var and set currentTurn to it
+   
+    //switch the turn 
     turn(gameInfo);
+
     numTurns++;
+
   } while (isWin == 0);
 
   printf("Game Ended. Performing cleanup...\n");
