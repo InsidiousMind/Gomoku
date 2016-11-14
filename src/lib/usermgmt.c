@@ -3,9 +3,8 @@
 #include "network.h"
 #include "gips.h"
 
-int login(int sock, char *username) {
+int login(int sock, int pid, char *username) {
   //get pid from the server based on the username.
-  int pid = 0;
   return pid;
 }
 
