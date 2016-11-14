@@ -91,7 +91,8 @@ int main() {
   char *win = malloc(sizeof(char) * 13);
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   int move_x, move_y, i;
-  char pid, stone, otherStone;
+  int pid;
+  char stone, otherStone;
 
   int sock = connect_to_server();
 
@@ -99,8 +100,9 @@ int main() {
   scanf("%s", name);
   printf("Player ID: ");
   scanf("%d", &pid);
-  // Login will reassign a PID if that one isn't right, or will just let them keep the one they supplied.
-  login(sock, pid, name);
+  // Login will reassign a PID if that one isn't right,
+  // or will just let them keep the one they supplied.
+  pid = login(sock, pid, name);
 
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
@@ -160,7 +162,7 @@ int main() {
     if (isWin != 0)
       break;
   }
-  
+
   if(isWin != pid)
     printf("You Lose! :-(\n");
   else
