@@ -34,15 +34,6 @@
 #define BACKLOG 10
 
 
-/*int login() {
-// The server needs logic to check if the database already contains a user,
-// and to assign the client a pid. pid_from_server should return a pid that
-// the client was sent from the server.
-char *username = malloc(sizeof(char) * 20);
-printf("Player username: ");
-scanf("%s", username);
-int pid = pid_from_server(username); // We should implement this in network.h
-}*/
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
@@ -102,13 +93,21 @@ int main() {
   int move_x, move_y, i;
   char pid, stone, otherStone;
 
+  int sock = connect_to_server();
+
+  printf("Username: ");
+  scanf("%s", name);
+  printf("Player ID: ");
+  scanf("%d", &pid);
+  // Login will reassign a PID if that one isn't right, or will just let them keep the one they supplied.
+  login(sock, pid, name);
+
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
   for (i = 0; i < HEIGHT; i++) {
     board[i] = malloc(DEPTH * sizeof(char *));
   }
   board = init_board(board);
-  int sock = connect_to_server();
   printf("Gomoku Client for Linux\n");
 
   if (sock != -1) {
