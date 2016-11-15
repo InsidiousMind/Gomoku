@@ -13,9 +13,6 @@ void INThandle(int sig){
 
   signal(sig, SIG_IGN);
 
-  printf(" NO.\n");
-  printf("OMG..LIKE..NOOOO.. DID YOU?... oh no...");
-  printf("DID YOU REAAAAALLLLLLYY...like REALLLLYY just hit Ctrl-C?\n ");
   printf("Do you REALLY want to quit? [y/n]");
 
   c = getchar();
@@ -30,7 +27,7 @@ void INThandle(int sig){
 
 
 
-int* readInts(int count){
+/*int* readInts(int count){
   int *numArr = calloc(count,sizeof(*numArr));
 
   int i;
@@ -40,7 +37,7 @@ int* readInts(int count){
   }
   flush(stdin);
   return numArr;  
-}
+}*/
 
 //String MUST be malloced when using this function
 int readWord(char **tmp, int size) {
