@@ -31,6 +31,8 @@
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/misc.h"
+#include "../lib/database.h"
+#include "../lib/usermgmt.h"
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
@@ -99,18 +101,17 @@ int main() {
 
   int sock = connect_to_server();
 
-  /*printf("Username: ");
+  printf("Username: ");
   scanf("%s", name);
   printf("Player ID: ");
   scanf("%d", &uniquePID);
-  */
+  
 
   //send username
   //send PID
   
   // Login will reassign a PID if that one isn't right,
   // or will just let them keep the one they supplied.
-  //pid = login(sock, &uniquePid, name);
 
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
@@ -124,11 +125,11 @@ int main() {
   
   //Name and stuff 
   if (sock != -1) {
-    printf("Enter your name: ");
-    readWord(name, 15, FALSE);
-    send_mesg(name, sock);
+    uniquePID = login(sock, uniquePID, name) ;
     recv(sock, &pid, sizeof(char), 0);
- 
+    //TODO 
+    //Inform user of Unique PID (If it was the one they requested or different)
+
     if(pid == 1) {
       stone = 'B';
       otherStone = 'W';

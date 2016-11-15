@@ -8,7 +8,7 @@
 // This should be used by the CLIENT to send newly-registered user or to
 // send/recieve an existing user
 // from the server.
-int login(int sock, char *username);
+int login(int sock, int upid, char *username);
 // This will allow the server to receive the login/registration from the CLIENT
 // and send a PID back to the player. The PID will not change, every time it's
 // sent back it will be the same value in the database.

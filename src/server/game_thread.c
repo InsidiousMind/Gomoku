@@ -59,8 +59,7 @@ void *startGameServer(void *args){
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-  printf("Client Threads Ended. Game Exiting. Performing cleanup...\n");
-
+  
   free(reply_sock_fd);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
@@ -175,7 +174,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
 
-  printf("Client Exit. Performing cleanup...\n");
+  printf("Game Ended. Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
