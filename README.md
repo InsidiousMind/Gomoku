@@ -1,6 +1,8 @@
 ## Program: 
  - A Networked Gomoku Game
 
+### Proposal Due Wednesday
+
 ## Author:
   - Andrew Plaza and Sean Batzel
 
