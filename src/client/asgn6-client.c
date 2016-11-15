@@ -113,10 +113,11 @@ int main() {
   printf("Gomoku Client for Linux\n");
 
   if (sock != -1) {
-    printf("Enter your name: ");
-    scanf("%s", name);
-    send_mesg(name, sock);
-    recv(sock, &pid, sizeof(char), 0);
+    // We don't need these after all.
+    //printf("Enter your name: ");
+    //scanf("%s", name);
+    //send_mesg(name, sock);
+    //recv(sock, &pid, sizeof(char), 0);
     if(pid == 1) {
       stone = 'B';
       otherStone = 'W';
