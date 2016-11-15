@@ -129,7 +129,6 @@ int main() {
     recv(sock, &pid, sizeof(char), 0);
     //TODO 
     //Inform user of Unique PID (If it was the one they requested or different)
-
     if(pid == 1) {
       stone = 'B';
       otherStone = 'W';
