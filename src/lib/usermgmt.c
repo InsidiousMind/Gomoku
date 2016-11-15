@@ -5,7 +5,9 @@
 
 int login(int sock, int pid, char *username) {
   //get pid from the server based on the username.
-  
+  send(sock, pid, len(pid), 0);
+  send(sock, username, len(username), 0);
+  recv(sock, pid, len(int), 0);
   return pid;
 }
 
