@@ -37,8 +37,6 @@
 #define HTTPPORT "32200"
 #define BACKLOG 10
 
-
-
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
   gips *z = malloc(sizeof(gips));
@@ -181,10 +179,13 @@ int main() {
     printf("You Lose! :-(\n");
   else
     printf("You Win!! :-)\n");
-  Player *player; 
+
+  Player *player = malloc(sizeof(Player)); 
   recv(sock, player, sizeof(Player), 0);
-  printf("Your Stats Are: \n");
-  print_player(player);
+  printf("%s%s%s%d%s\n", "Your Stats for username ", name, " and unique ID ", uniquePID, " are: \n");
+  printf("%s%d\n", "Wins: ", player->wins);
+  printf("%s%d\n", "Losses: ", player->losses);
+  printf("%s%d\n", "Ties: ", player->ties);
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {

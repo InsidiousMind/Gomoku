@@ -185,18 +185,25 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
     //wait until player turn
     while(isMyTurn(gameInfo, pid) != TRUE) sleep(1);
-
+    
     //send other players moves
     sendMoves(reply_sock_fd, numTurns, pid, gameInfo);
+    
+    int wpid = 0;
+    pthread_mutex_lock(&gameInfo->gameInfo_access);
+    wpid = gameInfo->playerWin;
+    pthread_mutex_unlock(&gameInfo->gameInfo_access);
+    if(wpid!=0)
+      break;
 
     if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
       perror("[!!!] ERROR: receive error in GameLoop");
-
+  
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b,
         player_info->pid, playerBoard, gameInfo);
-
+    
     //check for a win 
     isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
    

@@ -130,6 +130,7 @@ void print_file(int fd) {
 }
 
 void print_player(Player *player){
+  
   printf("%d, %s, %d, %d, %d\n", player->userid, 
       player->username,
       player->wins, 
