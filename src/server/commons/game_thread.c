@@ -150,7 +150,6 @@ void *subserver(void *arguments) {
   printf("Game Ended. Writing Player information to struct...");
   
   recPlayer((&(gameInfo->args.head_access)), uPID, gameInfo->args.fd, win, gameInfo->args.head, username, PID, reply_sock_fd);
- 
   
   close(reply_sock_fd);
 

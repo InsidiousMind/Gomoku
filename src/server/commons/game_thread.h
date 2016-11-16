@@ -4,7 +4,7 @@
 //arguments for gameServer
 typedef struct game_srv_args
 {
-  int *reply_sock_fd; 
+  int reply_sock_fd[2]; 
   int fd;
   Node *head;
   pthread_mutex_t *head_access;
