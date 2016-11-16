@@ -7,9 +7,11 @@
 #include "network.h"
 #include "gips.h"
 
-int login(int sock, int upid, char *username) {
+int login(int sock, int uniquePID, char *username) {
+
+  int upid = uniquePID;
   //get pid from the server based on the username.
-  send(sock, &upid, sizeof(upid), 0);
+  send(sock, &upid, sizeof(int), 0);
   send_mesg(username, sock);
   recv(sock, &upid, sizeof(int), 0);
   return upid;
@@ -30,7 +32,7 @@ Player *server_add_user(char *username, int id, int fd, Node *head) {
   // Otherwise, create a new database entry and return THAT pid.
   Player *x;
   printf("Looking for player: %d %s", id, username);
-  x = get_player_by_name(username, id, fd, head, FALSE);
+  x = query(username, id, fd, head, FALSE);
   if (check_valid_ptr(x)) {
     printf("Player found, returning.");
   } else if (!check_valid_ptr(x)){
