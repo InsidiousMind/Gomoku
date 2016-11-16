@@ -1,10 +1,6 @@
-//should change these to reflect
-//playerGameInfo
-
 typedef struct player {
   int userid;
-  char *first;
-  char *last;
+  char *username;
   int wins;
   int losses;
   int ties;
@@ -16,9 +12,12 @@ typedef struct node {
   struct node *next;
 } Node;
 
-void insert(int id, int fd, Player *player, Node **head);
-void update(int id, int fd, Player *player, Node *head);
-void query(int id, int fd, Node *head);
-Player *get_player_by_name(char *username, int id, int fd, Node *head);
+int insert(int id, int fd, Player *player, Node **head);
+int update(int id, int fd, Player *player, Node *head);
+Player *query(char *username, int id, int fd, Node *head, int verbose);
 Player *create_player();
 Player *create_player_up();
+void print_list(Node *head);
+void print_file(int fd);
+void print_player(Player *player);
+

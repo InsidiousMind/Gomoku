@@ -1,11 +1,20 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "database.h"
 #include "network.h"
 #include "gips.h"
 
-int login(int sock, int pid, char *username) {
+int login(int sock, int uniquePID, char *username) {
+
+  int upid = uniquePID;
   //get pid from the server based on the username.
-  return pid;
+  send(sock, &upid, sizeof(int), 0);
+  send_mesg(username, sock);
+  recv(sock, &upid, sizeof(int), 0);
+  return upid;
 }
 
 int check_valid_ptr(void *ptr) {
@@ -23,13 +32,13 @@ Player *server_add_user(char *username, int id, int fd, Node *head) {
   // Otherwise, create a new database entry and return THAT pid.
   Player *x;
   printf("Looking for player: %d %s", id, username);
-  x = get_player_by_name(username, id, fd, head);
+  x = query(username, id, fd, head, FALSE);
   if (check_valid_ptr(x)) {
     printf("Player found, returning.");
   } else if (!check_valid_ptr(x)){
     printf("That player doesn't exist yet.");
     x->userid = id;
-    x->last = username;
+    x->username = username;
     x->wins = 0;
     x->losses = 0;
     x->ties = 0;

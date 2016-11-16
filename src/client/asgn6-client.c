@@ -26,14 +26,16 @@
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
+#include <ctype.h>
+
 #include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/misc.h"
+#include "../lib/database.h"
+#include "../lib/usermgmt.h"
 
 #define HTTPPORT "32200"
 #define BACKLOG 10
-
-
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
@@ -91,30 +93,40 @@ int main() {
   char *win = malloc(sizeof(char) * 13);
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   int move_x, move_y, i;
-  char pid, stone, otherStone;
+  char pid;
+  int uniquePID;
+  char stone, otherStone;
 
   int sock = connect_to_server();
 
   printf("Username: ");
   scanf("%s", name);
   printf("Player ID: ");
-  scanf("%d", &pid);
-  // Login will reassign a PID if that one isn't right, or will just let them keep the one they supplied.
-  login(sock, pid, name);
+  scanf("%d", &uniquePID);
+  
+
+  //send username
+  //send PID
+  
+  // Login will reassign a PID if that one isn't right,
+  // or will just let them keep the one they supplied.
 
   char **board = malloc(HEIGHT * sizeof(char *));
   int isWin;
+
   for (i = 0; i < HEIGHT; i++) {
     board[i] = malloc(DEPTH * sizeof(char *));
   }
+
   board = init_board(board);
   printf("Gomoku Client for Linux\n");
-
+  
+  //Name and stuff 
   if (sock != -1) {
-    printf("Enter your name: ");
-    scanf("%s", name);
-    send_mesg(name, sock);
+    uniquePID = login(sock, uniquePID, name) ;
     recv(sock, &pid, sizeof(char), 0);
+    //TODO 
+    //Inform user of Unique PID (If it was the one they requested or different)
     if(pid == 1) {
       stone = 'B';
       otherStone = 'W';
@@ -130,7 +142,6 @@ int main() {
   }
 
   signal(SIGINT, INThandle);
-
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);
@@ -141,36 +152,46 @@ int main() {
       board = get_move(board, player_info, pid, otherStone);
     }
     display_board(board);
+    
     printf("Now you can move\n");
-    int valid = 0;
-    while(!valid) {
+    int valid = FALSE;
+    
+    signal(SIGINT, INThandle);
+    while(valid == FALSE) {
       printf("\n%s_> ", name);
       scanf("%d%d", &move_x, &move_y);
-      if (move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8) {
-        valid = 0;
+      if(move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8)
         printf("Invalid input.");
-      } else {
-        valid = 1;
-      }
+      else 
+        valid = TRUE;
     }
+
     send_move(--move_x, --move_y, board, sock, pid, stone);
+   
     //check for win
     display_board(board);
     recv(sock, &isWin, sizeof(int), 0);
     if (isWin != 0)
       break;
   }
-  
+
   if(isWin != pid)
     printf("You Lose! :-(\n");
   else
     printf("You Win!! :-)\n");
 
+  Player *player = malloc(sizeof(Player)); 
+  recv(sock, player, sizeof(Player), 0);
+  printf("%s%s%s%d%s\n", "Your Stats for username ", name, " and unique ID ", uniquePID, " are: \n");
+  printf("%s%d\n", "Wins: ", player->wins);
+  printf("%s%d\n", "Losses: ", player->losses);
+  printf("%s%d\n", "Ties: ", player->ties);
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {
     free(board[i]);
   }
+
   free(board);
   free(name);
   free(win);

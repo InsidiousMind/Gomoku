@@ -21,8 +21,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "asgn6-server.h"
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include "../lib/database.h"
+#include "commons/asgn6-server.h"
+#include "commons/server_db.h"
 
-int main(void) {
-  serverLoop();
+void die(const char *message);
+
+int main(int argc, char *argv[]) {
+
+  int fd = 0;
+  char *filename;
+
+  //init mutex for access to the database
+  pthread_mutex_t head_access = PTHREAD_MUTEX_INITIALIZER;
+
+  Node *head = NULL;
+  if(argc <= 1){
+    fprintf(stderr, "Usage: './server filename\n'");
+    exit(1);
+  }else{
+    //y/n, if it's not y or Y then it's assumed to be no
+    printf("Load data from previous file (if it exists)? [Y/n] ") ;
+    char c = getchar();
+   if(c == 'y' || c == 'Y') {
+    filename = malloc(strlen(argv[1]) + 1);
+    memset(filename, 0, sizeof(*filename));
+    fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+   }else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+  }
+  if(fd < 0) die("[ERROR] open failed");
+
+  serverLoop(fd, &head, &head_access);
+
+  free(filename);
+  close(fd);
+}
+
+void die(const char *message){
+  if(errno)
+    perror(message);
+  else
+    printf("ERROR: %s\n", message);
+  exit(1);
 }
