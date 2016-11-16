@@ -193,7 +193,18 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   //TODO 
   //write to struct in proper place
   //
-  //
+  // Try to insert.
+  // If insert returns 0,
+  // try to update.
+  // If update returns 0`,
+  // cry.
+  if (insert(upid, fd, player, head)) {
+    printf("Player committed to database.");
+  } else if (update(upid, fd, player, head)) {
+    printf("Player committed to database.");
+  } else {
+    printf("DATABASE COMMIT FAILED.");
+  }
 
   printf("Game Ended. Performing cleanup...\n");
 

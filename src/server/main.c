@@ -25,9 +25,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "../lib/database.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"
-#include "../lib/database.h"
+
 
 void die(const char *message);
 
