@@ -8,9 +8,6 @@ void INThandle(int sig){
 
   signal(sig, SIG_IGN);
 
-  printf(" NO.\n");
-  printf("OMG..LIKE..NOOOO.. DID YOU?... oh no...");
-  printf("DID YOU REAAAAALLLLLLYY...like REALLLLYY just hit Ctrl-C?\n ");
   printf("Do you REALLY want to quit? [y/n]");
 
   c = getchar();
