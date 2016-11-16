@@ -5,5 +5,5 @@
 #define NUM_THREADS 2
 #endif
 
-void serverLoop();
+void serverLoop(int fd, Node **head);
 

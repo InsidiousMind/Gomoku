@@ -26,9 +26,15 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
+#include "gips.h"
 
 void insert(int id, int fd, Player *player, Node **head) {
-	printf("ADD %d, %s, %s, %d, %d, %d\n", player->userid, player->last, player->first, player->wins, player->losses, player->ties);
+	printf("ADD %d, %s, %s, %d, %d, %d\n", player->userid, 
+                                         player->last, 
+                                         player->first, 
+                                         player->wins, 
+                                         player->losses, 
+                                         player->ties);
 	Node *tmp = *head;
 	if (tmp != NULL) {
 		if (tmp->player_id == id) {
@@ -100,21 +106,30 @@ void update(int id, int fd, Player *player, Node *head) {
 	}
 }
 
-void query(int id, int fd, Node *head) {
+int query(int id, int fd, Node *head, int verbose) {
 	Node *tmp = head;
-	while (tmp != NULL){
-		if (tmp->player_id == id){
+	
+  while (tmp != NULL){
+		
+    if (tmp->player_id == id){
 			Player *tmp2 = (Player *)malloc(sizeof(Player));
 			lseek(fd, tmp->index, SEEK_SET);
 			read(fd, tmp2, sizeof(Player));
-			printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last, tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
+
+		  if(verbose == TRUE)	
+        printf("QUERY: %d, %s, %s, %d, %d, %d\n", tmp2->userid, tmp2->last, tmp2->first, tmp2->wins, tmp2->losses, tmp2->ties);
+
 			free(tmp2);
-			return;
+			return -1;
+
 		} else {
 			tmp = tmp->next;
 		}
 	}
-	printf("ERROR - Player does not exist.\n");
+
+  if(verbose == TRUE)
+	  printf("ERROR - Player does not exist.\n");
+  return -1;
 }
 
 void print_list(Node *head) {
@@ -158,7 +173,9 @@ Player *create_player_up(int pid, int wins, int losses, int ties) {
 	return x;
 }
 
-Player *get_player_by_name(char *username, int id, int fd, Node *head) {
+
+//for querying
+Player *get_player_by_name(char *username, int id, int fd, Node *head, int verbose) {
 	Node *tmp = head;
 	while (tmp != NULL){
 		if (tmp->player_id == id){
@@ -170,13 +187,19 @@ Player *get_player_by_name(char *username, int id, int fd, Node *head) {
 			if (tmp2->last == username){
 				return tmp2;
 			} else {
-				printf("That id number belongs to a different username.");
+        if(verbose == TRUE)
+			    printf("That id number belongs to a different username.");
 				return NULL;
 			}
 		} else {
 			tmp = tmp->next;
 		}
 	}
-	printf("Player with id %d not found.", id);
+  if(verbose == TRUE)
+	  printf("Player with id %d not found.", id);
 	return NULL;
 }
+
+
+//void addPlayer(int id, )
+

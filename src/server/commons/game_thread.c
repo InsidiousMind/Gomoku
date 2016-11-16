@@ -4,9 +4,10 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include "../lib/gips.h"
-#include "../lib/network.h"
-#include "../lib/glogic.h"
+#include "../../lib/gips.h"
+#include "../../lib/network.h"
+#include "../../lib/glogic.h"
+#include "../../lib/database.h"
 #include "game_thread.h"
 
 void *subserver(void *args); //starts subserver
@@ -30,16 +31,20 @@ int genUPID();
 //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
  
-  int *reply_sock_fd = (int*)args;
+  gameArgs *gameSrvInfo = (gameArgs*)args;
+
+
  
   game *gameInfo = malloc(sizeof(game));
   
   pthread_t pthread, pthread2;
 
-  gameInfo->args.socket = reply_sock_fd[0];
+  gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
 
-  gameInfo->args.socket2 = reply_sock_fd[1];
-   
+  gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
+  gameInfo->args.fd = gameSrvInfo->fd;
+  gameInfo->args.head = gameSrvInfo->head;   
+
   //create a mutex car to avoid race conditoins 
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
  
@@ -61,7 +66,7 @@ void *startGameServer(void *args){
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
   
-  free(reply_sock_fd);
+  free(gameSrvInfo->reply_sock_fd);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
 
@@ -80,11 +85,14 @@ void *startGameServer(void *args){
 void *subserver(void *arguments) {
   //get the arguments
 
-
   int PID, uPID;
-  int reply_sock_fd; 
+  int reply_sock_fd, fd; 
+  Node *head;
   //game *gameInfo = arguments;
   game *gameInfo = ((game *) arguments);
+  
+  head = gameInfo->args.head; 
+  fd = gameInfo->args.fd;
 
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
 
@@ -128,6 +136,7 @@ void *subserver(void *arguments) {
   close(reply_sock_fd);
 
   free(username);
+  
   pthread_exit(NULL);
 }
 
@@ -137,8 +146,6 @@ void *subserver(void *arguments) {
 int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   game *gameInfo = *((game **) args);
-
-
   int i, isWin, numTurns = 0;
 
   //initialize and calloc a game-board
@@ -149,7 +156,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips));
-
 
   sendPID(pid, reply_sock_fd);
 
@@ -182,13 +188,19 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     numTurns++;
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
+  
+  printf("Game Ended. Writing Player information to struct...");
+  //TODO 
+  //write to struct in proper place
+  //
+  //
 
   printf("Game Ended. Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-
+  
   free(playerBoard);
   free(player_info);
 
