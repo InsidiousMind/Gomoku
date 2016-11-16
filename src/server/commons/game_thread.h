@@ -1,9 +1,21 @@
 #ifndef ARGS
 #define ARGS
+
+//arguments for gameServer
+typedef struct game_srv_args
+{
+  int *reply_sock_fd; 
+  int fd;
+  Node *head;
+
+} gameArgs;
+
 //args to pass to game_thread
 typedef struct pthread_args {
   int socket;
   int socket2;
+  Node *head;
+  int fd;
 } pargs;
 #endif /* ARGS */
 
@@ -24,7 +36,6 @@ typedef struct game_s {
    
   pargs args;
 
-  struct game *next;
 } game;
 #endif /* GAME */
 

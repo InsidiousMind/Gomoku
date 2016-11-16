@@ -27,7 +27,12 @@ void INThandle(int sig){
 }
 
 
+/*int* readInts(int count){
+  int *numArr = calloc(count,sizeof(*numArr));
+
+=======
 int* readInts(int count){
+>>>>>>> 062bff9f1a9def2a0d225714b0aea956d07e9d9e
   int i;
 
   int *numArr = calloc(count,sizeof(int*));
@@ -37,7 +42,7 @@ int* readInts(int count){
   }
   //flush(stdin);
   return numArr;  
-}
+}*/
 
 //String MUST be malloced when using this function
 int readWord(void *tmp, int size, int isInt) {

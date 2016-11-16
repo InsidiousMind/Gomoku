@@ -4,9 +4,10 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include "../lib/gips.h"
-#include "../lib/network.h"
-#include "../lib/glogic.h"
+#include "../../lib/gips.h"
+#include "../../lib/network.h"
+#include "../../lib/glogic.h"
+#include "../../lib/database.h"
 #include "game_thread.h"
 
 void *subserver(void *args); //starts subserver
@@ -20,7 +21,8 @@ char getOtherPlayersPID(char pid);
 void sendPID(char pid, int reply_sock_fd);
 int isMyTurn(game *gameInfo, char pid);
 void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
-
+int checkUPID(int *uPID, char *str);
+int genUPID();
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
 //START OF GAME THREAD
@@ -29,16 +31,20 @@ void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
  
-  int *reply_sock_fd = (int*)args;
+  gameArgs *gameSrvInfo = (gameArgs*)args;
+
+
  
   game *gameInfo = malloc(sizeof(game));
   
   pthread_t pthread, pthread2;
 
-  gameInfo->args.socket = reply_sock_fd[0];
+  gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
 
-  gameInfo->args.socket2 = reply_sock_fd[1];
-   
+  gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
+  gameInfo->args.fd = gameSrvInfo->fd;
+  gameInfo->args.head = gameSrvInfo->head;   
+
   //create a mutex car to avoid race conditoins 
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
  
@@ -59,9 +65,8 @@ void *startGameServer(void *args){
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-  printf("Client Threads Ended. Game Exiting. Performing cleanup...\n");
-
-  free(reply_sock_fd);
+  
+  free(gameSrvInfo->reply_sock_fd);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
 
@@ -80,22 +85,25 @@ void *startGameServer(void *args){
 void *subserver(void *arguments) {
   //get the arguments
 
-
-  char pid;
-  int reply_sock_fd; 
+  int PID, uPID;
+  int reply_sock_fd, fd; 
+  Node *head;
   //game *gameInfo = arguments;
   game *gameInfo = ((game *) arguments);
+  
+  head = gameInfo->args.head; 
+  fd = gameInfo->args.fd;
 
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
 
   //whoever unlocks this first gets player 1!
   pthread_mutex_lock(&gameInfo_access);
   if(gameInfo->player1Taken == FALSE){
-    pid = 1;
+    PID = 1;
     reply_sock_fd = gameInfo->args.socket;
     gameInfo->player1Taken = TRUE;
   }else{
-    pid = 2;
+    PID = 2;
     reply_sock_fd = gameInfo->args.socket2;
   }
   pthread_mutex_unlock(&gameInfo_access);
@@ -104,22 +112,31 @@ void *subserver(void *arguments) {
   int win;
 
   int BUFFERSIZE = 256;
-  char *buffer = calloc(BUFFERSIZE, sizeof(char));
-
+  char *username = calloc(BUFFERSIZE, sizeof(char));
+  
+  recv(reply_sock_fd, &uPID, sizeof(char), 0);
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-  read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
-  buffer[read_count] = '\0';
-  printf("%s\n", buffer);
+  read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0);
+  username[read_count] = '\0';
+  printf("%s\n", username);
 
-  if ((win = gameLoop(reply_sock_fd, pid, &arguments)) == -1) {
+  //check if username and uPID match/exist
+  if(checkUPID(&uPID, username) == TRUE){
+    sendPID(uPID, reply_sock_fd);
+  }else{
+    sendPID(genUPID(), reply_sock_fd);
+  }
+
+  if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
 
   close(reply_sock_fd);
 
-  free(buffer);
+  free(username);
+  
   pthread_exit(NULL);
 }
 
@@ -129,8 +146,6 @@ void *subserver(void *arguments) {
 int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   game *gameInfo = *((game **) args);
-
-
   int i, isWin, numTurns = 0;
 
   //initialize and calloc a game-board
@@ -141,7 +156,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips));
-
 
   sendPID(pid, reply_sock_fd);
 
@@ -174,13 +188,19 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     numTurns++;
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
+  
+  printf("Game Ended. Writing Player information to struct...");
+  //TODO 
+  //write to struct in proper place
+  //
+  //
 
-  printf("Client Exit. Performing cleanup...\n");
+  printf("Game Ended. Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-
+  
   free(playerBoard);
   free(player_info);
 
@@ -310,9 +330,6 @@ char getOtherPlayersPID(char pid){
 }
 
 void sendPID(char pid, int reply_sock_fd){
-  if (pid == 1)
-    send(reply_sock_fd, &pid, sizeof(char), 0);
-  else
     send(reply_sock_fd, &pid, sizeof(char), 0);
 }
 
@@ -328,9 +345,23 @@ int isMyTurn(game *gameInfo, char pid){
     return TRUE;
   else
     return FALSE;
+} 
+
+
+//placeholder functions
+int checkUPID(int *uPID, char *str){
+  return TRUE;
 }
+
+int genUPID(){
+  return 38374;
+}
+
+
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
 //END OF CLIENT THREAD
 ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+
+
 
