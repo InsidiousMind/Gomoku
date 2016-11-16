@@ -90,13 +90,13 @@ void *subserver(void *arguments) {
   char PID;
   int uPID;
   int reply_sock_fd, fd; 
-  Node *head;
-  //game *gameInfo = arguments;
+  //Node *head;
+  
   game *gameInfo = ((game *) arguments);
   
-  pthread_mutex_lock(&(*(gameInfo->args.head_access)));
-  head = gameInfo->args.head; 
-  pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
+  //pthread_mutex_lock(&(*(gameInfo->args.head_access)));
+  //head = gameInfo->args.head; 
+  //pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
 
   fd = gameInfo->args.fd;
 
@@ -125,7 +125,7 @@ void *subserver(void *arguments) {
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
   read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0);
-  username[read_count] = '\0';
+  //username[read_count] = '\0';
   printf("%s\n", username);
 
   //check if username and uPID match/exist
@@ -135,6 +135,8 @@ void *subserver(void *arguments) {
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(int), 0);
   }
+
+  gameInfo->uPID = uPID;
 
   if ((win = gameLoop(reply_sock_fd, PID, &gameInfo)) == -1) {
     perror("[!!!] error: Game Loop Fail");
@@ -200,7 +202,29 @@ int gameLoop(int reply_sock_fd, char pid, game **args) {
   //TODO 
   //write to struct in proper place
   //
+  // Try to insert.
+  // If insert returns 0,
+  // try to update.
+  // If update returns 0`,
+  // cry.
   //
+  Player *player = malloc(sizeof(player));
+  player->userid = 323;
+  player->first = "Rand";
+  player->last = "lastRand";
+  player->losses = 4;
+  player->wins = 5;
+  player->ties = 3;
+  
+  pthread_mutex_lock(&(*(gameInfo->args.head_access)));
+  if (insert(gameInfo->uPID, gameInfo->args.fd, player, (&(gameInfo->args.head))) == TRUE) {
+    printf("Player committed to database.");
+  } else if (update(gameInfo->uPID, gameInfo->args.fd, player, (gameInfo->args.head)) == TRUE ) {
+    printf("Player committed to database.");
+  } else {
+    printf("DATABASE COMMIT FAILED.");
+  }
+  pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
 
   printf("Game Ended. Performing cleanup...\n");
 

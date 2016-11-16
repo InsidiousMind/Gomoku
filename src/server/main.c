@@ -33,7 +33,7 @@ void die(const char *message);
 
 int main(int argc, char *argv[]) {
 
-  int index = 0, fd = 0;
+  int fd = 0;
   char *filename;
 
   //init mutex for access to the database
