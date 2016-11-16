@@ -20,7 +20,8 @@ char getOtherPlayersPID(char pid);
 void sendPID(char pid, int reply_sock_fd);
 int isMyTurn(game *gameInfo, char pid);
 void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
-
+int checkUPID(int *uPID, char *str);
+int genUPID();
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
 //START OF GAME THREAD
@@ -80,7 +81,7 @@ void *subserver(void *arguments) {
   //get the arguments
 
 
-  char pid;
+  int PID, uPID;
   int reply_sock_fd; 
   //game *gameInfo = arguments;
   game *gameInfo = ((game *) arguments);
@@ -90,11 +91,11 @@ void *subserver(void *arguments) {
   //whoever unlocks this first gets player 1!
   pthread_mutex_lock(&gameInfo_access);
   if(gameInfo->player1Taken == FALSE){
-    pid = 1;
+    PID = 1;
     reply_sock_fd = gameInfo->args.socket;
     gameInfo->player1Taken = TRUE;
   }else{
-    pid = 2;
+    PID = 2;
     reply_sock_fd = gameInfo->args.socket2;
   }
   pthread_mutex_unlock(&gameInfo_access);
@@ -103,22 +104,30 @@ void *subserver(void *arguments) {
   int win;
 
   int BUFFERSIZE = 256;
-  char *buffer = calloc(BUFFERSIZE, sizeof(char));
-
+  char *username = calloc(BUFFERSIZE, sizeof(char));
+  
+  recv(reply_sock_fd, &uPID, sizeof(char), 0);
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-  read_count = recv(reply_sock_fd, buffer, BUFFERSIZE, 0);
-  buffer[read_count] = '\0';
-  printf("%s\n", buffer);
+  read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0);
+  username[read_count] = '\0';
+  printf("%s\n", username);
 
-  if ((win = gameLoop(reply_sock_fd, pid, &arguments)) == -1) {
+  //check if username and uPID match/exist
+  if(checkUPID(&uPID, username) == TRUE){
+    sendPID(uPID, reply_sock_fd);
+  }else{
+    sendPID(genUPID(), reply_sock_fd);
+  }
+
+  if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
 
   close(reply_sock_fd);
 
-  free(buffer);
+  free(username);
   pthread_exit(NULL);
 }
 
@@ -309,9 +318,6 @@ char getOtherPlayersPID(char pid){
 }
 
 void sendPID(char pid, int reply_sock_fd){
-  if (pid == 1)
-    send(reply_sock_fd, &pid, sizeof(char), 0);
-  else
     send(reply_sock_fd, &pid, sizeof(char), 0);
 }
 
@@ -327,9 +333,23 @@ int isMyTurn(game *gameInfo, char pid){
     return TRUE;
   else
     return FALSE;
+} 
+
+
+//placeholder functions
+int checkUPID(int *uPID, char *str){
+  return TRUE;
 }
+
+int genUPID(){
+  return 38374;
+}
+
+
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
 //END OF CLIENT THREAD
 ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+
+
 

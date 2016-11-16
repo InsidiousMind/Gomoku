@@ -1,12 +1,18 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "database.h"
 #include "network.h"
 #include "gips.h"
 
-int login(int sock, int pid, char *username) {
+int login(int sock, int upid, char *username) {
   //get pid from the server based on the username.
-
-  return pid;
+  send(sock, &upid, sizeof(upid), 0);
+  send_mesg(username, sock);
+  recv(sock, &upid, sizeof(int), 0);
+  return upid;
 }
 
 int check_valid_ptr(void *ptr) {
