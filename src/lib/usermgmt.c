@@ -30,7 +30,7 @@ Player *server_add_user(char *username, int id, int fd, Node *head) {
   // Otherwise, create a new database entry and return THAT pid.
   Player *x;
   printf("Looking for player: %d %s", id, username);
-  x = get_player_by_name(username, id, fd, head);
+  x = get_player_by_name(username, id, fd, head, FALSE);
   if (check_valid_ptr(x)) {
     printf("Player found, returning.");
   } else if (!check_valid_ptr(x)){
