@@ -144,7 +144,6 @@ int main() {
   }
 
   signal(SIGINT, INThandle);
-
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);
@@ -158,7 +157,8 @@ int main() {
     
     printf("Now you can move\n");
     int valid = FALSE;
-
+    
+    signal(SIGINT, INThandle);
     while(valid == FALSE) {
       printf("\n%s_> ", name);
       scanf("%d%d", &move_x, &move_y);
@@ -181,7 +181,10 @@ int main() {
     printf("You Lose! :-(\n");
   else
     printf("You Win!! :-)\n");
-
+  Player *player; 
+  recv(sock, player, sizeof(Player), 0);
+  printf("Your Stats Are: \n");
+  print_player(player);
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {

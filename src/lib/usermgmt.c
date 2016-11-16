@@ -38,7 +38,7 @@ Player *server_add_user(char *username, int id, int fd, Node *head) {
   } else if (!check_valid_ptr(x)){
     printf("That player doesn't exist yet.");
     x->userid = id;
-    x->last = username;
+    x->username = username;
     x->wins = 0;
     x->losses = 0;
     x->ties = 0;

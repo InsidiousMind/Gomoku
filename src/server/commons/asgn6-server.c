@@ -23,9 +23,6 @@ int accept_client(int serv_sock); //accepts incoming connection
 
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
  
-
-  signal(SIGINT, INThandle);
-
   int sock_fd;
   Node *head = *((Node **) temp);
   
@@ -66,10 +63,11 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   *   to wait for each client thread to finish
   *  reducing memory leaks
   */
-  
+ 
+  signal(SIGINT, INThandle);
+ 
   while(TRUE){
-    gameSrvInfo->reply_sock_fd = malloc(2 * sizeof(int));
-
+    gameSrvInfo->reply_sock_fd = calloc(2, sizeof(int));
     if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
     if((gameSrvInfo->reply_sock_fd[1] = accept_client(sock_fd)) == -1)
