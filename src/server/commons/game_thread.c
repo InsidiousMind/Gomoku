@@ -4,13 +4,14 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include "../lib/gips.h"
-#include "../lib/network.h"
-#include "../lib/glogic.h"
+#include "../../lib/gips.h"
+#include "../../lib/network.h"
+#include "../../lib/glogic.h"
+#include "../../lib/database.h"
 #include "game_thread.h"
 
 void *subserver(void *args); //starts subserver
-int gameLoop(int reply_sock_fd, char pid, void **args);
+int gameLoop(int reply_sock_fd, char pid, game **args);
 char **addMove(char move_a, char move_b, char pid, char **board, game *gameInfo);
 void turn(game *gameInfo);
 void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd, int play1Moves[2], int play2Moves[2], int isWin);
@@ -29,18 +30,24 @@ int genUPID();
 
 //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
- 
-  int *reply_sock_fd = (int*)args;
- 
+  gameArgs *gameSrvInfo = (gameArgs*)args;
+
   game *gameInfo = malloc(sizeof(game));
   
   pthread_t pthread, pthread2;
 
-  gameInfo->args.socket = reply_sock_fd[0];
+  gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
+  gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
+  gameInfo->args.fd = gameSrvInfo->fd;
+  
+  pthread_mutex_lock(&(*(gameSrvInfo->head_access)));
+  gameInfo->args.head = gameSrvInfo->head;   
+  pthread_mutex_unlock(&(*(gameSrvInfo->head_access)));
+ 
+  gameInfo->args.head_access = gameSrvInfo->head_access;
+  
 
-  gameInfo->args.socket2 = reply_sock_fd[1];
-   
-  //create a mutex car to avoid race conditoins 
+  //create a mutex to avoid race condition for shared game resources
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
  
   gameInfo->player1Taken = FALSE;
@@ -61,7 +68,7 @@ void *startGameServer(void *args){
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
   
-  free(reply_sock_fd);
+  free(gameSrvInfo->reply_sock_fd);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
 
@@ -80,12 +87,18 @@ void *startGameServer(void *args){
 void *subserver(void *arguments) {
   //get the arguments
 
-
   char PID;
   int uPID;
-  int reply_sock_fd; 
-  //game *gameInfo = arguments;
+  int reply_sock_fd, fd; 
+  //Node *head;
+  
   game *gameInfo = ((game *) arguments);
+  
+  //pthread_mutex_lock(&(*(gameInfo->args.head_access)));
+  //head = gameInfo->args.head; 
+  //pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
+
+  fd = gameInfo->args.fd;
 
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
 
@@ -112,7 +125,7 @@ void *subserver(void *arguments) {
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
   read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0);
-  username[read_count] = '\0';
+  //username[read_count] = '\0';
   printf("%s\n", username);
 
   //check if username and uPID match/exist
@@ -121,27 +134,27 @@ void *subserver(void *arguments) {
   }else{
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(int), 0);
-
   }
 
-  if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
+  gameInfo->uPID = uPID;
+
+  if ((win = gameLoop(reply_sock_fd, PID, &gameInfo)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
 
   close(reply_sock_fd);
 
   free(username);
+  
   pthread_exit(NULL);
 }
 
 
 /*This is where the magic happens, conversation between client->server server->client
 */
-int gameLoop(int reply_sock_fd, char pid, void **args) {
+int gameLoop(int reply_sock_fd, char pid, game **args) {
 
   game *gameInfo = *((game **) args);
-
-
   int i, isWin, numTurns = 0;
 
   //initialize and calloc a game-board
@@ -152,7 +165,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips));
-
 
   sendPID(pid, reply_sock_fd);
 
@@ -185,13 +197,41 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     numTurns++;
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
+  
+  printf("Game Ended. Writing Player information to struct...");
+  //TODO 
+  //write to struct in proper place
+  //
+  // Try to insert.
+  // If insert returns 0,
+  // try to update.
+  // If update returns 0`,
+  // cry.
+  //
+  Player *player = malloc(sizeof(player));
+  player->userid = 323;
+  player->first = "Rand";
+  player->last = "lastRand";
+  player->losses = 4;
+  player->wins = 5;
+  player->ties = 3;
+  
+  pthread_mutex_lock(&(*(gameInfo->args.head_access)));
+  if (insert(gameInfo->uPID, gameInfo->args.fd, player, (&(gameInfo->args.head))) == TRUE) {
+    printf("Player committed to database.");
+  } else if (update(gameInfo->uPID, gameInfo->args.fd, player, (gameInfo->args.head)) == TRUE ) {
+    printf("Player committed to database.");
+  } else {
+    printf("DATABASE COMMIT FAILED.");
+  }
+  pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
 
   printf("Game Ended. Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-
+  
   free(playerBoard);
   free(player_info);
 

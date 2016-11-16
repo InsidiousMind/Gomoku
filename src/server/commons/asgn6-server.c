@@ -8,10 +8,11 @@
 #include <netdb.h>
 #include <signal.h>
 #include <pthread.h>
+#include "../../lib/database.h"
 #include "asgn6-server.h"
 #include "game_thread.h"
-#include "../lib/network.h"
-#include "../lib/misc.h"
+#include "../../lib/network.h"
+#include "../../lib/misc.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
@@ -19,11 +20,27 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 
-void serverLoop(){
+
+void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
+ 
+
+  signal(SIGINT, INThandle);
 
   int sock_fd;
+  Node *head = *((Node **) temp);
   
+  gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
+  
+  gameSrvInfo->fd = fd;
+
+  pthread_mutex_lock(&(*head_access));
+  gameSrvInfo->head = head;
+  pthread_mutex_unlock(&(*head_access));
+
+  gameSrvInfo->head_access = head_access;
+
   pthread_t pthread; 
+
   
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
@@ -49,16 +66,15 @@ void serverLoop(){
   *   to wait for each client thread to finish
   *  reducing memory leaks
   */
-  signal(SIGINT, INThandle);
-
+  
   while(TRUE){
-    int *reply_sock_fd = malloc(2 * sizeof(int));
+    gameSrvInfo->reply_sock_fd = malloc(2 * sizeof(int));
 
-    if ((reply_sock_fd[0] = accept_client(sock_fd)) == -1)
+    if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
-    if((reply_sock_fd[1] = accept_client(sock_fd)) == -1)
+    if((gameSrvInfo->reply_sock_fd[1] = accept_client(sock_fd)) == -1)
       continue;
-    if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) reply_sock_fd)) != 0)
+    if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
       printf("Failed to start Game Server");
   }
 }
