@@ -1,1 +1,1 @@
-gdb build/client/client
+gdb build/bin/client

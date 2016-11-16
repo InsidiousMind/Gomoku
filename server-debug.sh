@@ -1,1 +1,1 @@
-gdb build/server/server
+gdb build/bin/server

@@ -81,7 +81,8 @@ void *subserver(void *arguments) {
   //get the arguments
 
 
-  int PID, uPID;
+  char PID;
+  int uPID;
   int reply_sock_fd; 
   //game *gameInfo = arguments;
   game *gameInfo = ((game *) arguments);
