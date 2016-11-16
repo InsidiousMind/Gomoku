@@ -20,5 +20,4 @@ void insert(int id, int fd, Player *player, Node **head);
 void update(int id, int fd, Player *player, Node *head);
 void query(int id, int fd, Node *head);
 Player *get_player_by_name(char *username, int id, int fd, Node *head);
-Player *create_player();
-Player *create_player_up();
+
