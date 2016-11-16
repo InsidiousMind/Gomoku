@@ -35,6 +35,10 @@ int main(int argc, char *argv[]) {
 
   int index = 0, fd = 0;
   char *filename;
+
+  //init mutex for access to the database
+  pthread_mutex_t head_access = PTHREAD_MUTEX_INITIALIZER;
+
   Node *head = NULL;
   if(argc <= 1){
     fprintf(stderr, "Usage: './server filename\n'");
@@ -51,7 +55,7 @@ int main(int argc, char *argv[]) {
   }
   if(fd < 0) die("[ERROR] open failed");
 
-  serverLoop(fd, &head);
+  serverLoop(fd, &head, &head_access);
 
   free(filename);
   close(fd);

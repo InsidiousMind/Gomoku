@@ -11,7 +11,7 @@
 #include "game_thread.h"
 
 void *subserver(void *args); //starts subserver
-int gameLoop(int reply_sock_fd, char pid, void **args);
+int gameLoop(int reply_sock_fd, char pid, game **args);
 char **addMove(char move_a, char move_b, char pid, char **board, game *gameInfo);
 void turn(game *gameInfo);
 void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd, int play1Moves[2], int play2Moves[2], int isWin);
@@ -30,22 +30,24 @@ int genUPID();
 
 //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
- 
   gameArgs *gameSrvInfo = (gameArgs*)args;
 
-
- 
   game *gameInfo = malloc(sizeof(game));
   
   pthread_t pthread, pthread2;
 
   gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
-
   gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
   gameInfo->args.fd = gameSrvInfo->fd;
+  
+  pthread_mutex_lock(&(*(gameSrvInfo->head_access)));
   gameInfo->args.head = gameSrvInfo->head;   
+  pthread_mutex_unlock(&(*(gameSrvInfo->head_access)));
+ 
+  gameInfo->args.head_access = gameSrvInfo->head_access;
+  
 
-  //create a mutex car to avoid race conditoins 
+  //create a mutex to avoid race condition for shared game resources
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
  
   gameInfo->player1Taken = FALSE;
@@ -92,7 +94,10 @@ void *subserver(void *arguments) {
   //game *gameInfo = arguments;
   game *gameInfo = ((game *) arguments);
   
+  pthread_mutex_lock(&(*(gameInfo->args.head_access)));
   head = gameInfo->args.head; 
+  pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
+
   fd = gameInfo->args.fd;
 
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
@@ -129,10 +134,9 @@ void *subserver(void *arguments) {
   }else{
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(int), 0);
-
   }
 
-  if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
+  if ((win = gameLoop(reply_sock_fd, PID, &gameInfo)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
 
@@ -146,7 +150,7 @@ void *subserver(void *arguments) {
 
 /*This is where the magic happens, conversation between client->server server->client
 */
-int gameLoop(int reply_sock_fd, char pid, void **args) {
+int gameLoop(int reply_sock_fd, char pid, game **args) {
 
   game *gameInfo = *((game **) args);
   int i, isWin, numTurns = 0;

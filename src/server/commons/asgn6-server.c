@@ -21,8 +21,9 @@ int start_server(int serv_socket, int backlog);  //starts listening on port for 
 int accept_client(int serv_sock); //accepts incoming connection
 
 
-void serverLoop(int fd, Node **temp){
-  
+void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
+ 
+
   signal(SIGINT, INThandle);
 
   int sock_fd;
@@ -31,8 +32,12 @@ void serverLoop(int fd, Node **temp){
   gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
   
   gameSrvInfo->fd = fd;
-  gameSrvInfo->head = head;
 
+  pthread_mutex_lock(&(*head_access));
+  gameSrvInfo->head = head;
+  pthread_mutex_unlock(&(*head_access));
+
+  gameSrvInfo->head_access = head_access;
 
   pthread_t pthread; 
 

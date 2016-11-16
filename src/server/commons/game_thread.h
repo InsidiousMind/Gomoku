@@ -7,6 +7,7 @@ typedef struct game_srv_args
   int *reply_sock_fd; 
   int fd;
   Node *head;
+  pthread_mutex_t *head_access;
 
 } gameArgs;
 
@@ -15,6 +16,7 @@ typedef struct pthread_args {
   int socket;
   int socket2;
   Node *head;
+  pthread_mutex_t *head_access;
   int fd;
 } pargs;
 #endif /* ARGS */
@@ -33,7 +35,10 @@ typedef struct game_s {
   int whoTurn;
   int playerWin;
   int player1Taken;
-   
+  
+  
+
+
   pargs args;
 
 } game;

@@ -5,5 +5,5 @@
 #define NUM_THREADS 2
 #endif
 
-void serverLoop(int fd, Node **head);
+void serverLoop(int fd, Node **head, pthread_mutex_t *head_access);
 
