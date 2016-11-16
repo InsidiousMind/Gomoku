@@ -117,9 +117,11 @@ void *subserver(void *arguments) {
 
   //check if username and uPID match/exist
   if(checkUPID(&uPID, username) == TRUE){
-    sendPID(uPID, reply_sock_fd);
+    send(reply_sock_fd, &uPID, sizeof(int), 0);
   }else{
-    sendPID(genUPID(), reply_sock_fd);
+    uPID = genUPID();
+    send(reply_sock_fd, &uPID, sizeof(int), 0);
+
   }
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
