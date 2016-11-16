@@ -22,9 +22,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include "../lib/database.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"

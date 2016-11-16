@@ -5,7 +5,7 @@
 # MACROS
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
 
-CC = gcc
+CC = cc
 CFLAGS = -Wextra -Wall -lpthread -g
 
 #Server
