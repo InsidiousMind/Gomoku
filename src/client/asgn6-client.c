@@ -103,11 +103,11 @@ int main() {
   scanf("%s", name);
   printf("Player ID: ");
   scanf("%d", &uniquePID);
-  
+
 
   //send username
   //send PID
-  
+
   // Login will reassign a PID if that one isn't right,
   // or will just let them keep the one they supplied.
 
@@ -120,12 +120,12 @@ int main() {
 
   board = init_board(board);
   printf("Gomoku Client for Linux\n");
-  
-  //Name and stuff 
+
+  //Name and stuff
   if (sock != -1) {
     uniquePID = login(sock, uniquePID, name) ;
     recv(sock, &pid, sizeof(char), 0);
-    //TODO 
+    //TODO
     //Inform user of Unique PID (If it was the one they requested or different)
     if(pid == 1) {
       stone = 'B';
@@ -152,22 +152,22 @@ int main() {
       board = get_move(board, player_info, pid, otherStone);
     }
     display_board(board);
-    
+
     printf("Now you can move\n");
     int valid = FALSE;
-    
+
     signal(SIGINT, INThandle);
     while(valid == FALSE) {
       printf("\n%s_> ", name);
       scanf("%d%d", &move_x, &move_y);
       if(move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8)
         printf("Invalid input.");
-      else 
+      else
         valid = TRUE;
     }
 
     send_move(--move_x, --move_y, board, sock, pid, stone);
-   
+
     //check for win
     display_board(board);
     recv(sock, &isWin, sizeof(int), 0);
@@ -180,7 +180,7 @@ int main() {
   else
     printf("You Win!! :-)\n");
 
-  Player *player = malloc(sizeof(Player)); 
+  Player *player = malloc(sizeof(Player));
   recv(sock, player, sizeof(Player), 0);
   printf("%s%s%s%d%s\n", "Your Stats for username ", name, " and unique ID ", uniquePID, " are: \n");
   printf("%s%d\n", "Wins: ", player->wins);

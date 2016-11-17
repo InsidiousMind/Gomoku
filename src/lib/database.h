@@ -20,4 +20,4 @@ Player *create_player_up();
 void print_list(Node *head);
 void print_file(int fd);
 void print_player(Player *player);
-
+Node **persist(int fd, Node **head);

@@ -23,16 +23,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include "gips.h"
 
 int insert(int id, int fd, Player *player, Node **head) {
-  printf("ADD %d,%s, %d, %d, %d\n", player->userid, 
-      player->username, 
-      player->wins, 
-      player->losses, 
+  printf("ADD %d,%s, %d, %d, %d\n", player->userid,
+      player->username,
+      player->wins,
+      player->losses,
       player->ties);
   Node *tmp = *head;
   if (tmp != NULL) {
@@ -130,11 +131,11 @@ void print_file(int fd) {
 }
 
 void print_player(Player *player){
-  
-  printf("%d, %s, %d, %d, %d\n", player->userid, 
+
+  printf("%d, %s, %d, %d, %d\n", player->userid,
       player->username,
-      player->wins, 
-      player->losses, 
+      player->wins,
+      player->losses,
       player->ties);
 }
 
@@ -165,33 +166,21 @@ Player *query(char *username, int id, int fd, Node *head, int verbose) {
   Node *tmp = head;
   while (tmp != NULL){
     if (tmp->player_id == id){
-      
       Player *tmp2 = calloc(1, sizeof(Player));
       lseek(fd, tmp->index, SEEK_SET);
       read(fd, tmp2, sizeof(Player));
-        
       if(verbose == TRUE)
-           
         printf("QUERY: %d,%s, %d, %d, %d\n", tmp2->userid,
           tmp2->username, tmp2->wins, tmp2->losses, tmp2->ties);
-          
       if (tmp2->username == username){
-         
         return tmp2;
-          
       } else {
-          
         if(verbose == TRUE)
-         
           printf("That id number belongs to a different username.");
-          
         return NULL;
       }
-
     } else {
-
       tmp = tmp->next;
-
     }
   }
   if(verbose == TRUE)
@@ -202,4 +191,22 @@ Player *query(char *username, int id, int fd, Node *head, int verbose) {
 //void addPlayer(int id, )
 
 
+int readp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player),0);
+  return read(fd, play, sizeof(Player));
+}
 
+Node **persist(int fd, Node **head){
+  Node *tmp = *head;
+  Player *tmp2 = malloc(sizeof(Player));
+  int index = 0;
+  while (readp(fd, index, tmp2) != -1){
+    tmp->index = index;
+    tmp->player_id = tmp2->userid;
+    tmp->next = malloc(sizeof(Node));
+    tmp = tmp->next;
+    index++;
+  }
+  free(tmp2);
+  return head;
+}
