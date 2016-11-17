@@ -1,25 +1,30 @@
 ## Program: 
- - Programming Assignment 6, A Networked Gomoku Game
+ - A Networked Gomoku Game
 
-## Author: 
+### Proposal Due Wednesday
+
+## Author:
   - Andrew Plaza and Sean Batzel
 
-## Date: 
+## Date:
  - October 31, 2016
 
+## GitHub Repository
+ - [InsidiousMind/Gomoku](https://github.com/InsidiousMind/Gomoku)
+
 ## File Names:
- - asgn6-client.c 
- - asgn6-server.c 
- - src/lib/glogic.c+h 
- - src/lib/gips.c+h 
+ - asgn6-client.c
+ - asgn6-server.c
+ - src/lib/glogic.c+h
+ - src/lib/gips.c+h
  - src/lib/network.c+h
 
-## Compile: 
- - make server to compile server, 
- - make client to compile client, 
+## Compile:
+ - make server to compile server,
+ - make client to compile client,
  - make to compile server and client
 
-## run: 
+## run:
  - build/client/./asgn6-client.c
  - build/server/./asgn6-server.c
 

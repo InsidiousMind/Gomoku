@@ -1,97 +1,96 @@
-#
-# Makefile for the Gomoku project.
-#
-#
+# Gomoku Makefile
+
+
+#\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
+# MACROS
+# /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
 
 CC = cc
-CCO = cc -c
-CDEBUG = -g -Wall -Wextra
-SERV_SRC = src/server/asgn6-server.c
-CLIE_SRC = src/client/asgn6-client.c
-DBG_DEPS = debug/lib/gips.o debug/lib/network.o debug/lib/glogic.o
-PRD_DEPS = build/lib/gips.o build/lib/network.o build/lib/glogic.o
+CFLAGS = -Wextra -Wall -lpthread -g
 
-make:
-	mkdir -p build
-	mkdir -p build/server
-	mkdir -p build/client
-	mkdir -p build/lib
-	$(CCO) $(CLIE_SRC) -o build/client/client.o
-	$(CCO) $(SERV_SRC) -o build/server/server.o
-	$(CCO) src/lib/gips.c -o build/lib/gips.o
-	$(CCO) src/lib/network.c -o build/lib/network.o
-	$(CCO) src/lib/glogic.c -o build/lib/glogic.o
-	$(CC) $(PRD_DEPS) $(SERV_SRC) -lpthread -o build/server/server
-	$(CC) $(PRD_DEPS) $(CLIE_SRC) -o build/client/client
+#Server
 
-client:
-	mkdir -p build
-	mkdir -p build/client
-	mkdir -p build/lib
-	$(CCO) $(CLIE_SRC) -o build/client/client.o
-	$(CCO) src/lib/gips.c -o build/lib/gips.o
-	$(CCO) src/lib/network.c -o build/lib/network.o
-	$(CCO) src/lib/glogic.c -o build/lib/glogic.o
-	$(CC) $(CLIE_SRC) $(PRD_DEPS) -o build/client/client
+SRV_SRC = src/server/
+SRV_DEP = src/server/commons/
+SRV_OBJ = main.o asgn6-server.o game_thread.o server_db.o
+BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/game_thread.o build/server/server_db.o
 
-server:
-	mkdir -p build
-	mkdir -p build/server
-	mkdir -p build/lib
-	$(CCO) $(SERV_SRC) -o build/server/server.o
-	$(CCO) src/lib/gips.c -o build/lib/gips.o
-	$(CCO) src/lib/network.c -o build/lib/network.o
-	$(CCO) src/lib/glogic.c -o build/lib/glogic.o
-	$(CC) $(SERV_SRC) $(PRD_DEPS) -lpthread -o build/server/server
+#Client
+
+CLIENT_SRC = src/client
+CLIENT_OBJ = asgn6-client.o
+BUILD_CLIENT_OBJ = build/client/asgn6-client.o
+
+#Dependencies
+
+LIB_SRC = src/lib/
+DEP_OBJ = gips.o glogic.o network.o misc.o database.o usermgmt.o
+BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/misc.o build/lib/database.o build/lib/usermgmt.o
 
 
-debug:
-	mkdir -p debug
-	mkdir -p debug/server
-	mkdir -p debug/client
-	mkdir -p debug/lib
-	$(CCO) $(CLIE_SRC) $(CDEBUG) -o debug/client/client.o
-	$(CCO) $(SERV_SRC) $(CDEBUG) -o debug/server/server.o
-	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
-	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
-	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	$(CC) $(DBG_DEPS) $(SERV_SRC) $(CDEBUG) -lpthread  -o debug/server/server
-	$(CC) $(DBG_DEPS) $(CLIE_SRC) $(CDEBUG) -o debug/client/client
+#\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
+# MAKE RULES
+# /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
+make: dir server client
 
-client-debug:
-	mkdir -p debug
-	mkdir -p debug/client
-	mkdir -p debug/lib/
-	$(CCO) $(CLIE_SRC) $(CDEBUG) -o debug/client/client.o
-	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
-	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
-	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	$(CC) debug/client/client.o $(DBG_DEPS) $(CDEBUG) -o debug/client/client
+dir:
+	mkdir -p build/lib/
+	mkdir -p build/server/
+	mkdir -p build/client/
+	mkdir -p build/bin/
 
-server-debug:
-	mkdir -p debug
-	mkdir -p debug/server
-	mkdir -p debug/lib/
-	${CCO} $(SERV_SRC) $(CDEBUG) -o debug/server/server.o
-	$(CCO) src/lib/gips.c $(CDEBUG) -o debug/lib/gips.o
-	$(CCO) src/lib/network.c $(CDEBUG) -o debug/lib/network.o
-	$(CCO) src/lib/glogic.c $(CDEBUG) -o debug/lib/glogic.o
-	${CCO} src/server/asgn6-server.c $(CDEBUG) -o debug/server/server.o
-	${CC} debug/server/server.o $(DBG_DEPS) $(CDEBUG) -lpthread -o debug/server/server
+server: $(SRV_OBJ) $(DEP_OBJ)
+	$(CC) -o build/bin/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-run-client-debug:
-	gdb debug/client/client
+client: $(CLIENT_OBJ) $(DEP_OBJ)
+	$(CC) -o build/bin/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-run-server-debug:
-	gdb debug/server/server
-
-run-client-valgrind:
-	valgrind --leak-check=full -v --track-origins=yes debug/client/client
-
-run-server-valgrind:
-	valgrind --leak-check=full -v --track-origins=yes debug/server/server
+all: dir server client
 
 clean:
 	rm -rf build
-	rm -rf debug
 	rm -rf vgcore.*
+
+
+#\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
+# OBJECT COMPILATION
+# /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
+
+#Server Objects
+
+main.o: $(DEP_OBJ) $(SRV_SRC)main.c $(SRV_DEP)asgn6-server.h
+	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
+
+asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)network.h $(LIB_SRC)misc.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h
+	$(CC) -c src/server/commons/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
+
+game_thread.o: $(SRV_DEP)game_thread.c $(SRV_DEP)server_db.h $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_DEP)game_thread.h
+	$(CC) -c src/server/commons/game_thread.c -o build/server/game_thread.o $(CFLAGS)
+
+#Client Objects
+
+asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)misc.h $(LIB_SRC)gips.h
+	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o $(CFLAGS)
+
+#Library Objects
+
+gips.o: $(LIB_SRC)gips.c $(LIB_SRC)gips.h
+	$(CC) -c src/lib/gips.c -o build/lib/gips.o $(CFLAGS)
+
+glogic.o: $(LIB_SRC)glogic.c $(LIB_SRC)gips.h $(LIB_SRC)glogic.h
+	$(CC) -c src/lib/glogic.c -o build/lib/glogic.o $(CFLAGS)
+
+network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
+	$(CC) -c src/lib/network.c -o build/lib/network.o $(CFLAGS)
+
+misc.o: $(LIB_SRC)misc.c $(LIB_SRC)misc.h
+	$(CC) -c src/lib/misc.c -o build/lib/misc.o $(CFLAGS)
+
+database.o: $(LIB_SRC)database.c
+	$(CC) -c src/lib/database.c -o build/lib/database.o $(CFLAGS)
+
+usermgmt.o: $(LIB_SRC)usermgmt.c
+	$(CC) -c src/lib/usermgmt.c -o build/lib/usermgmt.o $(CFLAGS)
+
+server_db.o: $(LIB_SRC)database.h $(LIB_SRC)usermgmt.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
+	$(CC) -c src/server/commons/server_db.c -o build/server/server_db.o $(CFLAGS)

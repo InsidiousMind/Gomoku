@@ -1,7 +1,8 @@
 #include "gips.h"
 
 #ifndef HOST
-#define HOST "www.cs.scranton.edu"
+//#define HOST "server1.cs.scranton.edu"
+#define HOST "127.0.0.1"
 #endif
 #ifndef HTTPPORT
 #define HTTPPORT "32200"
@@ -16,3 +17,7 @@ gips *get_server(int sock);
 int send_mesg(char *str, int sock);
 
 int readBytes(int sock, unsigned int x, void *buffer);
+
+int send_misc(void *str, int sock);
+
+gips *get_server_login(int sock, char *username);
