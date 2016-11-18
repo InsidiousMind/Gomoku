@@ -11,6 +11,8 @@
 #include "../../lib/andrews-db-prog.h"
 #include "server_db.h"
 #include "game_thread.h"
+#include "../../lib/misc.h"
+#include <signal.h>
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -68,6 +70,7 @@ void *startGameServer(void *args){
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
+  signal(SIGINT, INThandle);
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
@@ -134,13 +137,12 @@ void *subserver(void *arguments) {
 
   //check if username and uPID match/exist
   
-  send(reply_sock_fd, &uPID, sizeof(uPID),0);
-  /*if(doesPlayerExist(&gameInfo->args.head, uPID, username, fd) == TRUE){
+  if(isPlayerTaken(&gameInfo->args.head, uPID, username, fd) == TRUE){
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }else{
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
-  }*/
+  }
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");

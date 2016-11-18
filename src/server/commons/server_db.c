@@ -38,10 +38,12 @@ void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd,
     else
       player = update(fd, &head, uPID, 0, 1, 0);
   }
-  pthread_mutex_unlock(&head_access);
+
 
   player = getPlayer(uPID, fd, username, &head);
   send(sockfd, player, sizeof(Player), 0);
+
+  pthread_mutex_unlock(&head_access);
 
 }
 
