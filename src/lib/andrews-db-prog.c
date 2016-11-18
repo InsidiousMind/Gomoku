@@ -353,7 +353,6 @@ int doesPlayerExist(Node **head, int uPID, char *username, int fd){
       temp = temp->next;
     }
   }
-
   return FALSE;
 }
 
