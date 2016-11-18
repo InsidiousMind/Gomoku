@@ -26,8 +26,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
-///#include "../lib/database.h"
-#include "../lib/andrews-db-prog.h"
+#include "../lib/database.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"
 
@@ -50,18 +49,14 @@ int main(int argc, char *argv[]) {
     char c = getchar();
 
     if(c == 'y' || c == 'Y'){
-      filename = calloc(1, strlen(argv[1]) + 1);
-      strcpy(filename, argv[1]);
+  
       fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-      //persist(fd, &head);
-      persist(fd, &index, &head, filename);
+      persist(fd, &index, &head, argv[1]);
+ 
     } else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
   }
 
   serverLoop(fd, &head, &head_access);
-
-  free(filename);
   close(fd);
 }
-
 

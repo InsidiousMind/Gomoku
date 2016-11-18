@@ -27,11 +27,10 @@
 #include <errno.h>
 #include <signal.h>
 #include <ctype.h>
-
+#include "../lib/database.h"
 #include "../lib/network.h"
 #include "../lib/gips.h"
-#include "../lib/misc.h"
-#include "../lib/andrews-db-prog.h"
+#include "../lib/IO_sighandle.h"
 #include "../lib/usermgmt.h"
 
 #define HTTPPORT "32200"

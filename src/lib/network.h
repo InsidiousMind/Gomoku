@@ -2,7 +2,7 @@
 
 #ifndef HOST
 //#define HOST "server1.cs.scranton.edu"
-#define HOST "127.0.0.1"
+#define HOST "10.31.226.161"
 #endif
 #ifndef HTTPPORT
 #define HTTPPORT "32200"

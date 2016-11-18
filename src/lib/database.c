@@ -1,268 +1,376 @@
-/*
- * Author: Sean Batzel and Andrew Plaza
- * Player database consisting of an ID number, last name, first name, number of wins, number of losses, and number of ties.
- * Modified to add commands to modify the list during runtime.
- * Modified to add file persistence to the database.
- * Modified to remove the "delete" command.
- * Compile: cc asgn1-batzels4.c -o asgn4
- * Input:
- * 	Add a new player:	+ userid lastname firstname wins losses ties
- *	Update existing:	* userid wins losses ties
- *	Find a player:		? userid
- *	Stop the program:	# <prints all entries>
- * Note:
- * 	If a userid already exists and is added to the database, output will be "ERROR - userid exists."
- *	If a userid does not exist and is queried, or updated, output will be "ERROR - player does not exist."
+/* Program: Programming Assignment 4, Binary Files
+ * author: Andrew Plaza
+ * Date: Sept 29, 2016
+ * File Name: asgn4-plazaa2.c
+ * compile: cc -o asgn4.out asgn4-plazaa2.c -g -Wall
+ * run: ./asgn4.out
+ * debug: gdb ./asgn4.out
+ *
+ * This C program accepts player records from the keyboard.
+ * '+ userid lastname firstname wins losses ties' to add
+ * '* userid wins losses ties' to update
+ * '? userid' to query
+ * '#' to terminate program
+ * Records are read and then written in binary form to a file.
+ * There is an option to load this file the next time the program is run.
+ * The program keeps data relating to where each record is in a file with a linked list (struct node).
+ * Upon termination the records and linked list are printed.
  */
 
-// Printf calls will be used on the server for debugging.
-// Scanf calls should be replaced.
-
-#include "database.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/uio.h>
 #include <sys/stat.h>
+#include "database.h"
 #include "gips.h"
 
+//method definitions (same order as methods in file)
 
-//the ID of insert must be unique
-int insert(int id, int fd, Player *player, Node **head) {
+void readp(int fd, int index, Player *play);
+void writep(int fd, int index, Player *play);
 
+//read in previous records
 
-  print_player(player);
-  
-  Node *tmp = *head;
+void query(int fd, Node **head);
 
+void kill(Node **head);
+void die(const char *message);
 
-  //make sure the ID we are inserting is unique
-  if (tmp != NULL) {
-    if (tmp->player_id == id) {
-      printf("Player ID already exists.\n");
-      free(tmp);
-      return FALSE;
-    }
-    while (tmp != NULL) {
-      if (tmp->player_id == id) {
-        printf("Player ID already exists.\n");
-        free(tmp);
-        return FALSE;
-      } else {
-        tmp = tmp->next;
-      }
-    }
-  }
+//LL = Linked List
 
-  free(tmp);
+//SAMPLE MAIN (DO NOT DELETE)
 
-
-  Node *x = calloc(1, sizeof(Node));
-  x->player_id = id;
-  int offset = lseek(fd, 0, SEEK_END);
-  x->index = offset;
-  
-  if ((*head) != NULL && (*head)->player_id == id) {
-    printf("ERROR - Player ID already exists.\n");
-    free(x);
-    return FALSE;
-  }
- 
-  else if (*head == NULL || (*head)->player_id > x->player_id){
-    x->next = *head;
-    *head = x;
-    write(fd, player, sizeof(Player));
-
-  } else {
-
-    tmp = *head;
-
-    while (tmp->next !=NULL && tmp->next->player_id <= x->player_id) {
-
-      if (x->player_id == tmp->next->player_id) {
-        printf("ERROR - Player ID already exists.\n");
-        free(x);
-        return 0;
-      }
-
-      tmp =  tmp->next;
-    }
-
-    x->next = tmp->next;
-    tmp->next = x;
-    write(fd, player, sizeof(Player));
-
-  }
-
-  return TRUE;
-
+void readp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player),0);
+  if(read(fd, play, sizeof(Player)) == -1)
+    die("[ERROR] read failed");
 }
 
-int update(int id, int fd, Player *player, Node *head) {
-  Node *tmp = head;
-  
-  
-  while (tmp->next != NULL && tmp->player_id != id)
-    tmp = tmp->next;
-
-
-  if (tmp->player_id == id) {
- 
-    Player *tmp2 = (Player *)malloc(sizeof(Player));
-    lseek(fd, tmp->index, SEEK_SET);
-    read(fd, tmp2, sizeof(Player));
-    
-    print_player(tmp2);
-   
-    tmp2->wins = player->wins;
-    tmp2->losses = player->losses;
-    tmp2->ties = player->ties;
-  
-  
-    print_player(tmp2);
-  
-    lseek(fd, tmp->index, SEEK_SET);
-    lseek(fd, tmp->index, SEEK_SET);
-
-    write(fd, tmp2, sizeof(Player));
-    free(tmp2);
-
-  } else {
-
-    if (tmp->next == NULL) {
-
-      printf("ERROR - Player does not exist.\n");
-      return FALSE;
-
-    }
-  }
-
-  return TRUE;
+void writep(int fd, int index, Player *play){
+  struct player rec = *play;
+  lseek(fd, index*sizeof(Player), 0);
+  if(write(fd, &rec, sizeof(Player)) == -1)
+    die("[ERROR] write failed");
 }
 
-void print_list(Node *head) {
+void persist(int fd, int *index, Node **head, char *filename){
+  int size, i;
+  int temp_i = *index;
+
+  Node *temp = *head;
+  struct stat st;
+  struct player rec;
+
+  //stat file size, convert to index
+  stat(filename, &st);
+  size = st.st_size/sizeof(Player);
+  if (size == 0) return;
+
+  for(i = 0; i < (size); i++){
+    Node *newn = calloc(1, sizeof(Node));
+
+    readp(fd, temp_i, &rec);
+    newn->userid = rec.userid;
+    newn->index = temp_i;
+    insert(&temp, newn);
+    temp_i++;
+  }
+  *index = temp_i;
+  *head = temp;
+}
+
+
+//print functions
+void print_nodes(Node **head){
+  Node *node = *head;
   printf("The linked list: ");
-  Node *tmp = head;
-  while (tmp != NULL){
-    printf("(%d, %d), ", tmp->player_id, tmp->index);
-    tmp = tmp->next;
+  while(node != NULL){
+    printf("(%d, %d)", node->userid, node->index);
+    node = node->next;
   }
   printf("\n");
 }
 
-void print_file(int fd) {
-  printf("Players:\n");
-  lseek(fd, 0, SEEK_SET);
-  Player *p = (Player *)malloc(sizeof(Player));
-  while (read(fd, p, sizeof(Player)) != 0){
-    printf("%d,%s, %d, %d, %d\n", p->userid, p->username, p->wins, p->losses, p->ties);
+void print_players(int fd, Node **head){
+  Node *temp = *head;
+  while(temp != NULL){
+    printp(fd, temp->index);
+    temp = temp->next;
   }
-  free(p);
-  printf("End\n");
 }
 
-void print_player(Player *player){
+//takes file and index of player
+//reads with readp into player struct
+//prints it
+void printp(int fd, int index){
+  struct player play;
+  readp(fd, index, &play);
 
-  printf("%d, %s, %d, %d, %d\n", player->userid,
-      player->username,
-      player->wins,
-      player->losses,
-      player->ties);
+  printf("%d, %s, %d, %d, %d \n", play.userid,
+      play.username,
+      play.wins,
+      play.losses,
+      play.ties);
+  return;
+
 }
-/*
-Player *create_player(int pid, char *username) {
+
+
+//creates a new noed (calloc) and writes it to binary file
+//inserts it into struct
+Node* add(int fd, int index, Node **head, int userid, 
+    int wins, int losses, int ties, char* username){
+
+  Node *temp = *head;
+  struct player prec;
+  //initialize mem to 0
+  memset(&prec, 0, sizeof(prec));
   
-  Player *x = calloc(1, sizeof(Player));
-  x->userid = pid;
-  x->username = username;
-  x->wins = 0;
-  x->losses = 0;
-  x->ties = 0;
-  return x;
+  //set variables 
+  prec.userid = userid;
+  strncpy(prec.username, username, 19);
+  prec.wins = wins;
+  prec.losses = losses;
+  prec.ties = ties;
+
+  while(temp != NULL){
+    if(temp->userid == prec.userid){
+      printf("ERROR - userid exists. Did you mean to update?\n");
+      printp(fd, temp->index);
+      return *head;
+    }else temp = temp -> next;
+  }
+
+  //reset temp after iterating through LL
+  temp = *head;
+
+  prec.index = index;
+  //write node to binary file
+  writep(fd, index, &prec);
+
+  printf("%s", "ADD: ");
+  printp(fd, prec.index);
+
+  Node *newNode = calloc(1, sizeof(Node));
+
+  newNode->userid = prec.userid;
+  newNode->index = prec.index;
+
+  insert(&temp, newNode);
+  *head = temp;
+  //make input look nicer
+
+  return *head;
 }
 
-Player *create_player_up(int pid, int wins, int losses, int ties) {
-  Player *x = (Player *)malloc(sizeof(Player));
-  x->userid = pid;
-  x->wins = wins;
-  x->losses = losses;
-  x->ties = ties;
-  return x;
+
+//inserts node into LL
+void insert(Node **head, Node *newNode){
+  Node *temp = *head;
+
+  if(temp == NULL){
+    *head = newNode;
+    return;
+  }
+
+  if(newNode->userid < temp->userid) {
+    //if need to move head back must do it outside loop
+    newNode->next = *head;
+    *head = newNode;
+    return;
+  }
+
+  //else we can just insert it into the right pos in the list
+  Node *curr;
+  curr = temp;
+
+  while(temp->next !=NULL) {
+    temp = temp -> next;
+
+    if(newNode->userid < temp->userid) {
+      curr->next = newNode;
+      newNode->next=temp;
+      return;
+    }
+    //if we are at the end of the list
+    curr = temp;
+  }
+
+  if(curr->next == NULL){
+    curr->next = newNode;
+    newNode->next = NULL;
+    return;
+  }
 }
-*/
 
-//check if username/id combo already exists
-//return FALSE if it does exist, TRUE if it does not
-Player *query(char *username, int id, int fd, Node *head, int verbose) {
+Player* update(int fd, Node **head, int userid, int wins, int losses, int ties){
 
-  Node *tmp = head;
-  while (tmp != NULL){
-    if (tmp->player_id == id){
-      Player *tmp2 = calloc(1, sizeof(Player));
-      lseek(fd, tmp->index, SEEK_SET);
-      read(fd, tmp2, sizeof(Player));
-      if(verbose == TRUE)
-        printf("QUERY: %d,%s, %d, %d, %d\n", tmp2->userid,
-          tmp2->username, tmp2->wins, tmp2->losses, tmp2->ties);
-      if (tmp2->username == username){
-        return tmp2;
-      } else {
-        if(verbose == TRUE)
-          printf("That id number belongs to a different username.");
-        return NULL;
-      }
-    } else {
-      tmp = tmp->next;
+  Node *temp = *head;
+  //declare struct, don't need to use memory on the heap
+  Player *prec = calloc(1, sizeof(Player));
+
+
+  //find data for playerid user entered, change info
+  while(temp != NULL){
+    if(temp->userid == userid) {
+      printf("%s", "BEFORE: ");
+      printp(fd, temp->index);
+
+      readp(fd, temp->index, prec);
+      prec->userid = userid;
+      prec->wins += wins;
+      prec->losses += losses;
+      prec->ties += ties;
+
+      writep(fd, temp->index, prec);
+
+      printf("%s", "AFTER: ");
+      printp(fd, temp->index);
+      //make input look nicer
+
+      return prec;
+    }else{
+      temp = temp->next;
     }
   }
-  if(verbose == TRUE)
-    printf("Player with id %d not found.", id);
+  printf("ERROR - player does not exist.");
+
+  //make input look nicer
   return NULL;
 }
 
+void query(int fd, Node **head){
+  int userid;
+  Node *temp = *head;
+  scanf("%d", &userid);
+
+  //find data user needs based on given ID
+  //print that player data
+  while(temp != NULL){
+    if(temp->userid == userid) {
+      printf("QUERY: ");
+      printp(fd, temp->index);
+      //make input look nicer
+      printf("> ");
+
+      return;
+    }else{
+      temp = temp->next;
+    }
+  }
+  //ERROR
+  printf("%s\n", "ERROR - player does not exist.");
+
+  //make input look nicer
+  printf("> ");
+
+  return;
+}
+
+//free memory starting from head
+void kill(Node **head){
+  Node *node = *head;
+  Node *temp;
+  while(node != NULL) {
+    temp = node;
+    node = node->next;
+    temp->next = NULL;
+    free(temp);
+  }
+  *head = NULL;
+}
+
+//throws a meaningful error message if something goes wrong
+//useful, especially in file I/O
+void die(const char *message){
+  if(errno)
+    perror(message);
+  else
+    printf("ERROR: %s\n", message);
+  exit(1);
+}
 
 
-int readp(int fd, int index, Player *play){
-  lseek(fd, index*sizeof(Player),0);
+int doesPlayerExist(Node **head, int uPID, char *username, int fd){
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+      return TRUE;
+    }else{
+      temp = temp->next;
+    }
+  }
+  return FALSE;
+}
+
+int isPlayerTaken(Node **head, int uPID, char *username, int fd){
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+    Player play;
+    
+    readp(fd, temp->index, &play);
+    if(strncmp(play.username, username, 20) != 0)
+      return TRUE;
+    else if(strncmp(play.username, username, 20) == 0)
+      return FALSE;
+    }else temp = temp->next;
+  }
+  return FALSE;
+}
+
+int getIndex(int fd){
+  int index=0;
+  struct player rec;
+  int rd = readnp(fd, index, &rec);
+  if(rd == 0 || rd == -1) return index;
+
+  while (TRUE){
+    if(rd == 0 || rd == -1) break;
+    index++;
+    rd = readnp(fd, index, &rec);
+  }
+  return index;
+}
+
+int readnp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player), 0);
   return read(fd, play, sizeof(Player));
 }
 
-Node **persist(int fd, Node **head){
-  
-  //Node *tmp = *head;
+Player* getPlayer(int uPID, int fd, char *username, Node **head){
 
-  //Player *tmp2 = malloc(sizeof(Player));
-  int index = 0;
-  Node *tmp = *head;
-  
-  Player *tmp2 = calloc(1, sizeof(Player));
 
-  while(readp(fd, index, tmp2) != -1){
-    Player *newp = calloc(1, sizeof(Player));
-    newp = tmp2;  
-    insert(newp->userid, fd, newp, &tmp);
-    index++;
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  
+  Player *play = calloc(1, sizeof(Player));
+
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+      readp(fd, temp->index, play);
+      break;
+    }else{
+      temp = temp->next;
+    }
   }
+  return play;
 
-  *head = tmp;
-
-  free(tmp2);
-  return head;
-}
-
-
-
-void printp(int fd, int index){
-  Player play;
-  readp(fd,index,&play);
-  printf("BEFORE: %d, %s, %d, %d, %d\n", 
-                                  play.userid, 
-                                  play.username,
-                                  play.wins, 
-                                  play.losses, 
-                                  play.ties);
-  return;
 }

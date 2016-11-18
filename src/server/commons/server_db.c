@@ -2,11 +2,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/socket.h>
-//#include "../../lib/database.h"
-#include "../../lib/andrews-db-prog.h"
+#include <string.h>
+#include "../../lib/database.h"
 #include "../../lib/usermgmt.h"
 #include "../../lib/gips.h"
-#include <string.h>
 
 //record player data to player's entry in struct
 //if player doesn't exist, create an entry

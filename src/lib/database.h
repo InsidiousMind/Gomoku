@@ -1,23 +1,47 @@
+
 typedef struct player {
   int userid;
-  char *username;
+  char username[20];
   int wins;
   int losses;
   int ties;
+  int index;
 } Player;
 
+
 typedef struct node {
-  int player_id;
+  int userid;
   int index;
   struct node *next;
 } Node;
 
-int insert(int id, int fd, Player *player, Node **head);
-int update(int id, int fd, Player *player, Node *head);
-Player *query(char *username, int id, int fd, Node *head, int verbose);
-/*Player *create_player();
-Player *create_player_up();*/
-void print_list(Node *head);
-void print_file(int fd);
-void print_player(Player *player);
-Node **persist(int fd, Node **head);
+
+void persist(int fd, int *index, Node **head, char *filename);
+
+
+void print_nodes(Node **head);
+void print_players(int fd, Node **head);
+void printp(int fd, int index);
+
+void insert(Node **head, Node *newNode);
+
+void query(int fd, Node **head);
+
+int doesPlayerExist(Node **head, int uPID, char *username, int fd);
+int isPlayerTaken(Node **head, int uPID, char *username, int fd);
+
+
+int readnp(int fd, int index, Player *play);
+
+int getIndex(int fd);
+
+Node* add(int fd, int index, Node **head, int userid, 
+    int wins, int losses, int ties, char* username);
+
+Player* update(int fd, Node **head, int userid, int wins, int losses, int ties);
+
+Player* getPlayer(int uPID, int fd, char *username, Node **head);
+
+
+
+

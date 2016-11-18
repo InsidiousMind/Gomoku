@@ -4,15 +4,14 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <signal.h>
 #include "../../lib/gips.h"
 #include "../../lib/network.h"
 #include "../../lib/glogic.h"
-//#include "../../lib/database.h"
-#include "../../lib/andrews-db-prog.h"
+#include "../../lib/database.h"
 #include "server_db.h"
 #include "game_thread.h"
-#include "../../lib/misc.h"
-#include <signal.h>
+#include "../../lib/IO_sighandle.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -38,7 +37,7 @@ void *startGameServer(void *args){
   
   gameArgs *gameSrvInfo = (gameArgs*)args;
 
-  game *gameInfo = malloc(sizeof(game));
+  game *gameInfo = calloc(1, sizeof(game));
   
   pthread_t pthread, pthread2;
 

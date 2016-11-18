@@ -8,12 +8,11 @@
 #include <netdb.h>
 #include <signal.h>
 #include <pthread.h>
-//#include "../../lib/database.h"
-#include "../../lib/andrews-db-prog.h"
+#include "../../lib/database.h"
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../../lib/network.h"
-#include "../../lib/misc.h"
+#include "../../lib/IO_sighandle.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP

@@ -24,8 +24,8 @@ BUILD_CLIENT_OBJ = build/client/asgn6-client.o
 #Dependencies
 
 LIB_SRC = src/lib/
-DEP_OBJ = gips.o glogic.o network.o misc.o database.o usermgmt.o
-BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/misc.o build/lib/database.o build/lib/usermgmt.o
+DEP_OBJ = gips.o glogic.o network.o IO_sighandle.o database.o usermgmt.o
+BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/network.o build/lib/IO_sighandle.o build/lib/database.o build/lib/usermgmt.o
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
@@ -61,7 +61,7 @@ clean:
 main.o: $(DEP_OBJ) $(SRV_SRC)main.c $(SRV_DEP)asgn6-server.h
 	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
-asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)network.h $(LIB_SRC)misc.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h
+asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)network.h $(LIB_SRC)IO_sighandle.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h
 	$(CC) -c src/server/commons/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(SRV_DEP)game_thread.c $(SRV_DEP)server_db.h $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(LIB_SRC)network.h $(SRV_DEP)game_thread.h
@@ -69,7 +69,7 @@ game_thread.o: $(SRV_DEP)game_thread.c $(SRV_DEP)server_db.h $(LIB_SRC)gips.h $(
 
 #Client Objects
 
-asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)misc.h $(LIB_SRC)gips.h
+asgn6-client.o: $(LIB_SRC)network.h $(LIB_SRC)IO_sighandle.h $(LIB_SRC)gips.h
 	$(CC) -c src/client/asgn6-client.c -o build/client/asgn6-client.o $(CFLAGS)
 
 #Library Objects
@@ -83,14 +83,14 @@ glogic.o: $(LIB_SRC)glogic.c $(LIB_SRC)gips.h $(LIB_SRC)glogic.h
 network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
 	$(CC) -c src/lib/network.c -o build/lib/network.o $(CFLAGS)
 
-misc.o: $(LIB_SRC)misc.c $(LIB_SRC)misc.h
-	$(CC) -c src/lib/misc.c -o build/lib/misc.o $(CFLAGS)
+IO_sighandle.o: $(LIB_SRC)IO_sighandle.c $(LIB_SRC)IO_sighandle.h
+	$(CC) -c src/lib/IO_sighandle.c -o build/lib/IO_sighandle.o $(CFLAGS)
 
-database.o: $(LIB_SRC)andrews-db-prog.c
-	$(CC) -c src/lib/andrews-db-prog.c -o build/lib/database.o $(CFLAGS)
+database.o: $(LIB_SRC)database.c
+	$(CC) -c src/lib/database.c -o build/lib/database.o $(CFLAGS)
 
 usermgmt.o: $(LIB_SRC)usermgmt.c
 	$(CC) -c src/lib/usermgmt.c -o build/lib/usermgmt.o $(CFLAGS)
 
-server_db.o: $(LIB_SRC)andrews-db-prog.h $(LIB_SRC)usermgmt.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
+server_db.o: $(LIB_SRC)database.h $(LIB_SRC)usermgmt.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
 	$(CC) -c src/server/commons/server_db.c -o build/server/server_db.o $(CFLAGS)
