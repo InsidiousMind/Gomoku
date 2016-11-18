@@ -1,6 +1,6 @@
 #! /bin/bash
 
-./client << EOF
+build/bin/client << EOF
 Tom
 233
 3 3
