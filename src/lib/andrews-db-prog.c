@@ -34,10 +34,6 @@ void writep(int fd, int index, Player *play);
 
 //read in previous records
 
-void ask_input(int fd, int index, Node **head);
-
-
-
 void query(int fd, Node **head);
 
 void kill(Node **head);
@@ -165,40 +161,6 @@ void printp(int fd, int index){
   return;
 
 }
-
-
-//get first character in input,
-//go to method to do what user asks
-/*void ask_input(int fd, int index, Node **head){
-
-  Node *temp = *head;
-  char c;
-
-//make input look nicer
-printf("> ");
-
-do{
-c = getchar();
-
-if(c == '+'){
- *head = add(fd, index, &temp);
- index++;
- }
- else if(c == '*')
- update(fd, &temp);
- else if (c == '?')
- query(fd, &temp);
- else if (c == '\n');
-//ignore newline chars, reduced 'Error Invalid Input'
-else if (c == '#'){
-printf("TERMINATE\n");
-print_players(fd, &temp);
-return;
-}
-}while(c != '#');
-
-return;
-}*/
 
 
 //creates a new noed (calloc) and writes it to binary file
@@ -391,7 +353,7 @@ int doesPlayerExist(Node **head, int uPID, char *username, int fd){
     readp(fd, temp->index, &play);
     
     if(strncmp(play.username, username, 20) != 0)
-      return FALSE;
+      return TRUE;
 
     }else{
       temp = temp->next;
@@ -408,7 +370,8 @@ int getIndex(int fd){
   int rd = readnp(fd, index, &rec);
   if(rd == 0 || rd == -1) return index;
 
-  while (rd != -1 || rd != 0){
+  while (TRUE){
+    if(rd == 0 || rd == -1) break;
     index++;
     rd = readnp(fd, index, &rec);
   }
@@ -435,6 +398,7 @@ Player* getPlayer(int uPID, int fd, char *username, Node **head){
   while(temp != NULL){
     if(temp->userid == uPID) {
       readp(fd, temp->index, play);
+      break;
     }else{
       temp = temp->next;
     }

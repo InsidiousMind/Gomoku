@@ -150,7 +150,8 @@ void *subserver(void *arguments) {
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
 
   
-  recPlayer((&(gameInfo->args.head_access)), uPID, gameInfo->args.fd, win, gameInfo->args.head, username, PID, reply_sock_fd);
+  recPlayer((&(gameInfo->args.head_access)), uPID,  gameInfo->args.fd, 
+             win, gameInfo->args.head, username, PID, reply_sock_fd);
   
   close(reply_sock_fd);
 

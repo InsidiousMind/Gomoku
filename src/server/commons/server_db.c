@@ -10,7 +10,8 @@
 
 //record player data to player's entry in struct
 //if player doesn't exist, create an entry
-void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd, int isWin, Node *head, char *username, char PID, int sockfd)
+void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd, 
+    int isWin, Node *head, char *username, char PID, int sockfd)
 {
   
   pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
