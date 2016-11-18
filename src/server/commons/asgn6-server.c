@@ -8,7 +8,8 @@
 #include <netdb.h>
 #include <signal.h>
 #include <pthread.h>
-#include "../../lib/database.h"
+//#include "../../lib/database.h"
+#include "../../lib/andrews-db-prog.h"
 #include "asgn6-server.h"
 #include "game_thread.h"
 #include "../../lib/network.h"

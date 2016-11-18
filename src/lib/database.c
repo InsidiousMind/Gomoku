@@ -23,18 +23,23 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include "gips.h"
 
+
+//the ID of insert must be unique
 int insert(int id, int fd, Player *player, Node **head) {
-  printf("ADD %d,%s, %d, %d, %d\n", player->userid, 
-      player->username, 
-      player->wins, 
-      player->losses, 
-      player->ties);
+
+
+  print_player(player);
+  
   Node *tmp = *head;
+
+
+  //make sure the ID we are inserting is unique
   if (tmp != NULL) {
     if (tmp->player_id == id) {
       printf("Player ID already exists.\n");
@@ -51,60 +56,90 @@ int insert(int id, int fd, Player *player, Node **head) {
       }
     }
   }
+
   free(tmp);
+
+
   Node *x = calloc(1, sizeof(Node));
   x->player_id = id;
   int offset = lseek(fd, 0, SEEK_END);
   x->index = offset;
+  
   if ((*head) != NULL && (*head)->player_id == id) {
     printf("ERROR - Player ID already exists.\n");
     free(x);
     return FALSE;
   }
+ 
   else if (*head == NULL || (*head)->player_id > x->player_id){
     x->next = *head;
     *head = x;
     write(fd, player, sizeof(Player));
+
   } else {
+
     tmp = *head;
+
     while (tmp->next !=NULL && tmp->next->player_id <= x->player_id) {
+
       if (x->player_id == tmp->next->player_id) {
         printf("ERROR - Player ID already exists.\n");
         free(x);
         return 0;
       }
+
       tmp =  tmp->next;
     }
+
     x->next = tmp->next;
     tmp->next = x;
     write(fd, player, sizeof(Player));
+
   }
+
   return TRUE;
+
 }
 
 int update(int id, int fd, Player *player, Node *head) {
   Node *tmp = head;
-  while (tmp->next != NULL && tmp->player_id != id) {
+  
+  
+  while (tmp->next != NULL && tmp->player_id != id)
     tmp = tmp->next;
-  }
+
+
   if (tmp->player_id == id) {
+ 
     Player *tmp2 = (Player *)malloc(sizeof(Player));
     lseek(fd, tmp->index, SEEK_SET);
     read(fd, tmp2, sizeof(Player));
-    printf("BEFORE: %d, %s, %d, %d, %d\n", tmp2->userid, tmp2->username, tmp2->wins, tmp2->losses, tmp2->ties);
+    
+    print_player(tmp2);
+   
     tmp2->wins = player->wins;
     tmp2->losses = player->losses;
     tmp2->ties = player->ties;
-    printf("AFTER: %d, %s, %d, %d, %d\n", tmp2->userid, tmp2->username, tmp2->wins, tmp2->losses, tmp2->ties);
+  
+  
+    print_player(tmp2);
+  
     lseek(fd, tmp->index, SEEK_SET);
+    lseek(fd, tmp->index, SEEK_SET);
+
     write(fd, tmp2, sizeof(Player));
     free(tmp2);
+
   } else {
+
     if (tmp->next == NULL) {
+
       printf("ERROR - Player does not exist.\n");
       return FALSE;
+
     }
   }
+
   return TRUE;
 }
 
@@ -130,16 +165,17 @@ void print_file(int fd) {
 }
 
 void print_player(Player *player){
-  
-  printf("%d, %s, %d, %d, %d\n", player->userid, 
+
+  printf("%d, %s, %d, %d, %d\n", player->userid,
       player->username,
-      player->wins, 
-      player->losses, 
+      player->wins,
+      player->losses,
       player->ties);
 }
-
+/*
 Player *create_player(int pid, char *username) {
-  Player *x = (Player *)malloc(sizeof(Player));
+  
+  Player *x = calloc(1, sizeof(Player));
   x->userid = pid;
   x->username = username;
   x->wins = 0;
@@ -156,7 +192,7 @@ Player *create_player_up(int pid, int wins, int losses, int ties) {
   x->ties = ties;
   return x;
 }
-
+*/
 
 //check if username/id combo already exists
 //return FALSE if it does exist, TRUE if it does not
@@ -165,33 +201,21 @@ Player *query(char *username, int id, int fd, Node *head, int verbose) {
   Node *tmp = head;
   while (tmp != NULL){
     if (tmp->player_id == id){
-      
       Player *tmp2 = calloc(1, sizeof(Player));
       lseek(fd, tmp->index, SEEK_SET);
       read(fd, tmp2, sizeof(Player));
-        
       if(verbose == TRUE)
-           
         printf("QUERY: %d,%s, %d, %d, %d\n", tmp2->userid,
           tmp2->username, tmp2->wins, tmp2->losses, tmp2->ties);
-          
       if (tmp2->username == username){
-         
         return tmp2;
-          
       } else {
-          
         if(verbose == TRUE)
-         
           printf("That id number belongs to a different username.");
-          
         return NULL;
       }
-
     } else {
-
       tmp = tmp->next;
-
     }
   }
   if(verbose == TRUE)
@@ -199,7 +223,46 @@ Player *query(char *username, int id, int fd, Node *head, int verbose) {
   return NULL;
 }
 
-//void addPlayer(int id, )
+
+
+int readp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player),0);
+  return read(fd, play, sizeof(Player));
+}
+
+Node **persist(int fd, Node **head){
+  
+  //Node *tmp = *head;
+
+  //Player *tmp2 = malloc(sizeof(Player));
+  int index = 0;
+  Node *tmp = *head;
+  
+  Player *tmp2 = calloc(1, sizeof(Player));
+
+  while(readp(fd, index, tmp2) != -1){
+    Player *newp = calloc(1, sizeof(Player));
+    newp = tmp2;  
+    insert(newp->userid, fd, newp, &tmp);
+    index++;
+  }
+
+  *head = tmp;
+
+  free(tmp2);
+  return head;
+}
 
 
 
+void printp(int fd, int index){
+  Player play;
+  readp(fd,index,&play);
+  printf("BEFORE: %d, %s, %d, %d, %d\n", 
+                                  play.userid, 
+                                  play.username,
+                                  play.wins, 
+                                  play.losses, 
+                                  play.ties);
+  return;
+}

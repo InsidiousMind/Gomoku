@@ -7,9 +7,12 @@
 #include "../../lib/gips.h"
 #include "../../lib/network.h"
 #include "../../lib/glogic.h"
-#include "../../lib/database.h"
+//#include "../../lib/database.h"
+#include "../../lib/andrews-db-prog.h"
 #include "server_db.h"
 #include "game_thread.h"
+#include "../../lib/misc.h"
+#include <signal.h>
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -67,11 +70,11 @@ void *startGameServer(void *args){
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
+  signal(SIGINT, INThandle);
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
   
-  free(gameSrvInfo->reply_sock_fd);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
 
@@ -96,7 +99,7 @@ void *subserver(void *arguments) {
   Node *head;
   
   game *gameInfo = ((game *) arguments);
-  
+  fd = gameInfo->args.fd; 
   pthread_mutex_lock(&(*(gameInfo->args.head_access)));
   head = gameInfo->args.head; 
   pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
@@ -133,23 +136,24 @@ void *subserver(void *arguments) {
   printf("%s\n", username);
 
   //check if username and uPID match/exist
-  //Player *query(char *username, int id, int fd, Node *head, int verbose) {
-  Player *player;
-
-  if((player = query(username, uPID, gameInfo->args.fd, gameInfo->args.head, FALSE)) == NULL) {
+  
+  if(isPlayerTaken(&gameInfo->args.head, uPID, username, fd) == TRUE){
+    uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }else{
-    uPID = genUPID(); 
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
+ 
+ 
+  printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
 
-  printf("Game Ended. Writing Player information to struct...");
   
-  recPlayer((&(gameInfo->args.head_access)), uPID, gameInfo->args.fd, win, gameInfo->args.head, username, PID, reply_sock_fd);
+  recPlayer((&(gameInfo->args.head_access)), uPID,  gameInfo->args.fd, 
+             win, gameInfo->args.head, username, PID, reply_sock_fd);
   
   close(reply_sock_fd);
 
@@ -215,7 +219,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   } while (isWin == 0 && read_count != -1 && read_count != 0);
   
 
-  printf("Game Ended. Performing cleanup...\n");
+  printf("%s%d%s", "Game ended for pid ", pid, " Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);

@@ -15,9 +15,9 @@ typedef struct node {
 int insert(int id, int fd, Player *player, Node **head);
 int update(int id, int fd, Player *player, Node *head);
 Player *query(char *username, int id, int fd, Node *head, int verbose);
-Player *create_player();
-Player *create_player_up();
+/*Player *create_player();
+Player *create_player_up();*/
 void print_list(Node *head);
 void print_file(int fd);
 void print_player(Player *player);
-
+Node **persist(int fd, Node **head);
