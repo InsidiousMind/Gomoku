@@ -12,9 +12,9 @@ void INThandle(int sig){
 
   char c;
 
-//  signal(sig, SIG_IGN);
+  signal(sig, SIG_IGN);
 
-  printf("Do you REALLY want to quit? [y/n]");
+  printf("Do you really want to quit? [y/n]");
 
   c = getchar();
 

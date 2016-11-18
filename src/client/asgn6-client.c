@@ -141,7 +141,7 @@ int main() {
     exit(0);
   }
 
-  signal(SIGINT, INThandle);
+  //signal(SIGINT, INThandle);
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);
