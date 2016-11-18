@@ -1,8 +1,7 @@
 
 typedef struct player {
   int userid;
-  char first[20];
-  char last[20];
+  char username[20];
   int wins;
   int losses;
   int ties;
@@ -27,5 +26,20 @@ void printp(int fd, int index);
 void insert(Node **head, Node *newNode);
 
 void query(int fd, Node **head);
+
+int doesPlayerExist(Node **head, int uPID, char *username, int fd);
+
+int readnp(int fd, int index, Player *play);
+
+int getIndex(int fd);
+
+Node* add(int fd, int index, Node **head, int userid, 
+    int wins, int losses, int ties, char* username);
+
+Player* update(int fd, Node **head, int userid, int wins, int losses, int ties);
+
+Player* getPlayer(int uPID, int fd, char *username, Node **head);
+
+
 
 

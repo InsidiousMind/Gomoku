@@ -172,7 +172,7 @@ void print_player(Player *player){
       player->losses,
       player->ties);
 }
-
+/*
 Player *create_player(int pid, char *username) {
   
   Player *x = calloc(1, sizeof(Player));
@@ -192,7 +192,7 @@ Player *create_player_up(int pid, int wins, int losses, int ties) {
   x->ties = ties;
   return x;
 }
-
+*/
 
 //check if username/id combo already exists
 //return FALSE if it does exist, TRUE if it does not
@@ -223,7 +223,6 @@ Player *query(char *username, int id, int fd, Node *head, int verbose) {
   return NULL;
 }
 
-//void addPlayer(int id, )
 
 
 int readp(int fd, int index, Player *play){

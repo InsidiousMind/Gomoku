@@ -25,7 +25,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "../lib/database.h"
+///#include "../lib/database.h"
+#include "../lib/andrews-db-prog.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"
 
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
   if(argc <= 1){
     fprintf(stderr, "Usage: './server filename\n'");
     exit(1);
-  }else
+  }else{
     printf("Load data from previous file (if it exists)? [Y/n] ");
     char c = getchar();
 
@@ -51,9 +52,10 @@ int main(int argc, char *argv[]) {
       filename = calloc(1, strlen(argv[1]) + 1);
       strcpy(filename, argv[1]);
       fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-      persist(fd, &head);
-      //persist(fd, &index, &head, filename);
+      //persist(fd, &head);
+      persist(fd, &index, &head, filename);
     } else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+  }
 
   serverLoop(fd, &head, &head_access);
 

@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "andrews-db-prog.h"
+#include "gips.h"
 
 //method definitions (same order as methods in file)
 
@@ -35,10 +36,8 @@ void writep(int fd, int index, Player *play);
 
 void ask_input(int fd, int index, Node **head);
 
-Node* add(int fd, int index, Node **head);
 
 
-void update(int fd, Node **head);
 void query(int fd, Node **head);
 
 void kill(Node **head);
@@ -55,39 +54,39 @@ void die(const char *message);
 
 
   if (argc <= 1){
-    fprintf(stderr, "Usage: './asgn4.out filename'\n");
-    exit(1);
+  fprintf(stderr, "Usage: './asgn4.out filename'\n");
+  exit(1);
   }else{
 
-    // y/n, if it's not y or Y then it's assumed to be no
-    printf("Load data from previous file (if it exists)? [Y/n] ");
-    char c = getchar();
+// y/n, if it's not y or Y then it's assumed to be no
+printf("Load data from previous file (if it exists)? [Y/n] ");
+char c = getchar();
 
-    if(c == 'y' || c == 'Y'){
-      //allocate memory so avoid buffer overflow, need filename for stat
-      filename = (char*)malloc(strlen(argv[1])+1);
-      memset(filename, 0, sizeof(*filename));
-      strcpy(filename, argv[1]);
-      fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-      persist(fd, &index, &head, filename);
-      free(filename);
+if(c == 'y' || c == 'Y'){
+//allocate memory so avoid buffer overflow, need filename for stat
+filename = (char*)malloc(strlen(argv[1])+1);
+memset(filename, 0, sizeof(*filename));
+strcpy(filename, argv[1]);
+fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+persist(fd, &index, &head, filename);
+free(filename);
 
-     //if no add O_TRUNC to clear any previous data
-    }else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-  }
+//if no add O_TRUNC to clear any previous data
+}else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+}
 
-  if( fd < 0) die("[ERROR] open failed");
+if( fd < 0) die("[ERROR] open failed");
 
 
 
-  ask_input(fd, index, &head);
+ask_input(fd, index, &head);
 
-  //end sequence
-  close(fd);
-  print_nodes(&head);
-  kill(&head);
-  printf("END\n");
-  exit(EXIT_SUCCESS);
+//end sequence
+close(fd);
+print_nodes(&head);
+kill(&head);
+printf("END\n");
+exit(EXIT_SUCCESS);
 }
 */
 
@@ -119,8 +118,7 @@ void persist(int fd, int *index, Node **head, char *filename){
   if (size == 0) return;
 
   for(i = 0; i < (size); i++){
-    Node *newn = (Node *)malloc(sizeof(Node));
-    memset(newn,0,sizeof(*newn));
+    Node *newn = calloc(1, sizeof(Node));
 
     readp(fd, temp_i, &rec);
     newn->userid = rec.userid;
@@ -159,12 +157,11 @@ void printp(int fd, int index){
   struct player play;
   readp(fd, index, &play);
 
-  printf("%d, %s, %s, %d, %d, %d \n", play.userid,
-                                      play.last,
-                                      play.first,
-                                      play.wins,
-                                      play.losses,
-                                      play.ties);
+  printf("%d, %s, %d, %d, %d \n", play.userid,
+      play.username,
+      play.wins,
+      play.losses,
+      play.ties);
   return;
 
 }
@@ -172,52 +169,59 @@ void printp(int fd, int index){
 
 //get first character in input,
 //go to method to do what user asks
-void ask_input(int fd, int index, Node **head){
+/*void ask_input(int fd, int index, Node **head){
 
   Node *temp = *head;
   char c;
 
-  //make input look nicer
-  printf("> ");
+//make input look nicer
+printf("> ");
 
-  do{
-    c = getchar();
+do{
+c = getchar();
 
-    if(c == '+'){
-      *head = add(fd, index, &temp);
-      index++;
-    }
-    else if(c == '*')
-      update(fd, &temp);
-    else if (c == '?')
-      query(fd, &temp);
-    else if (c == '\n');
-      //ignore newline chars, reduced 'Error Invalid Input'
-    else if (c == '#'){
-      printf("TERMINATE\n");
-      print_players(fd, &temp);
-      return;
-    }
-  }while(c != '#');
-
-  return;
+if(c == '+'){
+ *head = add(fd, index, &temp);
+ index++;
+ }
+ else if(c == '*')
+ update(fd, &temp);
+ else if (c == '?')
+ query(fd, &temp);
+ else if (c == '\n');
+//ignore newline chars, reduced 'Error Invalid Input'
+else if (c == '#'){
+printf("TERMINATE\n");
+print_players(fd, &temp);
+return;
 }
+}while(c != '#');
 
-Node* add(int fd, int index, Node **head){
+return;
+}*/
+
+
+//creates a new noed (calloc) and writes it to binary file
+//inserts it into struct
+Node* add(int fd, int index, Node **head, int userid, 
+    int wins, int losses, int ties, char* username){
 
   Node *temp = *head;
   struct player prec;
   //initialize mem to 0
   memset(&prec, 0, sizeof(prec));
-  //scan in the rest of the line
-  scanf("%d%s%s%d%d%d", &prec.userid, prec.last, prec.first,
-                        &prec.wins, &prec.losses, &prec.ties);
+  
+  //set variables 
+  prec.userid = userid;
+  strncpy(prec.username, username, 19);
+  prec.wins = wins;
+  prec.losses = losses;
+  prec.ties = ties;
 
   while(temp != NULL){
     if(temp->userid == prec.userid){
-      printf("ERROR - userid exists.\n");
+      printf("ERROR - userid exists. Did you mean to update?\n");
       printp(fd, temp->index);
-      printf("> ");
       return *head;
     }else temp = temp -> next;
   }
@@ -241,11 +245,12 @@ Node* add(int fd, int index, Node **head){
   insert(&temp, newNode);
   *head = temp;
   //make input look nicer
-  printf("> ");
 
   return *head;
 }
 
+
+//inserts node into LL
 void insert(Node **head, Node *newNode){
   Node *temp = *head;
 
@@ -284,13 +289,12 @@ void insert(Node **head, Node *newNode){
   }
 }
 
-void update(int fd, Node **head){
-  int userid, wins, losses, ties;
+Player* update(int fd, Node **head, int userid, int wins, int losses, int ties){
+
   Node *temp = *head;
   //declare struct, don't need to use memory on the heap
-  struct player prec;
+  Player *prec = calloc(1, sizeof(Player));
 
-  scanf("%d%d%d%d", &userid, &wins, &losses, &ties);
 
   //find data for playerid user entered, change info
   while(temp != NULL){
@@ -298,20 +302,19 @@ void update(int fd, Node **head){
       printf("%s", "BEFORE: ");
       printp(fd, temp->index);
 
-      readp(fd, temp->index, &prec);
-      prec.userid = userid;
-      prec.wins = wins;
-      prec.losses=losses;
-      prec.ties=ties;
+      readp(fd, temp->index, prec);
+      prec->userid = userid;
+      prec->wins += wins;
+      prec->losses += losses;
+      prec->ties += ties;
 
-      writep(fd, temp->index, &prec);
+      writep(fd, temp->index, prec);
 
       printf("%s", "AFTER: ");
       printp(fd, temp->index);
       //make input look nicer
 
-      printf("> ");
-      return;
+      return prec;
     }else{
       temp = temp->next;
     }
@@ -319,8 +322,7 @@ void update(int fd, Node **head){
   printf("ERROR - player does not exist.");
 
   //make input look nicer
-  printf("> ");
-  return;
+  return NULL;
 }
 
 void query(int fd, Node **head){
@@ -372,4 +374,71 @@ void die(const char *message){
   else
     printf("ERROR: %s\n", message);
   exit(1);
+}
+
+
+int doesPlayerExist(Node **head, int uPID, char *username, int fd){
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+    Player play;
+    
+    readp(fd, temp->index, &play);
+    
+    if(strncmp(play.username, username, 20) != 0)
+      return FALSE;
+
+    }else{
+      temp = temp->next;
+    }
+  }
+
+  return FALSE;
+}
+
+
+int getIndex(int fd){
+  int index=0;
+  struct player rec;
+  int rd = readnp(fd, index, &rec);
+  if(rd == 0 || rd == -1) return index;
+
+  while (rd != -1 || rd != 0){
+    index++;
+    rd = readnp(fd, index, &rec);
+  }
+  return index;
+}
+
+int readnp(int fd, int index, Player *play){
+  lseek(fd, index*sizeof(Player), 0);
+  return read(fd, play, sizeof(Player));
+}
+
+Player* getPlayer(int uPID, int fd, char *username, Node **head){
+
+
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  
+  Player *play = calloc(1, sizeof(Player));
+
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+      readp(fd, temp->index, play);
+    }else{
+      temp = temp->next;
+    }
+  }
+  return play;
+
 }
