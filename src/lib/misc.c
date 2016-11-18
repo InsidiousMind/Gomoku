@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 #include "gips.h"
 
 int isNextArg();
@@ -13,8 +14,7 @@ void INThandle(int sig){
   char c;
 
   signal(sig, SIG_IGN);
-
-  printf("Do you really want to quit? [y/n]");
+  write(0, "Do you really want to quit? [Y/n]", 33);
 
   c = getchar();
 

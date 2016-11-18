@@ -348,13 +348,7 @@ int doesPlayerExist(Node **head, int uPID, char *username, int fd){
   //print that player data
   while(temp != NULL){
     if(temp->userid == uPID) {
-    Player play;
-    
-    readp(fd, temp->index, &play);
-    
-    if(strncmp(play.username, username, 20) != 0)
       return TRUE;
-
     }else{
       temp = temp->next;
     }
@@ -363,6 +357,26 @@ int doesPlayerExist(Node **head, int uPID, char *username, int fd){
   return FALSE;
 }
 
+int isPlayerTaken(Node **head, int uPID, char *username, int fd){
+  Node *temp = *head;
+  char t_username[21];
+  strncpy(t_username, username, 20);
+
+  //find data user needs based on given ID
+  //print that player data
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+    Player play;
+    
+    readp(fd, temp->index, &play);
+    if(strncmp(play.username, username, 20) != 0)
+      return TRUE;
+    else if(strncmp(play.username, username, 20) == 0)
+      return FALSE;
+    }else temp = temp->next;
+  }
+  return FALSE;
+}
 
 int getIndex(int fd){
   int index=0;

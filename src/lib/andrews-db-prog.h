@@ -28,6 +28,8 @@ void insert(Node **head, Node *newNode);
 void query(int fd, Node **head);
 
 int doesPlayerExist(Node **head, int uPID, char *username, int fd);
+int isPlayerTaken(Node **head, int uPID, char *username, int fd);
+
 
 int readnp(int fd, int index, Player *play);
 
