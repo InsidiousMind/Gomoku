@@ -33,7 +33,7 @@ void die(const char *message);
 
 int main(int argc, char *argv[]) {
 
-  int fd = 0;
+  int fd = 0, index = 0;
   char *filename;
 
   //init mutex for access to the database
@@ -43,20 +43,17 @@ int main(int argc, char *argv[]) {
   if(argc <= 1){
     fprintf(stderr, "Usage: './server filename\n'");
     exit(1);
-  }else{
-    //y/n, if it's not y or Y then it's assumed to be no
-    printf("Load data from previous file (if it exists)? [Y/n] ") ;
+  }else
+    printf("Load data from previous file (if it exists)? [Y/n] ");
     char c = getchar();
-    filename = malloc(strlen(argv[1]) + 1);
-    memset(filename, 0, sizeof(*filename));
-    if(c == 'y' || c == 'Y') {
-      fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-    }else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-    head = *persist(fd, &head);
-  }
-  if(fd < 0) die("[ERROR] open failed");
 
-  print_file(fd);
+    if(c == 'y' || c == 'Y'){
+      filename = calloc(1, strlen(argv[1]) + 1);
+      strcpy(filename, argv[1]);
+      fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+      persist(fd, &head);
+      //persist(fd, &index, &head, filename);
+    } else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
   serverLoop(fd, &head, &head_access);
 
@@ -64,10 +61,4 @@ int main(int argc, char *argv[]) {
   close(fd);
 }
 
-void die(const char *message){
-  if(errno)
-  perror(message);
-  else
-  printf("ERROR: %s\n", message);
-  exit(1);
-}
+

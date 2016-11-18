@@ -24,26 +24,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-
-struct player {
-  int userid;
-  char first[20];
-  char last[20];
-  int wins;
-  int losses;
-  int ties;
-  int index;
-};
-
-
-struct node {
-  int userid;
-  int index;
-  struct node *next;
-};
-
-typedef struct node Node;
-typedef struct player Player;
+#include "andrews-db-prog.h"
 
 //method definitions (same order as methods in file)
 
@@ -51,16 +32,11 @@ void readp(int fd, int index, Player *play);
 void writep(int fd, int index, Player *play);
 
 //read in previous records
-void persist(int fd, int *index, Node **head, char *filename);
-
-void print_nodes(Node **head);
-void print_players(int fd, Node **head);
-void printp(int fd, int index);
 
 void ask_input(int fd, int index, Node **head);
 
 Node* add(int fd, int index, Node **head);
-void insert(Node **head, Node *newNode);
+
 
 void update(int fd, Node **head);
 void query(int fd, Node **head);
@@ -70,8 +46,8 @@ void die(const char *message);
 
 //LL = Linked List
 
-
-int main(int argc, char *argv[]) {
+//SAMPLE MAIN (DO NOT DELETE)
+/*int main(int argc, char *argv[]) {
 
   int index = 0, fd = 0;
   char *filename;
@@ -113,6 +89,7 @@ int main(int argc, char *argv[]) {
   printf("END\n");
   exit(EXIT_SUCCESS);
 }
+*/
 
 
 void readp(int fd, int index, Player *play){

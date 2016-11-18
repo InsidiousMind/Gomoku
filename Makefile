@@ -86,11 +86,11 @@ network.o: $(LIB_SRC)network.c $(LIB_SRC)gips.h $(LIB_SRC)network.h
 misc.o: $(LIB_SRC)misc.c $(LIB_SRC)misc.h
 	$(CC) -c src/lib/misc.c -o build/lib/misc.o $(CFLAGS)
 
-database.o: $(LIB_SRC)database.c
+database.o: $(LIB_SRC)andrews-db-prog.c
 	$(CC) -c src/lib/database.c -o build/lib/database.o $(CFLAGS)
 
 usermgmt.o: $(LIB_SRC)usermgmt.c
 	$(CC) -c src/lib/usermgmt.c -o build/lib/usermgmt.o $(CFLAGS)
 
-server_db.o: $(LIB_SRC)database.h $(LIB_SRC)usermgmt.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
+server_db.o: $(LIB_SRC)andrews-db-prog.h $(LIB_SRC)usermgmt.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
 	$(CC) -c src/server/commons/server_db.c -o build/server/server_db.o $(CFLAGS)

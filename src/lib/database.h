@@ -1,6 +1,6 @@
 typedef struct player {
   int userid;
-  char *username;
+  char username[20];
   int wins;
   int losses;
   int ties;
