@@ -140,9 +140,6 @@ int main() {
     printf("%d\n", errno);
     exit(0);
   }
-
-  signal(SIGINT, INThandle);
-  
   while (board != NULL) {
     printf("Wait your turn!\n");
     recv(sock, player_info, sizeof(player_info), 0);
