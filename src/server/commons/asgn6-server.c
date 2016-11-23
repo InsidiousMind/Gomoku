@@ -64,7 +64,6 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   *  reducing memory leaks
   */
  
-  signal(SIGINT, INThandle);
  
   while(TRUE){
     if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)

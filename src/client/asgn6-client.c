@@ -51,6 +51,36 @@ char **get_move(char **board, gips *z, char pid, char stone) {
   return board;
 }
 
+void print_player(Player *play){
+
+  printf("%s%s%s%d%s\n", "Your Stats for username ", play->username,
+                         " and unique ID ", play->userid, " are: \n");
+  printf("%s%d\n", "Wins: ", play->wins);
+  printf("%s%d\n", "Losses: ", play->losses);
+  printf("%s%d\n", "Ties: ", play->ties);
+}
+
+int checkValid(int *moves, char stone, char *name, char **board ){
+  
+  printf("\n%s_> ", name);
+  
+  while(readInts(moves, 2));
+ 
+  printf("%d%c%d\n", moves[0],'|', moves[1]);
+
+  if(moves[0] < 1 || moves[1] < 1 || moves[0] > 8 || moves[1] > 8){
+    printf("Invalid input.");
+    return TRUE;
+  }
+  else if(board[moves[0]][moves[1]] != 'o' && board[moves[0]][moves[1]] != stone){
+    printf("You can't take the other players move!");
+    return TRUE; 
+  }else{
+    return FALSE;
+  }
+
+}
+
 void display_board(char **board) {
   int i;
   int j;
@@ -88,10 +118,13 @@ char **init_board(char **board) {
 
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
 int main() {
-  char *name = malloc(sizeof(char) * 15);
-  char *win = malloc(sizeof(char) * 13);
+  int i; 
+
+  char *name = calloc(15, sizeof(char));
+  char *win = calloc(13, sizeof(char));
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
-  int move_x, move_y, i;
+  int *moves = calloc(2, sizeof(int));
+  
   char pid;
   int uniquePID;
   char stone, otherStone;
@@ -99,7 +132,7 @@ int main() {
   int sock = connect_to_server();
 
   printf("Username: ");
-  scanf("%s", name);
+  readWord(name, strlen(name));
   printf("Player ID: ");
   scanf("%d", &uniquePID);
 
@@ -140,7 +173,10 @@ int main() {
     exit(0);
   }
   while (board != NULL) {
+
     printf("Wait your turn!\n");
+    
+    signal(SIGINT, INThandle);
     recv(sock, player_info, sizeof(player_info), 0);
     if (player_info->isWin != 0) {
       break;
@@ -151,19 +187,14 @@ int main() {
     display_board(board);
 
     printf("Now you can move\n");
-    int valid = FALSE;
 
     signal(SIGINT, INThandle);
-    while(valid == FALSE) {
-      printf("\n%s_> ", name);
-      scanf("%d%d", &move_x, &move_y);
-      if(move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8)
-        printf("Invalid input.");
-      else
-        valid = TRUE;
-    }
-
-    send_move(--move_x, --move_y, board, sock, pid, stone);
+    char c = getc(stdin); /*grab a rogue nullbyte */
+  
+    //check for a valid turn 
+    while(checkValid(moves, stone, name, board));
+    
+    send_move(--moves[0], --moves[1], board, sock, pid, stone);
 
     //check for win
     display_board(board);
@@ -176,13 +207,12 @@ int main() {
     printf("You Lose! :-(\n");
   else
     printf("You Win!! :-)\n");
-
+  
   Player *player = malloc(sizeof(Player));
+ 
   recv(sock, player, sizeof(Player), 0);
-  printf("%s%s%s%d%s\n", "Your Stats for username ", name, " and unique ID ", uniquePID, " are: \n");
-  printf("%s%d\n", "Wins: ", player->wins);
-  printf("%s%d\n", "Losses: ", player->losses);
-  printf("%s%d\n", "Ties: ", player->ties);
+  print_player(player);
+
   close(sock);
 
   for (i = 0; i < HEIGHT; i++) {

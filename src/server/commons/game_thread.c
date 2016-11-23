@@ -69,8 +69,6 @@ void *startGameServer(void *args){
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
 
-  signal(SIGINT, INThandle);
-
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
   
@@ -142,6 +140,8 @@ void *subserver(void *arguments) {
   }else{
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }
+
+  signal(SIGINT, INThandle);
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");

@@ -3,16 +3,15 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "database.h"
 #include "gips.h"
-
 int isNextArg();
-int readWord(void *tmp, int size, int isInt);
-int flush(FILE *where);
+int toDigit(char c);
 
 void INThandle(int sig){
   Node *head; 
- 
+
   char c;
 
   signal(sig, SIG_IGN);
@@ -38,71 +37,96 @@ void free_LL(Node**head){
     free(temp);
   }
   *head = NULL;
-
 }
-/*int* readInts(int count){
-  int *numArr = calloc(count,sizeof(*numArr));
 
-=======
-int* readInts(int count){
->>>>>>> 062bff9f1a9def2a0d225714b0aea956d07e9d9e
-  int i;
+//same as readWord but for ints
+int readInts(int *numArr, int size){
+  char c;
+  int i = 0; 
+  int *tmp = numArr; 
 
-  int *numArr = calloc(count,sizeof(int*));
-   
-  for(i = 0; i < count; i++){
-    readWord((void*)&numArr[i], 4, TRUE);
+  do {
+   //realloc memory if necessary
+   c = fgetc(stdin);
+   if (i >= size) {
+    size++;
+    numArr = realloc(numArr, sizeof(int) * size);
+    tmp = numArr; 
+   } 
+  
+  //stops at a whitespace to get the entire word
+  if (c == '\n' || c == EOF || c == ' ') break;
+  else{
+    if(isdigit(c)){
+      tmp[i] = toDigit(c);
+      i++ ;
+    } else /* do nothing */ ;
   }
-  //flush(stdin);
-  return numArr;  
-}*/
 
-//String MUST be malloced when using this function
-int readWord(void *tmp, int size, int isInt) {
-
-  // Allocate memory for a string.
-  // avoid buffer overflow through realloc
-  char *str = tmp;
-	char c;
-	int i = 0;
-
-	do {
-		c = fgetc(stdin);
-	  
-    //reallocate memory by 1B every time
-    //it goes over the size (initially 1B)
-		if (i >= size) {
-			size++;
-			tmp = realloc(tmp, sizeof(char) * size);
-      str = tmp;
-		}
-
-  //check if Int 
-  //it's a str
-  //stops at a whitespace to get entire word
+  } while(TRUE);
   
-    if (c == '\n' || c == EOF || c == ' ') {
-      if(isInt == TRUE) break;
-      else{
-        str[i]	= '\0';
-        break;
-      }
-    }else{
-      if(isInt == TRUE) str[i] = (int)c;
-      else
-        str[i] = c;
-      i++;
-    }
-	} while (1);
-  
-  if (c == ' '){
+  if (c == ' ' || c == '\n'){
 
     ungetc(c, stdin);
+
     //this is for getting rid of whitespace
     return isNextArg();
 
-  }else
-    return 0;
+  }else return FALSE;
+}
+
+int toDigit(char c){
+
+  int i;
+
+  char dArr[9] = { '1','2', '3', '4', '5', '6', '7', '8', '9'};
+  for(i = 0; i < 9; i++) {
+    if(c == dArr[i]){
+      return i+1; 
+    }
+  }
+  return -1;
+}
+
+//String MUST be malloced when using this function
+int readWord(char *tmp, int size) {
+
+  // Allocate memory for a string.
+  // avoid buffer overflow through realloc
+  char c;
+  int i = 0;
+  char *str = tmp;
+
+  do {
+    c = fgetc(stdin);
+
+    //reallocate memory by 1B every time
+    //it goes over the size (initially 1B)
+    if (i >= size) {
+      size++;
+      tmp = realloc(tmp, sizeof(char) * size);
+      str = tmp;
+    }
+
+    //stops at a whitespace to get entire word
+
+    if (c == '\n' || c == EOF || c == ' ') {
+      str[i]	= '\0';
+      break;
+    }else{
+      str[i] = c;
+      i++;
+    }
+  } while (1);
+
+  if (c == ' '){
+
+    ungetc(c, stdin);
+
+    //this is for getting rid of whitespace
+    return isNextArg();
+
+  }else return FALSE;
 }
 
 //check if the next character is the start of another
@@ -115,17 +139,13 @@ int isNextArg(){
     c = fgetc(stdin);
     i++;
   } while (c == ' ');
-  
+
   if(c == EOF || c == '\n' )
     return 0;
   else{
     ungetc(c, stdin);
     return -1;
   }
+  return -1;
 }
 
-int flush(FILE *where){
-  int c;
-  while (((c = fgetc(where)) != '\n') || (c != EOF))  /*abyss of null*/;
-  return c;
-}
