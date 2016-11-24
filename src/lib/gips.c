@@ -1,13 +1,14 @@
-#include "gips.h"
-#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include "gips.h"
 
 //Some functions to compress what we send over the nets
 
 //packs info needed for playing the game into a struct
 //using chars to make the package as small as possible
-gips *pack(char pid, char isWin, char move_a, char move_b) {
+
+gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b) {
   static gips info;
 
   info.pid = pid; //1 if player1, 2 if player2
@@ -17,53 +18,68 @@ gips *pack(char pid, char isWin, char move_a, char move_b) {
   return &info;
 }
 
-//Some functions to compress what we send over the nets
-//gets packed int a long long (64bits/8bytes)
-//this was a earlier idea that was switched out for the new gips
-// structure. It stays commented since we have some idea for it in the future
-// ((i*HEIGHT) + j ) to get the right pos of a 2d array
-//packs positions of player into a long long
-/*gips *to_long(char **pos, short player){
-static gips info;
-int i, j;
-lng long num = 0;
 
-for(i = 0; i < HEIGHT; i++)  {
-for(j = 0; j < DEPTH; j++) {
-if(pos[i][j] == 'x' )
-num |= (1ull << (((i*HEIGHT)+j)));
-}
-}
+//Functions to safely send things over to client, or from client to server
+int send_to(gips *info, int sock) {
 
-//info.pos = num;
-info.pid = player;
-return &info;
+  int total = 0;
+  int bytesleft = sizeof(info), n;
+  int len = sizeof(info);
+  while (total < len) {
+    n = (int) send(sock, &(*(info + total)), bytesleft, 0);
+    if (n == -1) {
+      perror("[!!!] could not send");
+      break;
+    }
+    total += n; //tally up what was sent
+    bytesleft -= n; //bytes left to send
+  }
+  len = total; // number of bytes actually sent
+  return n == -1 ? -1 : total; //-1 on fail 0 on success
 }
 
+int send_mesg(char *str, int sock) {
 
-//unpacks by checking if the bit in the ll
-//is toggled (1)
-//returns fully built board
-char **from_long(gips *info){
-int i, j;
+  int total = 0;
+  int bytesleft = (int) (strlen(str) * sizeof(char));
+  int n;
+  int len = bytesleft;
 
-static char *pos[8];
-
-for(i = 0; i < 8; i++){
-pos[i] = malloc(8);
-memset(&pos[i], 0, sizeof(pos[i])* strlen(pos[i]));
+  while (total < len) {
+    n = (int) send(sock, str + total, bytesleft, MSG_NOSIGNAL);
+    if (n == -1) {
+      perror("[!!!] could not send:");
+      break;
+    }
+    total += n;
+    bytesleft -= n;
+  }
+  len = total;
+  return n == -1 ? -1 : total;
 }
 
-for(i = 0; i < HEIGHT; i++){
-for(j = 0; j < DEPTH; j++) {
-if( ((info->pos >> ((i*HEIGHT)+j)) & 1) == 1 ){
-pos[i][j] = 'x';
-}else{
-pos[i][j] = 'o';
-}
-}
+int send_misc(void *thing, int sock){
+
+  int total = 0;
+  //watch out for this, this is probably wrong
+  int bytesleft = sizeof(*thing);
+  int n;
+  int len = bytesleft;
+
+  while( total < len){
+    n = (int) send(sock, thing + total, bytesleft, MSG_NOSIGNAL);
+    if (n == -1){
+      perror("[!!!] could not send") ;
+      break;
+    }
+
+    total += n;
+    bytesleft -= n;
+  }
+  len = total;
+
+  return n == -1 ? -1 : total;
 }
 
-return pos;
-}
-*/
+//TODO
+//Functions to safely receive things from client/server

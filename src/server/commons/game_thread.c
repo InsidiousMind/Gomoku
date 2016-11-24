@@ -3,15 +3,17 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <pthread.h>
 #include <signal.h>
+#include <stdbool.h>
+
+//shared libraries
 #include "../../lib/gips.h"
-#include "../../lib/network.h"
 #include "../../lib/glogic.h"
 #include "../../lib/database.h"
+#include "../../lib/IO_sighandle.h"
+//commons
 #include "server_db.h"
 #include "game_thread.h"
-#include "../../lib/IO_sighandle.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -19,12 +21,10 @@ char **addMove(char move_a, char move_b, char pid, char **board, game *gameInfo)
 void turn(game *gameInfo);
 void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd, int play1Moves[2], int play2Moves[2], int isWin);
 int checkWin(char **board, char pid, int sockfd, game *gameInfo);
-char getThisPlayersPID(int client_count);
 char getOtherPlayersPID(char pid);
 void sendPID(char pid, int reply_sock_fd);
-int isMyTurn(game *gameInfo, char pid);
+bool isMyTurn(game *gameInfo, char pid);
 void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
-int checkUPID(int *uPID, char *str);
 int genUPID();
 
 
@@ -44,11 +44,8 @@ void *startGameServer(void *args){
   gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
   gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
   gameInfo->args.fd = gameSrvInfo->fd;
-  
-  pthread_mutex_lock(&(*(gameSrvInfo->head_access)));
-  gameInfo->args.head = gameSrvInfo->head;   
-  pthread_mutex_unlock(&(*(gameSrvInfo->head_access)));
- 
+
+  gameInfo->args.head = gameSrvInfo->head;
   gameInfo->args.head_access = gameSrvInfo->head_access;
   
 
@@ -68,8 +65,6 @@ void *startGameServer(void *args){
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
-
-  signal(SIGINT, INThandle);
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
@@ -92,13 +87,15 @@ void *startGameServer(void *args){
 void *subserver(void *arguments) {
   //get the arguments
 
-  char PID;
+  BYTE PID;
   int uPID = 0;
   int reply_sock_fd, fd; 
-  Node *head;
-  
+  Node *head; 
+
   game *gameInfo = ((game *) arguments);
   fd = gameInfo->args.fd; 
+
+
   pthread_mutex_lock(&(*(gameInfo->args.head_access)));
   head = gameInfo->args.head; 
   pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
@@ -108,17 +105,17 @@ void *subserver(void *arguments) {
 
   //whoever unlocks this first gets player 1!
   pthread_mutex_lock(&gameInfo_access);
-  if(gameInfo->player1Taken == FALSE){
+  if(gameInfo->player1Taken == false){
     PID = 1;
     reply_sock_fd = gameInfo->args.socket;
-    gameInfo->player1Taken = TRUE;
+    gameInfo->player1Taken = true;
   }else{
     PID = 2;
     reply_sock_fd = gameInfo->args.socket2;
   }
   pthread_mutex_unlock(&gameInfo_access);
 
-  int read_count = -1;
+  ssize_t read_count;
   int win;
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
@@ -135,13 +132,15 @@ void *subserver(void *arguments) {
   printf("%s\n", username);
 
   //check if username and uPID match/exist
-  
-  if(isPlayerTaken(&gameInfo->args.head, uPID, username, fd) == TRUE){
+  //if they don't, send the player a uniquePID 
+  if(isPlayerTaken(&head, uPID, username, fd) == true){
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }else{
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }
+
+  signal(SIGINT, INThandle);
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
@@ -180,14 +179,14 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   sendPID(pid, reply_sock_fd);
 
-  int read_count = -1;
+  int read_count;
 
   //wait until other players turn is over,
   //can't play the game all at once!
   do {
 
     //wait until player turn
-    while(isMyTurn(gameInfo, pid) != TRUE) sleep(1);
+    while(isMyTurn(gameInfo, pid) != true) sleep(1);
     
     //send other players moves
     sendMoves(reply_sock_fd, numTurns, pid, gameInfo);
@@ -278,7 +277,7 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
     p1win = check_for_win_server(board);
     
    
-  if ((p1win == TRUE) || (p2win == TRUE)) {
+  if ((p1win == true) || (p2win == true)) {
     
     send(sockfd, &npid, sizeof(int), 0);
     
@@ -338,13 +337,6 @@ void turn(game *gameInfo) {
   }
 }
 
-char getThisPlayersPID(int client_count){
-  if (client_count % 2 == 0)
-    return 1; 
-  else
-    return 2;
-}
-
 char getOtherPlayersPID(char pid){
   if (pid == 1)
     return 2;
@@ -357,7 +349,7 @@ void sendPID(char pid, int reply_sock_fd){
 }
 
 //function to check for turns
-int isMyTurn(game *gameInfo, char pid){
+bool isMyTurn(game *gameInfo, char pid){
   
   int currentTurn; 
   pthread_mutex_lock(&gameInfo->gameInfo_access);
@@ -365,9 +357,9 @@ int isMyTurn(game *gameInfo, char pid){
   pthread_mutex_unlock(&gameInfo->gameInfo_access);
 
   if(currentTurn == pid)
-    return TRUE;
+    return true;
   else
-    return FALSE;
+    return false;
 } 
 
 

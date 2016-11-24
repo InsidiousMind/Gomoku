@@ -18,29 +18,25 @@
 * libraries to run. They are linked when running make server
 *
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h>
-#include <sys/stat.h>
+
 #include "../lib/database.h"
 #include "commons/asgn6-server.h"
-#include "commons/server_db.h"
 
-void die(const char *message);
 
 int main(int argc, char *argv[]) {
 
   int fd = 0, index = 0;
-  char *filename;
 
   //init mutex for access to the database
   pthread_mutex_t head_access = PTHREAD_MUTEX_INITIALIZER;
 
-  Node *head = malloc(sizeof(Node));
+  Node *game_head = malloc(sizeof(Node));
   if(argc <= 1){
     fprintf(stderr, "Usage: './server filename\n'");
     exit(1);
@@ -51,12 +47,12 @@ int main(int argc, char *argv[]) {
     if(c == 'y' || c == 'Y'){
   
       fd = open(argv[1], O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-      persist(fd, &index, &head, argv[1]);
+      persist(fd, &index, &game_head, argv[1]);
  
     } else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
   }
 
-  serverLoop(fd, &head, &head_access);
+  serverLoop(fd, &game_head, &head_access);
   close(fd);
 }
 

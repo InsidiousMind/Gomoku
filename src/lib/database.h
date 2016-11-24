@@ -1,3 +1,7 @@
+#include <stdbool.h>
+
+#ifndef DATABASE_H
+#define DATABASE_H
 
 typedef struct player {
   int userid;
@@ -27,8 +31,8 @@ void insert(Node **head, Node *newNode);
 
 void query(int fd, Node **head);
 
-int doesPlayerExist(Node **head, int uPID, char *username, int fd);
-int isPlayerTaken(Node **head, int uPID, char *username, int fd);
+bool doesPlayerExist(Node **head, int uPID, char *username);
+bool isPlayerTaken(Node **head, int uPID, char *username, int fd);
 
 
 int readnp(int fd, int index, Player *play);
@@ -42,6 +46,6 @@ Player* update(int fd, Node **head, int userid, int wins, int losses, int ties);
 
 Player* getPlayer(int uPID, int fd, char *username, Node **head);
 
-
+#endif //DATABASE_H
 
 

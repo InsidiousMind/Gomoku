@@ -3,8 +3,8 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <string.h>
+
 #include "../../lib/database.h"
-#include "../../lib/usermgmt.h"
 #include "../../lib/gips.h"
 
 //record player data to player's entry in struct
@@ -12,14 +12,16 @@
 void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd, 
     int isWin, Node *head, char *username, char PID, int sockfd)
 {
-  
-  pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
+
+  //used to be
+  //pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
+  pthread_mutex_t head_access = **temp_head_access;
 
   pthread_mutex_lock(&head_access);
   
   Player *player; 
   
-  if(doesPlayerExist(&head, uPID, username, fd) == FALSE){
+  if(doesPlayerExist(&head, uPID, username) == FALSE){
     
     player = calloc(1, sizeof(Player));
    

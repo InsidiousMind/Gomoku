@@ -1,8 +1,8 @@
 #include "gips.h"
 
-#ifndef GLOGIC
-#define GLOGIC
+#ifndef GLOGIC_H
+#define GLOGIC_H
 
 int check_for_win_server(char **board);
 
-#endif
+#endif /* GLOGIC_H */
