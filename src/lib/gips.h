@@ -1,21 +1,16 @@
 #ifndef GIPS
 #define GIPS
+
+typedef unsigned char BYTE;
+
 typedef struct {
-  char pid;
-  char isWin;
-  char move_a;
-  char move_b;
+  BYTE pid;
+  BYTE isWin;
+  BYTE move_a;
+  BYTE move_b;
 } gips;
 
-typedef struct {
-  char pid;
-  long long comp_board;
-} gips_comp;
-
-gips *to_long(char **pos, short player); //packs long long
-char **from_long(gips *info);
-
-gips *pack(char pid, char isWin, char move_x, char move_y);
+gips *pack(BYTE pid, BYTE isWin, BYTE move_x, BYTE move_y);
 
 int send_to(gips *info, int sock);
 

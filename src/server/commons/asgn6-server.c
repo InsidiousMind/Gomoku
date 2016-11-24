@@ -6,15 +6,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <signal.h>
 #include <pthread.h>
-#include "../../lib/database.h"
+#include <stdbool.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
-
 //Shared libraries
 #include "../../lib/gips.h"
-#include "../../lib/IO_sighandle.h"
+#include "../../lib/database.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
@@ -22,23 +20,25 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 
-
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
  
   int sock_fd;
-  Node *head = *((Node **) temp);
+  Node *game_head = *((Node **) temp);
   
   gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
   
+  // game info for managing the player records. Once the game ends, it is automatically written
+  // to the file
   gameSrvInfo->fd = fd;
-
-  pthread_mutex_lock(&(*head_access));
-  gameSrvInfo->head = head;
-  pthread_mutex_unlock(&(*head_access));
-
+  gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
 
   pthread_t pthread; 
+
+  //make the thread detached
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   
   sock_fd = get_server_socket(HOST, HTTPPORT);
@@ -46,13 +46,6 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
     perror("[!!!] error on server start");
     exit(1);
   }
-
-
-  //make the thread detached
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  
 
   /*once two clients connect init a game server
   *              Game Server(detached)
@@ -67,7 +60,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   */
  
  
-  while(TRUE){
+  while(true){
     if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
     if((gameSrvInfo->reply_sock_fd[1] = accept_client(sock_fd)) == -1)

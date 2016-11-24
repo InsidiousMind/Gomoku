@@ -12,8 +12,10 @@
 void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd, 
     int isWin, Node *head, char *username, char PID, int sockfd)
 {
-  
-  pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
+
+  //used to be
+  //pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
+  pthread_mutex_t head_access = **temp_head_access;
 
   pthread_mutex_lock(&head_access);
   

@@ -24,8 +24,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdbool.h>
+
 #include "database.h"
-#include "gips.h"
 
 //method definitions (same order as methods in file)
 
@@ -294,7 +295,7 @@ void die(const char *message){
 }
 
 
-int doesPlayerExist(Node **head, int uPID, char *username){
+bool doesPlayerExist(Node **head, int uPID, char *username){
   Node *temp = *head;
   char t_username[21];
   strncpy(t_username, username, 20);
@@ -303,15 +304,15 @@ int doesPlayerExist(Node **head, int uPID, char *username){
   //print that player data
   while(temp != NULL){
     if(temp->userid == uPID) {
-      return TRUE;
+      return true;
     }else{
       temp = temp->next;
     }
   }
-  return FALSE;
+  return false;
 }
 
-int isPlayerTaken(Node **head, int uPID, char *username, int fd){
+bool isPlayerTaken(Node **head, int uPID, char *username, int fd){
   Node *temp = *head;
   char t_username[21];
   strncpy(t_username, username, 20);
@@ -324,12 +325,12 @@ int isPlayerTaken(Node **head, int uPID, char *username, int fd){
     
     readp(fd, temp->index, &play);
     if(strncmp(play.username, username, 20) != 0)
-      return TRUE;
+      return true;
     else if(strncmp(play.username, username, 20) == 0)
-      return FALSE;
+      return false;
     }else temp = temp->next;
   }
-  return FALSE;
+  return false;
 }
 
 int getIndex(int fd){
@@ -338,7 +339,7 @@ int getIndex(int fd){
   int rd = readnp(fd, index, &rec);
   if(rd == 0 || rd == -1) return index;
 
-  while (TRUE){
+  while (true){
     if(rd == 0 || rd == -1) break;
     index++;
     rd = readnp(fd, index, &rec);

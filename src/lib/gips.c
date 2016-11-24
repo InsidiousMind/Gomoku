@@ -8,7 +8,7 @@
 //packs info needed for playing the game into a struct
 //using chars to make the package as small as possible
 
-gips *pack(char pid, char isWin, char move_a, char move_b) {
+gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b) {
   static gips info;
 
   info.pid = pid; //1 if player1, 2 if player2
@@ -80,7 +80,6 @@ int send_misc(void *thing, int sock){
 
   return n == -1 ? -1 : total;
 }
-
 
 //TODO
 //Functions to safely receive things from client/server
