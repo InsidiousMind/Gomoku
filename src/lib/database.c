@@ -294,7 +294,7 @@ void die(const char *message){
 }
 
 
-int doesPlayerExist(Node **head, int uPID, char *username, int fd){
+int doesPlayerExist(Node **head, int uPID, char *username){
   Node *temp = *head;
   char t_username[21];
   strncpy(t_username, username, 20);

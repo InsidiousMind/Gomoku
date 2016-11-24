@@ -2,6 +2,7 @@ CMakeLists.txt
 .idea/*
 build/*
 debug/*
+src/client/.idea/*
 .*.*.swp
 .*.*.swo
 *.o

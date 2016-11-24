@@ -11,7 +11,9 @@
 #include "../../lib/database.h"
 #include "asgn6-server.h"
 #include "game_thread.h"
-#include "../../lib/network.h"
+
+//Shared libraries
+#include "../../lib/gips.h"
 #include "../../lib/IO_sighandle.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
@@ -64,7 +66,6 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   *  reducing memory leaks
   */
  
-  signal(SIGINT, INThandle);
  
   while(TRUE){
     if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)

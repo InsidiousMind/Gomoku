@@ -5,13 +5,16 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <signal.h>
+
+//shared libraries
 #include "../../lib/gips.h"
-#include "../../lib/network.h"
 #include "../../lib/glogic.h"
 #include "../../lib/database.h"
+#include "../../lib/IO_sighandle.h"
+
+//commons
 #include "server_db.h"
 #include "game_thread.h"
-#include "../../lib/IO_sighandle.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -68,8 +71,6 @@ void *startGameServer(void *args){
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
-
-  signal(SIGINT, INThandle);
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
@@ -142,6 +143,8 @@ void *subserver(void *arguments) {
   }else{
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }
+
+  signal(SIGINT, INThandle);
 
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
