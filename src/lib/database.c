@@ -373,5 +373,4 @@ Player* getPlayer(int uPID, int fd, char *username, Node **head){
     }
   }
   return play;
-
 }

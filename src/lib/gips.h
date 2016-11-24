@@ -1,5 +1,5 @@
-#ifndef GIPS
-#define GIPS
+#ifndef GIPS_H
+#define GIPS_H
 
 typedef unsigned char BYTE;
 
@@ -18,7 +18,7 @@ int send_mesg(char *str, int sock);
 
 int send_misc(void *str, int sock);
 
-#endif /*GIPS*/
+#endif /*GIPS_H*/
 
 #ifndef DEPTH
 #define DEPTH 8

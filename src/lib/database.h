@@ -1,5 +1,8 @@
 #include <stdbool.h>
 
+#ifndef DATABASE_H
+#define DATABASE_H
+
 typedef struct player {
   int userid;
   char username[20];
@@ -43,6 +46,6 @@ Player* update(int fd, Node **head, int userid, int wins, int losses, int ties);
 
 Player* getPlayer(int uPID, int fd, char *username, Node **head);
 
-
+#endif //DATABASE_H
 
 
