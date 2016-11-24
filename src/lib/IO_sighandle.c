@@ -11,8 +11,6 @@ int isNextArg();
 int toDigit(char c);
 
 void INThandle(int sig){
-  Node *head;
-
   char c;
 
   signal(sig, SIG_IGN);
@@ -64,7 +62,7 @@ int readInts(int *numArr, int size, int *i){
         int a = toDigit(c);
         if(a != -1) tmp[*i] = a;
         ++(*i);
-      } else /* do nothing */ ;
+      } else{ /* do nothing */ }
     }
 
   } while(TRUE);

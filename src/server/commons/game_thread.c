@@ -96,10 +96,12 @@ void *subserver(void *arguments) {
   char PID;
   int uPID = 0;
   int reply_sock_fd, fd; 
-  Node *head;
-  
+  Node *head; 
+
   game *gameInfo = ((game *) arguments);
   fd = gameInfo->args.fd; 
+
+
   pthread_mutex_lock(&(*(gameInfo->args.head_access)));
   head = gameInfo->args.head; 
   pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
@@ -136,8 +138,8 @@ void *subserver(void *arguments) {
   printf("%s\n", username);
 
   //check if username and uPID match/exist
-  
-  if(isPlayerTaken(&gameInfo->args.head, uPID, username, fd) == TRUE){
+  //if they don't, send the player a uniquePID 
+  if(isPlayerTaken(&head, uPID, username, fd) == TRUE){
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }else{
