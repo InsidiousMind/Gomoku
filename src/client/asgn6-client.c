@@ -55,10 +55,11 @@ void print_player(Player *play){
 int checkValid(int *moves, char stone, char *name, char **board ){
 
   printf("%s_> ", name);
+
   int i = 0;
   while(readInts(moves, 2, &i));
 
-  printf("%d%c%d\n", moves[0],'|', moves[1]);
+  //decrement so that it will fit on board
   moves[0]--;
   moves[1]--;
 
@@ -215,5 +216,6 @@ int main() {
   free(board);
   free(name);
   free(win);
+  free(moves);
   free(player_info);
 }
