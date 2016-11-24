@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdbool.h>
 
 //shared libraries
 #include "../lib/database.h"
@@ -27,20 +28,19 @@
 //private functions
 #include "commons/client_connect.h"
 
-
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
   gips *z;
   board[a][b] = stone;
-  z = pack(player, FALSE, a, b);
+  z = pack(player, false, a, b);
   send_to(z, sock);
 }
 
-char **get_move(char **board, gips *z, char stone) {
+void get_move(char ***t_board, gips *z, char stone) {
+  char **board = *((char ***)t_board);
   // Check if the game is over.
   // Otherwise we just decode
-  board[(int) z->move_a][(int) z->move_b] = stone;
-  return board;
+  board[(int)z->move_a][(int)z->move_b] = stone;
 }
 
 void print_player(Player *play){
@@ -63,15 +63,15 @@ int checkValid(int *moves, char stone, char *name, char **board ){
   moves[0]--;
   moves[1]--;
 
-  if(moves[0] < 0 || moves[1] < 0 || moves[0] > 7 || moves[1] > 7){
+  if(moves[0] < 0 || moves[1] < 0 || moves[0] > (HEIGHT-1) || moves[1] > (HEIGHT-1) ){
     printf("Invalid input.\n");
-    return TRUE;
+    return true;
   }
   else if(board[moves[0]][moves[1]] != 'o' && board[moves[0]][moves[1]] != stone){
     printf("You can't take the other players move!\n");
-    return TRUE; 
+    return true; 
   }else{
-    return FALSE;
+    return false;
   }
 
 }
@@ -173,12 +173,12 @@ int main() {
     
     signal(SIGINT, INThandle);
     recv(sock, player_info, sizeof(player_info), 0);
-    if (player_info->isWin != 0) {
-      break;
-    } else if ((player_info->move_a == -1) && (player_info->move_b == -1)){
-    } else {
-      board = get_move(board, player_info, otherStone);
-    }
+    
+    //break if win, if first turn don't do anything, else get the move 
+    if (player_info->isWin != 0) break;
+    else if ((player_info->move_a == -1) && (player_info->move_b == -1)) /*nothing*/;
+    else get_move(&board, player_info, otherStone);
+   
     display_board(board);
 
     printf("Now you can move\n");
