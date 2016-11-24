@@ -1,16 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <string.h>
 #include <unistd.h>
 #include <ctype.h>
 #include "database.h"
 #include "gips.h"
+
+
 int isNextArg();
 int toDigit(char c);
 
 void INThandle(int sig){
-  Node *head; 
+  Node *head;
 
   char c;
 
@@ -40,31 +41,34 @@ void free_LL(Node**head){
 }
 
 //same as readWord but for ints
-int readInts(int *numArr, int size){
+int readInts(int *numArr, int size, int *i){
+
   char c;
-  int i = 0; 
-  int *tmp = numArr; 
+  int *tmp = numArr;
 
   do {
-   //realloc memory if necessary
-   c = fgetc(stdin);
-   if (i >= size) {
-    size++;
-    numArr = realloc(numArr, sizeof(int) * size);
-    tmp = numArr; 
-   } 
-  
-  //stops at a whitespace to get the entire word
-  if (c == '\n' || c == EOF || c == ' ') break;
-  else{
-    if(isdigit(c)){
-      tmp[i] = toDigit(c);
-      i++ ;
-    } else /* do nothing */ ;
-  }
+    //realloc memory if necessary
+    c = getchar();
+    while((c == '\n') && (*i == 0)) c = getchar();
+
+    if (*i >= size) {
+      size++;
+      numArr = realloc(numArr, sizeof(int) * size);
+      tmp = numArr;
+    }
+
+    //stops at a whitespace to get the entire word
+    if (c == '\n' || c == EOF || c == ' ') break;
+    else{
+      if(isdigit(c)){
+        int a = toDigit(c);
+        if(a != -1) tmp[*i] = a;
+        ++(*i);
+      } else /* do nothing */ ;
+    }
 
   } while(TRUE);
-  
+
   if (c == ' ' || c == '\n'){
 
     ungetc(c, stdin);
@@ -78,12 +82,9 @@ int readInts(int *numArr, int size){
 int toDigit(char c){
 
   int i;
-
-  char dArr[9] = { '1','2', '3', '4', '5', '6', '7', '8', '9'};
+  char dArr[9] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
   for(i = 0; i < 9; i++) {
-    if(c == dArr[i]){
-      return i+1; 
-    }
+    if(c == dArr[i]) return i+1;
   }
   return -1;
 }
@@ -98,7 +99,7 @@ int readWord(char *tmp, int size) {
   char *str = tmp;
 
   do {
-    c = fgetc(stdin);
+    c = getchar();
 
     //reallocate memory by 1B every time
     //it goes over the size (initially 1B)
@@ -136,16 +137,12 @@ int isNextArg(){
   int i = 0;
 
   do{
-    c = fgetc(stdin);
+    c = getchar();
     i++;
   } while (c == ' ');
 
   if(c == EOF || c == '\n' )
-    return 0;
-  else{
-    ungetc(c, stdin);
-    return -1;
-  }
-  return -1;
+    return FALSE;
+  else ungetc(c, stdin);
+  return TRUE;
 }
-

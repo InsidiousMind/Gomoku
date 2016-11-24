@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
+
 #include "../lib/database.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"
@@ -35,7 +36,6 @@ void die(const char *message);
 int main(int argc, char *argv[]) {
 
   int fd = 0, index = 0;
-  char *filename;
 
   //init mutex for access to the database
   pthread_mutex_t head_access = PTHREAD_MUTEX_INITIALIZER;

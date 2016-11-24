@@ -16,7 +16,12 @@ gips *to_long(char **pos, short player); //packs long long
 char **from_long(gips *info);
 
 gips *pack(char pid, char isWin, char move_x, char move_y);
-//void someone_won(gips *x);
+
+int send_to(gips *info, int sock);
+
+int send_mesg(char *str, int sock);
+
+int send_misc(void *str, int sock);
 
 #endif /*GIPS*/
 
@@ -32,3 +37,14 @@ gips *pack(char pid, char isWin, char move_x, char move_y);
 #ifndef TRUE
 #define TRUE 1
 #endif
+
+#ifndef HOST
+//#define HOST "server1.cs.scranton.edu"
+//#define HOST "10.31.226.161"
+#define HOST "127.0.0.1"
+#endif
+#ifndef HTTPPORT
+#define HTTPPORT "32200"
+#endif
+
+

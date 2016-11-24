@@ -5,13 +5,16 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <signal.h>
+
+//shared libraries
 #include "../../lib/gips.h"
-#include "../../lib/network.h"
 #include "../../lib/glogic.h"
 #include "../../lib/database.h"
+#include "../../lib/IO_sighandle.h"
+
+//commons
 #include "server_db.h"
 #include "game_thread.h"
-#include "../../lib/IO_sighandle.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);

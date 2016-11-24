@@ -15,36 +15,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <netdb.h>
-#include <pthread.h>
 #include <errno.h>
 #include <signal.h>
-#include <ctype.h>
+
+//shared libraries
 #include "../lib/database.h"
-#include "../lib/network.h"
 #include "../lib/gips.h"
 #include "../lib/IO_sighandle.h"
-#include "../lib/usermgmt.h"
 
-#define HTTPPORT "32200"
-#define BACKLOG 10
+//private functions
+#include "commons/client_connect.h"
+
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
-  gips *z = malloc(sizeof(gips));
+  gips *z;
   board[a][b] = stone;
   z = pack(player, FALSE, a, b);
   send_to(z, sock);
 }
 
-char **get_move(char **board, gips *z, char pid, char stone) {
+char **get_move(char **board, gips *z, char stone) {
   // Check if the game is over.
   // Otherwise we just decode
   board[(int) z->move_a][(int) z->move_b] = stone;
@@ -61,19 +53,21 @@ void print_player(Player *play){
 }
 
 int checkValid(int *moves, char stone, char *name, char **board ){
-  
-  printf("\n%s_> ", name);
-  
-  while(readInts(moves, 2));
- 
-  printf("%d%c%d\n", moves[0],'|', moves[1]);
 
-  if(moves[0] < 1 || moves[1] < 1 || moves[0] > 8 || moves[1] > 8){
-    printf("Invalid input.");
+  printf("%s_> ", name);
+  int i = 0;
+  while(readInts(moves, 2, &i));
+
+  printf("%d%c%d\n", moves[0],'|', moves[1]);
+  moves[0]--;
+  moves[1]--;
+
+  if(moves[0] < 0 || moves[1] < 0 || moves[0] > 7 || moves[1] > 7){
+    printf("Invalid input.\n");
     return TRUE;
   }
   else if(board[moves[0]][moves[1]] != 'o' && board[moves[0]][moves[1]] != stone){
-    printf("You can't take the other players move!");
+    printf("You can't take the other players move!\n");
     return TRUE; 
   }else{
     return FALSE;
@@ -132,7 +126,7 @@ int main() {
   int sock = connect_to_server();
 
   printf("Username: ");
-  readWord(name, strlen(name));
+  readWord(name, strlen(name)+1);
   printf("Player ID: ");
   scanf("%d", &uniquePID);
 
@@ -182,19 +176,18 @@ int main() {
       break;
     } else if ((player_info->move_a == -1) && (player_info->move_b == -1)){
     } else {
-      board = get_move(board, player_info, pid, otherStone);
+      board = get_move(board, player_info, otherStone);
     }
     display_board(board);
 
     printf("Now you can move\n");
 
     signal(SIGINT, INThandle);
-    char c = getc(stdin); /*grab a rogue nullbyte */
-  
+
     //check for a valid turn 
     while(checkValid(moves, stone, name, board));
     
-    send_move(--moves[0], --moves[1], board, sock, pid, stone);
+    send_move(moves[0], moves[1], board, sock, pid, stone);
 
     //check for win
     display_board(board);
