@@ -46,7 +46,7 @@ void *startGameServer(void *args){
   gameInfo->args.fd = gameSrvInfo->fd;
 
   gameInfo->args.head = gameSrvInfo->head;
-  gameInfo->args.head_access = gameSrvInfo->head_access;
+  gameInfo->args.head_access = *gameSrvInfo->head_access;
   
 
   //create a mutex to avoid race condition for shared game resources
@@ -84,7 +84,8 @@ void *startGameServer(void *args){
 //START OF CLIENT THREAD
 ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
-void *subserver(void *arguments) {
+void *subserver(void *arguments)
+{
   //get the arguments
 
   BYTE PID;
@@ -96,13 +97,9 @@ void *subserver(void *arguments) {
   fd = gameInfo->args.fd; 
 
 
-  pthread_mutex_lock(&(*(gameInfo->args.head_access)));
-  head = gameInfo->args.head; 
-  pthread_mutex_unlock(&(*(gameInfo->args.head_access)));
-
-
+  head = gameInfo->args.head;
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
-
+  
   //whoever unlocks this first gets player 1!
   pthread_mutex_lock(&gameInfo_access);
   if(gameInfo->player1Taken == false){
@@ -115,30 +112,33 @@ void *subserver(void *arguments) {
   }
   pthread_mutex_unlock(&gameInfo_access);
 
-  ssize_t read_count;
-  int win;
+    ssize_t read_count;
+    
+    int win;
 
-  printf("subserver ID = %lu\n", (unsigned long) pthread_self());
+    printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-  if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
-    perror("[!!!] error: receive fail in subserver");
+    if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
+      perror("[!!!] error: receive fail in subserver");
 
-  int BUFFERSIZE = 256;
-  char *username = calloc(1, BUFFERSIZE*sizeof(char));
+    int BUFFERSIZE = 256;
+    char *username = calloc(1, BUFFERSIZE*sizeof(char));
 
-  if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
-    perror("[!!] error: receive fail in subserver");
-  username[read_count] = '\0';
-  printf("%s\n", username);
+    if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
+      perror("[!!] error: receive fail in subserver");
+    username[read_count] = '\0';
+    printf("%s\n", username);
 
-  //check if username and uPID match/exist
-  //if they don't, send the player a uniquePID 
+    //check if username and uPID match/exist
+    //if they don't, send the player a uniquePID
+    pthread_mutex_lock(&gameInfo->args.head_access);
   if(isPlayerTaken(&head, uPID, username, fd) == true){
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }else{
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
   }
+  pthread_mutex_unlock(&gameInfo->args.head_access);
 
   signal(SIGINT, INThandle);
 
@@ -146,13 +146,14 @@ void *subserver(void *arguments) {
     perror("[!!!] error: Game Loop Fail");
   }
  
- 
+  //in the future could have subserver return with win and record player in GameServer removing
+  // the need for having head_access in threads
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
 
-  
-  recPlayer((&(gameInfo->args.head_access)), uPID,  gameInfo->args.fd, 
-             win, gameInfo->args.head, username, PID, reply_sock_fd);
-  
+  pthread_mutex_lock(&(gameInfo->args.head_access));
+  recPlayer(uPID, PID, username, win, head, reply_sock_fd, fd);
+  pthread_mutex_unlock(&(gameInfo->args.head_access));
+ 
   close(reply_sock_fd);
 
   free(username);

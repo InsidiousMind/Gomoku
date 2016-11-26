@@ -20,11 +20,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "database.h"
 
@@ -119,53 +119,8 @@ void printp(int fd, int index){
 
 }
 
-
-//creates a new noed (calloc) and writes it to binary file
+//creates a new node (calloc) and writes it to binary file
 //inserts it into struct
-Node* add(int fd, int index, Node **head, int userid, 
-    int wins, int losses, int ties, char* username){
-
-  Node *temp = *head;
-  struct player prec;
-  //initialize mem to 0
-  memset(&prec, 0, sizeof(prec));
-  
-  //set variables 
-  prec.userid = userid;
-  strncpy(prec.username, username, 19);
-  prec.wins = wins;
-  prec.losses = losses;
-  prec.ties = ties;
-
-  while(temp != NULL){
-    if(temp->userid == prec.userid){
-      printf("ERROR - userid exists. Did you mean to update?\n");
-      printp(fd, temp->index);
-      return *head;
-    }else temp = temp -> next;
-  }
-
-  //reset temp after iterating through LL
-  temp = *head;
-
-  prec.index = index;
-  //write node to binary file
-  writep(fd, index, &prec);
-
-  printf("%s", "ADD: ");
-  printp(fd, prec.index);
-
-  Node *newNode = calloc(1, sizeof(Node));
-
-  newNode->userid = prec.userid;
-  newNode->index = prec.index;
-
-  insert(&temp, newNode);
-  *head = temp;
-  //make input look nicer
-
-  return *head;
-}
 
 
 //inserts node into LL
@@ -207,7 +162,7 @@ void insert(Node **head, Node *newNode){
   }
 }
 
-Player* update(int fd, Node **head, int userid, int wins, int losses, int ties){
+void update(int fd, Node **head, int userid, int wins, int losses, int ties){
 
   Node *temp = *head;
   //declare struct, don't need to use memory on the heap
@@ -217,10 +172,12 @@ Player* update(int fd, Node **head, int userid, int wins, int losses, int ties){
   //find data for playerid user entered, change info
   while(temp != NULL){
     if(temp->userid == userid) {
+
       printf("%s", "BEFORE: ");
       printp(fd, temp->index);
 
       readp(fd, temp->index, prec);
+
       prec->userid = userid;
       prec->wins += wins;
       prec->losses += losses;
@@ -231,16 +188,12 @@ Player* update(int fd, Node **head, int userid, int wins, int losses, int ties){
       printf("%s", "AFTER: ");
       printp(fd, temp->index);
       //make input look nicer
-
-      return prec;
+      temp = temp->next;
     }else{
       temp = temp->next;
     }
   }
-  printf("ERROR - player does not exist.");
-
-  //make input look nicer
-  return NULL;
+  printf("[!!ERROR!!] - player does not exist.");
 }
 
 void query(int fd, Node **head){
@@ -284,14 +237,49 @@ void kill(Node **head){
   *head = NULL;
 }
 
-//throws a meaningful error message if something goes wrong
-//useful, especially in file I/O
 void die(const char *message){
   if(errno)
     perror(message);
   else
     printf("ERROR: %s\n", message);
-  exit(1);
+  exit(1)
+      ;
+}
+
+Node *add(int fd, int index, Node **head, Player **play) {
+  
+  Player *prec = *((Player**) play);
+  
+  Node *temp = *head;
+  
+  while(temp != NULL){
+    if(temp->userid == prec->userid){
+      printf("ERROR - userid exists. Did you mean to update?\n");
+      printp(fd, temp->index);
+      return *head;
+    }else temp = temp -> next;
+  }
+  
+  //reset temp after iterating through LL
+  temp = *head;
+  
+  prec->index = index;
+  //write node to binary file
+  writep(fd, index, prec);
+  
+  printf("%s", "ADD: ");
+  printp(fd, prec->index);
+  
+  Node *newNode = calloc(1, sizeof(Node));
+  
+  newNode->userid = prec->userid;
+  newNode->index = prec->index;
+  
+  insert(&temp, newNode);
+  *head = temp;
+  //make input look nicer
+  
+  return *head;
 }
 
 

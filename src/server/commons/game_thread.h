@@ -17,7 +17,7 @@ typedef struct pthread_args {
   int socket2;
   int fd;
   Node *head;
-  pthread_mutex_t *head_access;
+  pthread_mutex_t head_access;
 } pargs;
 #endif /* ARGS */
 

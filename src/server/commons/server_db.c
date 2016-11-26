@@ -3,48 +3,44 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <string.h>
+#include "gips.h"
 
 #include "../../lib/database.h"
-#include "../../lib/gips.h"
+
+void initp(Player **player, int userid, char *username, int wins, int losses, int ties);
 
 //record player data to player's entry in struct
 //if player doesn't exist, create an entry
-void recPlayer(pthread_mutex_t **temp_head_access, int uPID, int fd, 
-    int isWin, Node *head, char *username, char PID, int sockfd)
+
+void recPlayer(int uPID, BYTE PID, char *username, int isWin, Node *head, int sockfd, int fd)
 {
-
-  //used to be
-  //pthread_mutex_t head_access = **((pthread_mutex_t **)temp_head_access);
-  pthread_mutex_t head_access = **temp_head_access;
-
-  pthread_mutex_lock(&head_access);
   
-  Player *player; 
-  
-  if(doesPlayerExist(&head, uPID, username) == FALSE){
-    
-    player = calloc(1, sizeof(Player));
+  Player *player;
+  //if the player doesn't exist create a new player record, and add it
+  //else just update the existing player record
+  if(doesPlayerExist(&head, uPID, username) == false){
    
-    strncpy(player->username, username, 20);
-    player->userid = uPID;
-  
-    if(PID == isWin){
-      head = add(fd, getIndex(fd), &head, uPID, 1, 0, 0, username);
-    }else{
-      head = add(fd, getIndex(fd), &head, uPID, 0, 1, 0, username);
-    }
-  }else{
-    if(PID == isWin)
-      player = update(fd, &head, uPID, 1, 0, 0);
-    else
-      player = update(fd, &head, uPID, 0, 1, 0);
-  }
+    player = calloc(1, sizeof(Player));
+    initp(&player, uPID, username, isWin == PID, !(isWin == PID), 0 );
+    head = add(fd, getIndex(fd), &head, &player);
+    
+  }else update(fd, &head, uPID, isWin==PID, !(isWin == PID), 0);
 
 
   player = getPlayer(uPID, fd, username, &head);
   send(sockfd, player, sizeof(Player), 0);
+}
 
-  pthread_mutex_unlock(&head_access);
-
+//index is set in update/add
+//just an initializer function (pass by ref)
+void initp(Player **player, int userid, char *username, int wins, int losses, int ties){
+  Player *play = *((Player **) player);
+  
+  play->userid = userid;
+  strncpy(play->username, username, 20);
+  play->userid = userid;
+  play->wins = wins;
+  play->losses = losses;
+  play->ties = ties;
 }
 

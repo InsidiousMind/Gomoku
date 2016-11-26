@@ -39,10 +39,9 @@ int readnp(int fd, int index, Player *play);
 
 int getIndex(int fd);
 
-Node* add(int fd, int index, Node **head, int userid, 
-    int wins, int losses, int ties, char* username);
+Node* add(int fd, int index, Node **head, Player **play);
 
-Player* update(int fd, Node **head, int userid, int wins, int losses, int ties);
+void update(int fd, Node **head, int userid, int wins, int losses, int ties);
 
 Player* getPlayer(int uPID, int fd, char *username, Node **head);
 
