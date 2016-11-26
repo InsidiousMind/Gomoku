@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/socket.h>
+#include <ares_build.h>
+#include <string.h>
 #include "server_connections.h"
 
 void cnode(c_head **src_node, cList **dest_node);
 void to_head(cList **src_node, c_head **dest_node, int size);
+bool isSockUp(int sockfd);
 
-void add(c_head **head, int sockfd){
+void c_add(c_head **head, int sockfd){
  
   cList *newNode = calloc(1, sizeof(cList));
   c_head *t_head = *head;
@@ -42,7 +46,7 @@ void add(c_head **head, int sockfd){
     curr = temp;
   }
 }
-void update(c_head **head, int sockfd){
+void c_update(c_head **head, int sockfd){
   
  cList *temp = calloc(1, sizeof(cList));
  c_head *t_head = *head;
@@ -61,7 +65,7 @@ void update(c_head **head, int sockfd){
   printf("[!!ERROR!!] - socket never connected or has never been added to connections\n");
 }
 
-void del(c_head **head, int sockfd){
+void c_del(c_head **head, int sockfd){
   
   cList *temp = calloc(1, sizeof(cList));
   cnode(head, &temp);
@@ -99,6 +103,82 @@ void del(c_head **head, int sockfd){
     curr = temp;
     temp = temp->next;
   }
+}
+
+//find a not-playing node, that is NOT found
+int find(c_head **head, int found){
+
+  int i;
+  cList *temp;
+  c_head *t_head = *head;
+  if(t_head->isPlaying == false && t_head->sockfd != found) {
+    return t_head->sockfd;
+  }
+ 
+  temp = t_head->next;
+  for(i = 1; i < t_head->size; i++) {
+    if(temp->isPlaying == false && temp->sockfd != found) {
+      return temp->sockfd;
+    }
+  }
+  return -1;
+}
+
+void parseConnections(c_head **head) {
+  int i;
+  c_head *t_head = *head;
+  cList *temp;
+ 
+  if (!isSockUp(t_head->sockfd)) {
+   c_del(head, t_head->sockfd);
+  }
+  temp = t_head->next;
+
+  for (i = 1; i < t_head->size; i++, temp = temp->next) {
+    if (!isSockUp(temp->sockfd)) {
+      c_del(head, temp->sockfd);
+    }
+  }
+}
+
+bool isSockUp(int sockfd){
+  int error = 0;
+  socklen_t len = sizeof (error);
+  int retval = getsockopt (sockfd, SOL_SOCKET, SO_ERROR, &error, &len);
+  
+  if (retval != 0) {
+    /* there was a problem getting the error code */
+    fprintf(stderr, "error getting socket error code: %s\n", strerror(retval));
+    return false;
+  }
+  if (error != 0) {
+    /* socket has a non zero error status */
+    fprintf(stderr, "socket error: %s\n", strerror(error));
+    return false;
+  }
+  return true;
+}
+//sets either playing to false or true, depending on
+//if it was set to true or false in the first place
+void setPlaying(c_head **head, int sockfd){
+  
+  int i;
+ 
+  c_head *t_head = *head;
+  cList *temp;
+  if(t_head->sockfd == sockfd) {
+    t_head->isPlaying = !t_head->isPlaying;
+    return;
+  }
+  temp = t_head->next;
+
+  for(i = 1; i < t_head->size; i++, temp = temp->next){
+    if(temp->sockfd == sockfd) {
+      temp->isPlaying = !temp->isPlaying;
+      return;
+    }
+  }
+  printf("No connection with that socket descriptor\n");
 }
 
 //copy node

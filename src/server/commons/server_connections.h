@@ -23,9 +23,10 @@ typedef struct headCList {
   struct connectionList *next;
 } c_head;
 
-void add(c_head **head, int sockfd);
-void update(c_head **head, int sockfd);
-void del(c_head **head, int sockfd);
-
-
+void c_add(c_head **head, int sockfd);
+void c_update(c_head **head, int sockfd);
+void c_del(c_head **head, int sockfd);
+int find(c_head **head, int found);
+void setPlaying(c_head **head, int sockfd);
+void parseConnections(c_head **head);
 #endif //SERVER_SERVER_CONNECTIONS_H

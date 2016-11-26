@@ -12,8 +12,8 @@ CFLAGS = -Wextra -Wall -lpthread -g
 
 SRV_SRC = src/server/
 SRV_DEP = src/server/commons/
-SRV_OBJ = main.o asgn6-server.o game_thread.o server_db.o
-BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/game_thread.o build/server/server_db.o
+SRV_OBJ = main.o asgn6-server.o game_thread.o server_db.o server_connections.o
+BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/game_thread.o build/server/server_db.o build/server/server_connections.o
 
 #Client
 
@@ -92,3 +92,8 @@ client_connect.o: $(CLIENT_DEP)client_connect.c
 
 server_db.o: $(LIB_SRC)database.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
 	$(CC) -c src/server/commons/server_db.c -o build/server/server_db.o $(CFLAGS)
+
+server_connections.o: $(SRV_DEP)server_connections.h
+	$(CC) -c src/server/commons/server_connections.c -o build/server/server_connections.o $(CFLAGS)
+
+
