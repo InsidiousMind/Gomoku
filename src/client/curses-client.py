@@ -32,7 +32,7 @@ def main():
     try:
         while game_running:
             stdscr.refresh()  # This line begins the interface logic.
-            display_board(board, win3)
+            display_board(stdscr, board, win3)
             stdscr.refresh()  # This begins the user interaction
             c = stdscr.getch()
             if c == ord('q'):
@@ -50,7 +50,7 @@ def main():
     down(stdscr)  # Breaks the application down and ends it.
 
 
-def display_board(board, win):
+def display_board(stdscr, board, win):
     x = 1
     y = 1
     for a in board:
@@ -58,6 +58,7 @@ def display_board(board, win):
             win.addch(y, x, ord(b))
             y += 1
         x += 1
+    stdscr.refresh()
 
 
 def init_board():
