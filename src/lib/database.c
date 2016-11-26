@@ -37,7 +37,7 @@ void writep(int fd, int index, Player *play);
 
 void query(int fd, Node **head);
 
-void kill(Node **head);
+void free_gameList(Node **head);
 void die(const char *message);
 
 //LL = Linked List
@@ -225,7 +225,7 @@ void query(int fd, Node **head){
 }
 
 //free memory starting from head
-void kill(Node **head){
+void free_gameList(Node **head){
   Node *node = *head;
   Node *temp;
   while(node != NULL) {

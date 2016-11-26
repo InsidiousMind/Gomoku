@@ -89,15 +89,15 @@ void *subserver(void *arguments)
   //get the arguments
 
   BYTE PID;
-  int uPID = 0;
-  int reply_sock_fd, fd; 
+  int uPID = 0, reply_sock_fd, fd;
   Node *head; 
 
   game *gameInfo = ((game *) arguments);
-  fd = gameInfo->args.fd; 
-
+  
+  fd = gameInfo->args.fd;
 
   head = gameInfo->args.head;
+
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
 
   //whoever unlocks this first gets player 1!
@@ -117,13 +117,14 @@ void *subserver(void *arguments)
   int win;
 
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
-
+  
+  //first packet twe receive is the clients 'Expected' unique PID
   if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
     perror("[!!!] error: receive fail in subserver");
-
+  
+  //next packet is the clients Username
   int BUFFERSIZE = 256;
   char *username = calloc(1, BUFFERSIZE*sizeof(char));
-
   if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
     perror("[!!] error: receive fail in subserver");
   username[read_count] = '\0';
@@ -147,7 +148,6 @@ void *subserver(void *arguments)
   }
 
   //in the future could have subserver return with win and record player in GameServer removing
-  // the need for having head_access in threads
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
 
   pthread_mutex_lock(&(gameInfo->args.head_access));
@@ -217,13 +217,11 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
 
-
   printf("%s%d%s", "Game ended for pid ", pid, " Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-
   free(playerBoard);
   free(player_info);
 

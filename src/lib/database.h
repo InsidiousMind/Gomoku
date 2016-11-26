@@ -45,6 +45,8 @@ void update(int fd, Node **head, int userid, int wins, int losses, int ties);
 
 Player* getPlayer(int uPID, int fd, char *username, Node **head);
 
+void free_gameList(Node **head);
+
 #endif //DATABASE_H
 
 

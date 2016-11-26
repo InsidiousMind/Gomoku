@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
   }
 
   serverLoop(fd, &game_head, &head_access);
+  free_gameList(&game_head);
   close(fd);
 }
 
