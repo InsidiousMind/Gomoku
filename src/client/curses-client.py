@@ -5,7 +5,7 @@ import sys
 import threading
 import logging
 from curses.textpad import Textbox
-
+import socket
 
 class Chat (threading.Thread):
     def __init__(self, win):
@@ -23,6 +23,9 @@ class GIPS (object):
 
 
 def main():
+    host = "127.0.0.1"
+    port1 = 32200
+    port2 = 32201
     print("WELCOME TO GOMOKU")
     print("USERNAME")
     username = input("> ")
@@ -31,9 +34,9 @@ def main():
     # Login with our unique pid.
     # Talk to the server and see what we can get.
     # Get a chat_socket
-    chat_socket = 0
-    # Get a game_socket
-    game_socket = 0
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        chat_socket = s.connect((host, port1))
+        game_socket = s.connect((host, port2))
     # Get your player number from the server.
     pid = 0
     stdscr = initialize()  # Starts the Curses application.
