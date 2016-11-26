@@ -21,12 +21,12 @@ int start_server(int serv_socket, int backlog);  //starts listening on port for 
 int accept_client(int serv_sock); //accepts incoming connection
 
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
- 
+
   int sock_fd;
   Node *game_head = *((Node **) temp);
-  
+
   gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
-  
+
   // game info for managing the player records. Once the game ends, it is automatically written
   // to the file
   gameSrvInfo->fd = fd;
@@ -40,7 +40,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  
+
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
@@ -48,18 +48,18 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   }
 
   /*once two clients connect init a game server
-  *              Game Server(detached)
-  *              /        \
-  *             /          \
-  *   Client Thread      Client Thread  ( both attached to game server)
-  *
-  *   this gives more control over client threads
-  *   For example, now we can use pthread_join in Game server
-  *   to wait for each client thread to finish
-  *  reducing memory leaks
-  */
- 
- 
+   *              Game Server(detached)
+   *              /        \
+   *             /          \
+   *   Client Thread      Client Thread  ( both attached to game server)
+   *
+   *   this gives more control over client threads
+   *   For example, now we can use pthread_join in Game server
+   *   to wait for each client thread to finish
+   *  reducing memory leaks
+   */
+
+
   while(true){
     if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
       continue;
@@ -160,7 +160,7 @@ void print_ip(struct addrinfo *ai) {
       port = ipv4->sin_port;
       ipver = "IPV6";
     }
-    
+
     inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
     printf("serv ip info: %s - %s @%d\n", ipstr, ipver, ntohs(port));
   }

@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <string.h>
-#include "gips.h"
+#include "../../lib/gips.h"
 
 #include "../../lib/database.h"
 
@@ -14,16 +14,16 @@ void initp(Player **player, int userid, char *username, int wins, int losses, in
 
 void recPlayer(int uPID, BYTE PID, char *username, int isWin, Node *head, int sockfd, int fd)
 {
-  
+
   Player *player;
   //if the player doesn't exist create a new player record, and add it
   //else just update the existing player record
   if(doesPlayerExist(&head, uPID, username) == false){
-   
+
     player = calloc(1, sizeof(Player));
     initp(&player, uPID, username, isWin == PID, !(isWin == PID), 0 );
     head = add(fd, getIndex(fd), &head, &player);
-    
+
   }else update(fd, &head, uPID, isWin==PID, !(isWin == PID), 0);
 
 
@@ -35,7 +35,7 @@ void recPlayer(int uPID, BYTE PID, char *username, int isWin, Node *head, int so
 //just an initializer function (pass by ref)
 void initp(Player **player, int userid, char *username, int wins, int losses, int ties){
   Player *play = *((Player **) player);
-  
+
   play->userid = userid;
   strncpy(play->username, username, 20);
   play->userid = userid;

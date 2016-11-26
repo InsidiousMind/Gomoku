@@ -29,16 +29,16 @@ int genUPID();
 
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-//START OF GAME THREAD
-///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+  //START OF GAME THREAD
+  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
-//starts each parallel thread, as programmed in game_thread.c
+  //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
-  
+
   gameArgs *gameSrvInfo = (gameArgs*)args;
 
   game *gameInfo = calloc(1, sizeof(game));
-  
+
   pthread_t pthread, pthread2;
 
   gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
@@ -47,11 +47,11 @@ void *startGameServer(void *args){
 
   gameInfo->args.head = gameSrvInfo->head;
   gameInfo->args.head_access = *gameSrvInfo->head_access;
-  
+
 
   //create a mutex to avoid race condition for shared game resources
   pthread_mutex_init(&gameInfo->gameInfo_access, NULL);
- 
+
   gameInfo->player1Taken = FALSE;
   gameInfo->whoTurn = 1;
   gameInfo->playerWin = FALSE;
@@ -68,7 +68,7 @@ void *startGameServer(void *args){
 
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-  
+
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
   free(gameInfo);
 
@@ -76,13 +76,13 @@ void *startGameServer(void *args){
 }
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-//END OF GAME THREAD
-///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+  //END OF GAME THREAD
+  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-//START OF CLIENT THREAD
-///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+  //START OF CLIENT THREAD
+  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
 void *subserver(void *arguments)
 {
@@ -99,7 +99,7 @@ void *subserver(void *arguments)
 
   head = gameInfo->args.head;
   pthread_mutex_t gameInfo_access = gameInfo->gameInfo_access;
-  
+
   //whoever unlocks this first gets player 1!
   pthread_mutex_lock(&gameInfo_access);
   if(gameInfo->player1Taken == false){
@@ -112,26 +112,26 @@ void *subserver(void *arguments)
   }
   pthread_mutex_unlock(&gameInfo_access);
 
-    ssize_t read_count;
-    
-    int win;
+  ssize_t read_count;
 
-    printf("subserver ID = %lu\n", (unsigned long) pthread_self());
+  int win;
 
-    if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
-      perror("[!!!] error: receive fail in subserver");
+  printf("subserver ID = %lu\n", (unsigned long) pthread_self());
 
-    int BUFFERSIZE = 256;
-    char *username = calloc(1, BUFFERSIZE*sizeof(char));
+  if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
+    perror("[!!!] error: receive fail in subserver");
 
-    if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
-      perror("[!!] error: receive fail in subserver");
-    username[read_count] = '\0';
-    printf("%s\n", username);
+  int BUFFERSIZE = 256;
+  char *username = calloc(1, BUFFERSIZE*sizeof(char));
 
-    //check if username and uPID match/exist
-    //if they don't, send the player a uniquePID
-    pthread_mutex_lock(&gameInfo->args.head_access);
+  if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
+    perror("[!!] error: receive fail in subserver");
+  username[read_count] = '\0';
+  printf("%s\n", username);
+
+  //check if username and uPID match/exist
+  //if they don't, send the player a uniquePID
+  pthread_mutex_lock(&gameInfo->args.head_access);
   if(isPlayerTaken(&head, uPID, username, fd) == true){
     uPID = genUPID();
     send(reply_sock_fd, &uPID, sizeof(uPID), 0);
@@ -145,7 +145,7 @@ void *subserver(void *arguments)
   if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
     perror("[!!!] error: Game Loop Fail");
   }
- 
+
   //in the future could have subserver return with win and record player in GameServer removing
   // the need for having head_access in threads
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
@@ -153,11 +153,11 @@ void *subserver(void *arguments)
   pthread_mutex_lock(&(gameInfo->args.head_access));
   recPlayer(uPID, PID, username, win, head, reply_sock_fd, fd);
   pthread_mutex_unlock(&(gameInfo->args.head_access));
- 
+
   close(reply_sock_fd);
 
   free(username);
-  
+
   pthread_exit(NULL);
 }
 
@@ -188,10 +188,10 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
     //wait until player turn
     while(isMyTurn(gameInfo, pid) != true) sleep(1);
-    
+
     //send other players moves
     sendMoves(reply_sock_fd, numTurns, pid, gameInfo);
-    
+
     int wpid = 0;
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     wpid = gameInfo->playerWin;
@@ -201,29 +201,29 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
     if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
       perror("[!!!] ERROR: receive error in GameLoop");
-  
+
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
     playerBoard = addMove(player_info->move_a, player_info->move_b,
         player_info->pid, playerBoard, gameInfo);
-    
+
     //check for a win 
     isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
-   
+
     //switch the turn 
     turn(gameInfo);
 
     numTurns++;
 
   } while (isWin == 0 && read_count != -1 && read_count != 0);
-  
+
 
   printf("%s%d%s", "Game ended for pid ", pid, " Performing cleanup...\n");
 
   for(i = 0; i < HEIGHT; i++){
     free(playerBoard[i]);
   }
-  
+
   free(playerBoard);
   free(player_info);
 
@@ -276,24 +276,24 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
     p2win = check_for_win_server(board);
   else
     p1win = check_for_win_server(board);
-    
-   
+
+
   if ((p1win == true) || (p2win == true)) {
-    
+
     send(sockfd, &npid, sizeof(int), 0);
-    
+
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     gameInfo->playerWin = npid;
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
-    
+
     return pid;
-    
+
   } else {
-    
+
     send(sockfd, &noWin, sizeof(int), 0);
-    
+
     return 0;
-    
+
   }
 }
 
@@ -351,7 +351,7 @@ void sendPID(char pid, int reply_sock_fd){
 
 //function to check for turns
 bool isMyTurn(game *gameInfo, char pid){
-  
+
   int currentTurn; 
   pthread_mutex_lock(&gameInfo->gameInfo_access);
   currentTurn = gameInfo->whoTurn;
@@ -372,8 +372,8 @@ int genUPID(){
 
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
-//END OF CLIENT THREAD
-///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
+  //END OF CLIENT THREAD
+  ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
 
 
