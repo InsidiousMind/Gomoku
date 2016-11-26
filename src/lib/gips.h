@@ -1,7 +1,7 @@
 #ifndef GIPS_H
 #define GIPS_H
 
-typedef unsigned char BYTE;
+typedef char BYTE;
 
 typedef struct {
   BYTE pid;

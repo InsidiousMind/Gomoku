@@ -13,61 +13,85 @@
 //Shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/database.h"
+#include "server_connections.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
 int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
-
+int* startGame(c_head **head);
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
- 
+  c_head *c_head = NULL;
   int sock_fd;
   Node *game_head = *((Node **) temp);
-  
+
   gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
-  
+
   // game info for managing the player records. Once the game ends, it is automatically written
   // to the file
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
-
-  pthread_t pthread; 
+  pthread_t pthread;
 
   //make the thread detached
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  
+
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
     exit(1);
   }
-
+  
   /*once two clients connect init a game server
-  *              Game Server(detached)
-  *              /        \
-  *             /          \
-  *   Client Thread      Client Thread  ( both attached to game server)
-  *
-  *   this gives more control over client threads
-  *   For example, now we can use pthread_join in Game server
-  *   to wait for each client thread to finish
-  *  reducing memory leaks
-  */
- 
- 
+   *              Game Server(detached)
+   *              /        \
+   *             /          \
+   *   Client Thread      Client Thread  ( both attached to game server)
+   *
+   *   this gives more control over client threads
+   *   For example, now we can use pthread_join in Game server
+   *   to wait for each client thread to finish
+   *  reducing memory leaks
+   */
+
+  int r_sockfd;
+  int *start_socks;
   while(true){
-    if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
+    if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
-    if((gameSrvInfo->reply_sock_fd[1] = accept_client(sock_fd)) == -1)
-      continue;
-    if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
-      printf("Failed to start Game Server");
+    c_add(&c_head, r_sockfd);
+
+    parseConnections(&c_head);
+    
+    if( (start_socks = startGame(&c_head)) != NULL) {
+      gameSrvInfo->reply_sock_fd[0] = start_socks[0];
+      gameSrvInfo->reply_sock_fd[1] = start_socks[1];
+      if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
+       printf("Failed to start Game Server");
+      setPlaying(&c_head, start_socks[0]);
+      setPlaying(&c_head, start_socks[1]);
+      free(start_socks);
+    }
   }
+}
+    
+  
+  
+
+//checks for a valid game, and if it can find one
+//returns the two socket connections to start one
+int* startGame(c_head **head){
+  int *start_socks = calloc(2, sizeof(int));
+  if( (start_socks[0] = find(head, -1)) == -1)
+    return NULL;
+  if( (start_socks[1] = find(head, start_socks[0])) == -1)
+    return NULL;
+  return start_socks;
 }
 
 int get_server_socket(char *hostname, char *port) {
@@ -160,7 +184,7 @@ void print_ip(struct addrinfo *ai) {
       port = ipv4->sin_port;
       ipver = "IPV6";
     }
-    
+
     inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
     printf("serv ip info: %s - %s @%d\n", ipstr, ipver, ntohs(port));
   }
