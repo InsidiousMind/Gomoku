@@ -32,8 +32,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
-
-  pthread_t pthread; 
+  pthread_t pthread;
 
   //make the thread detached
   pthread_attr_t attr;
@@ -46,7 +45,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
     perror("[!!!] error on server start");
     exit(1);
   }
-
+  
   /*once two clients connect init a game server
    *              Game Server(detached)
    *              /        \
@@ -59,12 +58,11 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
    *  reducing memory leaks
    */
 
-
+  int r_sockfd;
   while(true){
-    if ((gameSrvInfo->reply_sock_fd[0] = accept_client(sock_fd)) == -1)
+    if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
-    if((gameSrvInfo->reply_sock_fd[1] = accept_client(sock_fd)) == -1)
-      continue;
+     
     if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
       printf("Failed to start Game Server");
   }
