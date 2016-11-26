@@ -187,13 +187,10 @@ void update(int fd, Node **head, int userid, int wins, int losses, int ties){
 
       printf("%s", "AFTER: ");
       printp(fd, temp->index);
-      //make input look nicer
-      temp = temp->next;
-    }else{
-      temp = temp->next;
-    }
+      return;
+    }else temp = temp->next;
   }
-  printf("[!!ERROR!!] - player does not exist.");
+  printf("[!!ERROR!!] - player does not exist.\n");
 }
 
 void query(int fd, Node **head){
@@ -249,20 +246,17 @@ void die(const char *message){
 Node *add(int fd, int index, Node **head, Player **play) {
   
   Player *prec = *((Player**) play);
-  
   Node *temp = *head;
-  
   while(temp != NULL){
     if(temp->userid == prec->userid){
       printf("ERROR - userid exists. Did you mean to update?\n");
       printp(fd, temp->index);
       return *head;
-    }else temp = temp -> next;
+    } else temp = temp -> next;
   }
   
   //reset temp after iterating through LL
   temp = *head;
-  
   prec->index = index;
   //write node to binary file
   writep(fd, index, prec);

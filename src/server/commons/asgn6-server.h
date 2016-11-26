@@ -8,4 +8,4 @@
 #endif
 
 void serverLoop(int fd, Node **head, pthread_mutex_t *head_access);
-
+int accept_client(int serv_sock);

@@ -4,7 +4,7 @@
 //arguments for gameServer
 typedef struct game_srv_args
 {
-  int reply_sock_fd[2]; 
+  int reply_sock_fd[2];
   int fd;
   Node *head;
   pthread_mutex_t *head_access;
@@ -19,10 +19,7 @@ typedef struct pthread_args {
   Node *head;
   pthread_mutex_t head_access;
 } pargs;
-#endif /* ARGS */
 
-#ifndef GAME
-#define GAME
 //keep track of games and game information
 typedef struct game_s {
   
@@ -39,7 +36,7 @@ typedef struct game_s {
   pargs args;
 
 } game;
-#endif /* GAME */
 
+#endif /* ARGS */
 
-void *startGameServer(void *args); //starts subserver
+void *startGameServer(void *args); //starts subservers
