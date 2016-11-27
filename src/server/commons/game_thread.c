@@ -135,9 +135,9 @@ void *subserver(void *arguments)
   pthread_mutex_lock(&gameInfo->args.head_access);
   if(isPlayerTaken(&head, uPID, username, fd) == true){
     uPID = genUPID();
-    send(reply_sock_fd, &uPID, sizeof(uPID), 0);
+    send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
   }else{
-    send(reply_sock_fd, &uPID, sizeof(uPID), 0);
+    send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
   }
   pthread_mutex_unlock(&gameInfo->args.head_access);
 

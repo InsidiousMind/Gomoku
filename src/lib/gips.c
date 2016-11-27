@@ -26,7 +26,7 @@ int send_to(gips *info, int sock) {
   int bytesleft = sizeof(info), n;
   int len = sizeof(info);
   while (total < len) {
-    n = (int) send(sock, &(*(info + total)), bytesleft, 0);
+    n = (int) send(sock, &(*(info + total)), bytesleft, MSG_NOSIGNAL);
     if (n == -1) {
       perror("[!!!] could not send");
       break;
