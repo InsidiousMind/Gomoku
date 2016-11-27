@@ -18,14 +18,39 @@ class Chat (threading.Thread):
 
 
 class GIPS (object):
-    def __init__(self, gips):
+    def __init__(self, sock):
+        logging.debug("GIPS.sock is being defined.")
+        self.sock = sock
+        logging.debug(self.sock)
+
+    def unpack(self, gips):
+        self.gips = gips
         self.is_win = 0
+        t = struct.unpack('cccc', gips)
+        self.pid = t[0]
+        self.is_win = t[1]
+        self.move_x = t[2]
+        self.move_y = t[3]
+
+    def pack(self, pid, is_win, move_x, move_y):
+        self.is_win = is_win
+        self.pid = pid
+        self.move_x = move_x
+        self.move_y = move_y
+        self.gips = struct.pack('cccc', pid, is_win, move_x, move_y)
+
+    def send(self):
+        self.sock.send(self.gips)
+
+    def recv(self):
+        self.gips = self.sock.recv(4)
 
 
 def main():
-    host = "127.0.0.1"
-    port1 = 32200
-    port2 = 32201
+    logging.basicConfig(filename='log.txt', level=logging.DEBUG)
+    host = "localhost"
+    port = 32200
+    logging.info("Trying to connect on " + str(host) + ":" + str(port))
     # The next few lines are literally useless except to make it look cool.
     print("Welcome to GOMOKU")
     print("USERNAME")
@@ -38,18 +63,18 @@ def main():
     # Get your player number from the server.
     pid = 0
     stdscr = initialize()  # Starts the Curses application.
-    game_socket = 0
-    chat_socket = 0
-    '''
     try:
-        sock1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        game_socket = sock1.connect((host, port1))
-        chat_socket = sock1.connect((host, port2))
+        logging.warning("Trying to connect to the server.")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        logging.warning("Socket created, connecting... " + str(sock))
+        sock.connect((host, port))
+        logging.warning("Socket issue check: " + str(sock))
     except Exception:
+        logging.critical("Server could not be reached!")
         down(stdscr)
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
-    '''
+    logging.debug("Pointer to sock: " + str(sock))
     board = init_board()
     game_running = True
     one_begin_x = 1
@@ -73,20 +98,23 @@ def main():
     box1 = Textbox(win1)
     box2 = Textbox(win4)
     chat = Chat(win2)
-    print("Game starting.")
+    logging.debug("Game starting.")
     try:
         while game_running:
             # Receive a GIPS
-            gips = recv_gips(game_socket)
-            print("Received a GIPS packet.")
+            logging.debug("Starting the loop.")
+            gips = GIPS(sock)
+            logging.debug("The GIPS is defined.")
+            gips.recv()
+            logging.debug("Received a GIPS packet.")
             # Decode the gips.
-            pack = decode_gips(gips)
+            gips.unpack()
             # Check if someone won.
-            print("Current value of winner: " + str(pack.is_win))
-            if pack.is_win is 0:
-                print("Game continuing.")
+            logging.debug("Current value of winner: " + str(gips.is_win))
+            if gips.is_win is 0:
+                logging.debug("Game continuing.")
                 pass
-            elif pack.is_win is pid:
+            elif gips.is_win is pid:
                 game_running = False
                 print("You win!")
                 break
@@ -95,7 +123,7 @@ def main():
                 print("You lose.")
                 break
             # Else update the board.
-            board = update_board(pack, board)
+            board = update_board(gips, board)
             stdscr.refresh()  # This line begins the interface logic. 
             display_board(board, win3)
             stdscr.refresh()  # This begins the user interaction
@@ -112,19 +140,19 @@ def main():
                 # If the move is not valid:
                 if not move_is_valid(move):
                     # Send 'invalid move' to chat.
-                    send_to_chat(chat_socket, "server: Invalid move, "  + str(username) + "!")
+                    send_to_chat(sock, "server: Invalid move, "  + str(username) + "!")
                 else:
                     # Otherwise:
                     # Encode a GIPS
-                    gips = encode_gips(username, pid, move)
+                    gips = GIPS.pack(username, pid, move[0], move[1])
                     # Send the GIPS
-                    send_gips(game_socket, gips)
+                    gips.send()
             if c == ord('c'):
                 box2.edit()
                 stuff = box2.gather()
                 message = str(username) + ": " + str(stuff)
                 # Send message to the server as a bytestring.
-                send_to_chat(chat_socket, message)
+                send_to_chat(sock, message)
                 stdscr.refresh() # Redraws the screen.
         down(stdscr)
         sys.exit(0)
@@ -134,33 +162,16 @@ def main():
         sys.exit(0)
 
 
-def encode_gips(username, pid, move):
-    print("Encoding GIPS object to byte struct")
-    pass
-
-
-def decode_gips(gips):
-    print("Decoding packet")
-    return GIPS(gips)
-
-
-def send_gips(sock, gips):
-    print("Sending a gips")
-    pass
-
-
-def recv_gips(sock):
-    print("Waiting for a GIPS")
-    pass
-
-
 def send_to_chat(sock, message):
-    print(str(messge) + " to chat")
-    pass
+    logging.debug(str(messge) + " to chat")
 
 
 def update_board(gips, board):
-    print("Updating to the next board.")
+    logging.debug("Updating to the next board.")
+    if gips.pid == 1:
+        board[gips.move_x] = 'B'
+    elif gips.pid == 2:
+        board[gips.move_y] = 'W'
     return board
 
 
@@ -201,12 +212,6 @@ def initialize():
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
-    sys.stdout = open("log.txt", "a")
-    sys.stderr = open("log.txt", "a")
-    print("")
-    print("****************************************************************")
-    print("New client started")
-    print("****************************************************************")
     return stdscr
 
 
@@ -217,12 +222,6 @@ def down(stdscr):
     curses.endwin()
     import doctest
     doctest.testmod()
-    print("****************************************************************")
-    print("Client exiting.")
-    print("****************************************************************")
-    print("")
-    sys.stdout.close()
-    sys.stdout.close()
 
 
 def print_title(stdscr):
