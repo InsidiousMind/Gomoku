@@ -31,9 +31,6 @@
 ## scripts:
  - Scripts in the ./scripts/ directory should be invoked from the root of the repository, they allow ease of testing.
 
-## docs:
- - The docs directory contains documents on playing the game and the code for the game. This will eventually be migrated to the wiki.
-
 ### Wiki
 [Wiki](https://github.com/InsidiousMind/Gomoku/wiki)
 
