@@ -6,6 +6,9 @@ import threading
 import logging
 from curses.textpad import Textbox
 import socket
+import struct
+import random
+import ctypes
 
 class Chat (threading.Thread):
     def __init__(self, win):
@@ -23,10 +26,9 @@ class GIPS (object):
         self.sock = sock
         logging.debug(self.sock)
 
-    def unpack(self, gips):
-        self.gips = gips
+    def unpack(self):
         self.is_win = 0
-        t = struct.unpack('cccc', gips)
+        t = struct.unpack('=cccc', self.gips)
         self.pid = t[0]
         self.is_win = t[1]
         self.move_x = t[2]
@@ -37,17 +39,19 @@ class GIPS (object):
         self.pid = pid
         self.move_x = move_x
         self.move_y = move_y
-        self.gips = struct.pack('cccc', pid, is_win, move_x, move_y)
+        self.gips = struct.pack('=cccc', pid, is_win, move_x, move_y)
 
     def send(self):
         self.sock.send(self.gips)
 
     def recv(self):
         self.gips = self.sock.recv(4)
+        logging.debug("Received: " + str(self.gips))
 
 
 def main():
-    logging.basicConfig(filename='log.txt', level=logging.DEBUG)
+    id = str(random.randrange(100))
+    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG)
     host = "localhost"
     port = 32200
     logging.info("Trying to connect on " + str(host) + ":" + str(port))
@@ -61,7 +65,6 @@ def main():
     # Talk to the server and see what we can get.
     # Get a chat_socket
     # Get your player number from the server.
-    pid = 0
     stdscr = initialize()  # Starts the Curses application.
     try:
         logging.warning("Trying to connect to the server.")
@@ -74,6 +77,8 @@ def main():
         down(stdscr)
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
+    upid = login(sock, pid, username)
+    pid = sock.recv(4)
     logging.debug("Pointer to sock: " + str(sock))
     board = init_board()
     game_running = True
@@ -124,7 +129,7 @@ def main():
                 break
             # Else update the board.
             board = update_board(gips, board)
-            stdscr.refresh()  # This line begins the interface logic. 
+            stdscr.refresh()  # This line begins the interface logic.
             display_board(board, win3)
             stdscr.refresh()  # This begins the user interaction
             c = stdscr.getch()
@@ -160,6 +165,23 @@ def main():
         logging.exception("Exception caught")
         down(stdscr)  # Breaks the application down and ends it.
         sys.exit(0)
+
+
+def login(sock, upid, username):
+    sock.send(struct.pack("I", int(upid)))
+    send_string(sock, username)
+    upid = sock.recv(4)
+    return upid
+
+
+def send_string(sock, string):
+    totalsent = 0
+    string = bytes(string, "utf-8")
+    while totalsent < len(string):
+        sent = sock.send(string[totalsent:])
+        if sent == 0:
+            raise RuntimeError("Socket connection broken.")
+        totalsent = totalsent + sent
 
 
 def send_to_chat(sock, message):
