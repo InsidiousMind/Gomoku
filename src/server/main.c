@@ -1,4 +1,4 @@
-/* Program: Programming Assignment 5, create a shell
+/* Program: Programming Assignment 7, Networked Gomoku Game
  * Author: Andrew Plaza
  * Github: https://github.com/InsidiousMind/Gomoku
  * Date: October 31 2016
@@ -56,4 +56,3 @@ int main(int argc, char *argv[]) {
   free_gameList(&game_head);
   close(fd);
 }
-
