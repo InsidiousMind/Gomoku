@@ -55,7 +55,6 @@ def main():
     host = "localhost"
     port = 32200
     logging.info("Trying to connect on " + str(host) + ":" + str(port))
-    # The next few lines are literally useless except to make it look cool.
     print("Welcome to GOMOKU")
     print("USERNAME")
     username = input("> ")
