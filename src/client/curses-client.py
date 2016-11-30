@@ -28,7 +28,7 @@ class GIPS (object):
 
     def unpack(self):
         self.is_win = 0
-        t = struct.unpack('=cccc', self.gips)
+        t = struct.unpack('cccc', self.gips)
         self.pid = t[0]
         self.is_win = t[1]
         self.move_x = t[2]
@@ -39,7 +39,7 @@ class GIPS (object):
         self.pid = pid
         self.move_x = move_x
         self.move_y = move_y
-        self.gips = struct.pack('=cccc', pid, is_win, move_x, move_y)
+        self.gips = struct.pack('cccc', pid, is_win, move_x, move_y)
 
     def send(self):
         self.sock.send(self.gips)
@@ -175,13 +175,8 @@ def login(sock, upid, username):
 
 
 def send_string(sock, string):
-    totalsent = 0
-    string = bytes(string, "utf-8")
-    while totalsent < len(string):
-        sent = sock.send(string[totalsent:])
-        if sent == 0:
-            raise RuntimeError("Socket connection broken.")
-        totalsent = totalsent + sent
+    string = bytes(string, 'utf-8')
+    sock.send(string)
 
 
 def send_to_chat(sock, message):
