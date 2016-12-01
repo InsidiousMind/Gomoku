@@ -25,14 +25,23 @@ class GIPS (object):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
         logging.debug(self.sock)
+        self.pid = 0
+        self.is_win = 0
+        self.move_x = 0
+        self.move_y = 0
 
     def unpack(self):
         self.is_win = 0
-        t = struct.unpack('cccc', self.gips)
-        self.pid = t[0]
-        self.is_win = t[1]
-        self.move_x = t[2]
-        self.move_y = t[3]
+        try:
+            t = struct.unpack('cccc', self.gips) 
+            self.pid = int(t[0])
+            self.is_win = int(t[1])
+            self.move_x = int(t[2])
+            self.move_y = int(t[3])
+        except:
+            logging.critical("socket.recv call DID NOT BLOCK")
+            logging.exception("Exception text")
+
 
     def pack(self, pid, is_win, move_x, move_y):
         self.is_win = is_win
@@ -114,18 +123,25 @@ def main():
             # Decode the gips.
             gips.unpack()
             # Check if someone won.
+            display_board(board, win3)
             logging.debug("Current value of winner: " + str(gips.is_win))
-            if gips.is_win is 0:
+            if gips.is_win == 0:
                 logging.debug("Game continuing.")
                 pass
-            elif gips.is_win is pid:
+            elif gips.is_win == pid:
                 game_running = False
                 print("You win!")
+                logging.warning("This client won.")
                 break
-            else:
+            elif gips.is_win != 0 and gips.is_win != pid:
                 game_running = False
                 print("You lose.")
+                logging.warning("This client lost.")
                 break
+            elif gips.move_a == -1 and gips.move_b == -1:
+                logging.warning("This client received an invalid move.")
+            else:
+                pass  # Keep doing your thing buddy you're doing great
             # Else update the board.
             board = update_board(gips, board)
             stdscr.refresh()  # This line begins the interface logic.
@@ -144,7 +160,8 @@ def main():
                 # If the move is not valid:
                 if not move_is_valid(move):
                     # Send 'invalid move' to chat.
-                    send_to_chat(sock, "server: Invalid move, "  + str(username) + "!")
+                    send_to_chat(sock, "server: Invalid move, "
+                                 + str(username) + "!")
                 else:
                     # Otherwise:
                     # Encode a GIPS
@@ -170,12 +187,15 @@ def login(sock, upid, username):
     sock.send(struct.pack("I", int(upid)))
     send_string(sock, username)
     upid = sock.recv(4)
+    logging.debug(str(upid))
     return upid
 
 
 def send_string(sock, string):
     string = bytes(string, 'utf-8')
-    sock.send(string)
+    sent = sock.send(string)
+    if sent != (len(string)):
+        logging.warning("Bytes sent DID NOT MATCH")
 
 
 def send_to_chat(sock, message):

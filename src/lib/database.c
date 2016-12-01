@@ -244,7 +244,7 @@ void die(const char *message){
 }
 
 Node *add(int fd, int index, Node **head, Player **play) {
-  
+
   Player *prec = *((Player**) play);
   Node *temp = *head;
   while(temp != NULL){
@@ -254,25 +254,25 @@ Node *add(int fd, int index, Node **head, Player **play) {
       return *head;
     } else temp = temp -> next;
   }
-  
+
   //reset temp after iterating through LL
   temp = *head;
   prec->index = index;
   //write node to binary file
   writep(fd, index, prec);
-  
+
   printf("%s", "ADD: ");
   printp(fd, prec->index);
-  
+
   Node *newNode = calloc(1, sizeof(Node));
-  
+
   newNode->userid = prec->userid;
   newNode->index = prec->index;
-  
+
   insert(&temp, newNode);
   *head = temp;
   //make input look nicer
-  
+
   return *head;
 }
 
@@ -304,7 +304,7 @@ bool isPlayerTaken(Node **head, int uPID, char *username, int fd){
   while(temp != NULL){
     if(temp->userid == uPID) {
     Player play;
-    
+
     readp(fd, temp->index, &play);
     if(strncmp(play.username, username, 20) != 0)
       return true;
@@ -343,7 +343,7 @@ Player* getPlayer(int uPID, int fd, char *username, Node **head){
 
   //find data user needs based on given ID
   //print that player data
-  
+
   Player *play = calloc(1, sizeof(Player));
 
   while(temp != NULL){
