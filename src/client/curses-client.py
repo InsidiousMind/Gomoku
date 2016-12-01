@@ -6,6 +6,9 @@ import threading
 import logging
 from curses.textpad import Textbox
 import socket
+import struct
+import random
+import ctypes
 
 class Chat (threading.Thread):
     def __init__(self, win):
@@ -22,36 +25,56 @@ class GIPS (object):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
         logging.debug(self.sock)
-
-    def unpack(self, gips):
-        self.gips = gips
+        self.pid = 0
         self.is_win = 0
-        t = struct.unpack('cccc', gips)
-        self.pid = t[0]
-        self.is_win = t[1]
-        self.move_x = t[2]
-        self.move_y = t[3]
+        self.move_x = 0
+        self.move_y = 0
+
+    def unpack(self):
+        self.is_win = 0
+        try:
+            t = struct.unpack('cccc', self.gips)
+            self.pid = int.from_bytes(t[0], byteorder='big')
+            self.is_win = int.from_bytes(t[1], byteorder='big')
+            self.move_x = int.from_bytes(t[2], byteorder='big')
+            self.move_y = int.from_bytes(t[3], byteorder='big')
+        except:
+            logging.critical("socket.recv call DID NOT BLOCK")
+            logging.exception("Exception text")
+
 
     def pack(self, pid, is_win, move_x, move_y):
+        logging.debug("Packing: " + str(pid) + " " + str(is_win) +
+                      " " + str(move_x) + " " + str(move_y))
         self.is_win = is_win
         self.pid = pid
         self.move_x = move_x
         self.move_y = move_y
-        self.gips = struct.pack('cccc', pid, is_win, move_x, move_y)
+        try:
+            self.gips = struct.pack('cccc',
+                                ctypes.c_char(int.from_bytes(pid,
+                                                             byteorder="big")),
+                                ctypes.c_char(is_win),
+                                ctypes.c_char(move_x),
+                                ctypes.c_char(move_y))
+        except:
+            logging.debug("Pack did not work even remotely.")
 
     def send(self):
         self.sock.send(self.gips)
 
     def recv(self):
         self.gips = self.sock.recv(4)
+        logging.debug("Received: " + str(self.gips))
 
 
 def main():
-    logging.basicConfig(filename='log.txt', level=logging.DEBUG)
+    id = str(random.randrange(100))
+    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG,
+                        format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
     host = "localhost"
     port = 32200
     logging.info("Trying to connect on " + str(host) + ":" + str(port))
-    # The next few lines are literally useless except to make it look cool.
     print("Welcome to GOMOKU")
     print("USERNAME")
     username = input("> ")
@@ -61,7 +84,6 @@ def main():
     # Talk to the server and see what we can get.
     # Get a chat_socket
     # Get your player number from the server.
-    pid = 0
     stdscr = initialize()  # Starts the Curses application.
     try:
         logging.warning("Trying to connect to the server.")
@@ -74,6 +96,9 @@ def main():
         down(stdscr)
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
+    upid = login(sock, pid, username)
+    pid = sock.recv(4)
+    logging.debug("Received PID: " + str(pid))
     logging.debug("Pointer to sock: " + str(sock))
     board = init_board()
     game_running = True
@@ -110,21 +135,28 @@ def main():
             # Decode the gips.
             gips.unpack()
             # Check if someone won.
+            display_board(board, win3)
             logging.debug("Current value of winner: " + str(gips.is_win))
-            if gips.is_win is 0:
+            if gips.is_win == 0:
                 logging.debug("Game continuing.")
                 pass
-            elif gips.is_win is pid:
+            elif gips.is_win == pid:
                 game_running = False
                 print("You win!")
+                logging.warning("This client won.")
                 break
-            else:
+            elif gips.is_win != 0 and gips.is_win != pid:
                 game_running = False
                 print("You lose.")
+                logging.warning("This client lost.")
                 break
+            elif gips.move_a == -1 and gips.move_b == -1:
+                logging.warning("This client received an invalid move.")
+            else:
+                pass  # Keep doing your thing buddy you're doing great
             # Else update the board.
             board = update_board(gips, board)
-            stdscr.refresh()  # This line begins the interface logic. 
+            stdscr.refresh()  # This line begins the interface logic.
             display_board(board, win3)
             stdscr.refresh()  # This begins the user interaction
             c = stdscr.getch()
@@ -140,11 +172,12 @@ def main():
                 # If the move is not valid:
                 if not move_is_valid(move):
                     # Send 'invalid move' to chat.
-                    send_to_chat(sock, "server: Invalid move, "  + str(username) + "!")
+                    send_to_chat(sock, "server: Invalid move, "
+                                 + str(username) + "!")
                 else:
                     # Otherwise:
                     # Encode a GIPS
-                    gips = GIPS.pack(username, pid, move[0], move[1])
+                    gips.pack(pid, gips.is_win, move[0], move[1])
                     # Send the GIPS
                     gips.send()
             if c == ord('c'):
@@ -162,8 +195,23 @@ def main():
         sys.exit(0)
 
 
+def login(sock, upid, username):
+    sock.send(struct.pack("I", int(upid)))
+    send_string(sock, username)
+    upid = sock.recv(4)
+    logging.debug(str(upid))
+    return upid
+
+
+def send_string(sock, string):
+    string = bytes(string, 'utf-8')
+    sent = sock.send(string)
+    if sent != (len(string)):
+        logging.warning("Bytes sent DID NOT MATCH")
+
+
 def send_to_chat(sock, message):
-    logging.debug(str(messge) + " to chat")
+    logging.debug(str(message) + " to chat")
 
 
 def update_board(gips, board):
@@ -176,8 +224,8 @@ def update_board(gips, board):
 
 
 def move_is_valid(move):
-    if int(move[0]) < 8 and int(move[0]) > 0:
-        if int(move[1]) < 8 and int(move[1]) > 0:
+    if 8 > int(move[0]) > 0:
+        if 8 > int(move[1]) > 0:
             return True
         else:
             return False
