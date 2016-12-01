@@ -1,4 +1,4 @@
-## Program: 
+## Program:
  - A Networked Gomoku Game
 
 ### Proposal Due Wednesday
@@ -28,6 +28,8 @@
  - build/client/./asgn6-client.c
  - build/server/./asgn6-server.c
 
+## scripts:
+ - Scripts in the ./scripts/ directory should be invoked from the root of the repository, they allow ease of testing.
 
 ### Wiki
 [Wiki](https://github.com/InsidiousMind/Gomoku/wiki)

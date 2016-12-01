@@ -6,6 +6,9 @@ import threading
 import logging
 from curses.textpad import Textbox
 import socket
+import struct
+import random
+import ctypes
 
 class Chat (threading.Thread):
     def __init__(self, win):
@@ -18,141 +21,211 @@ class Chat (threading.Thread):
 
 
 class GIPS (object):
-    def __init__(self, gips):
+    def __init__(self, sock):
+        logging.debug("GIPS.sock is being defined.")
+        self.sock = sock
+        logging.debug(self.sock)
+        self.pid = 0
         self.is_win = 0
+        self.move_x = 0
+        self.move_y = 0
+
+    def unpack(self):
+        self.is_win = 0
+        try:
+            t = struct.unpack('cccc', self.gips)
+            self.pid = int.from_bytes(t[0], byteorder='big')
+            self.is_win = int.from_bytes(t[1], byteorder='big')
+            self.move_x = int.from_bytes(t[2], byteorder='big')
+            self.move_y = int.from_bytes(t[3], byteorder='big')
+        except:
+            logging.critical("socket.recv call DID NOT BLOCK")
+            logging.exception("Exception text")
+
+
+    def pack(self, pid, is_win, move_x, move_y):
+        logging.debug("Packing: " + str(pid) + " " + str(is_win) +
+                      " " + str(move_x) + " " + str(move_y))
+        self.is_win = is_win
+        self.pid = pid
+        self.move_x = move_x
+        self.move_y = move_y
+        try:
+            self.gips = struct.pack('cccc',
+                                ctypes.c_char(int.from_bytes(pid,
+                                                             byteorder="big")),
+                                ctypes.c_char(is_win),
+                                ctypes.c_char(move_x),
+                                ctypes.c_char(move_y))
+        except:
+            logging.debug("Pack did not work even remotely.")
+
+    def send(self):
+        self.sock.send(self.gips)
+
+    def recv(self):
+        self.gips = self.sock.recv(4)
+        logging.debug("Received: " + str(self.gips))
 
 
 def main():
-    host = "127.0.0.1"
-    port1 = 32200
-    port2 = 32201
-    print("WELCOME TO GOMOKU")
+    id = str(random.randrange(100))
+    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG,
+                        format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
+    host = "localhost"
+    port = 32200
+    logging.info("Trying to connect on " + str(host) + ":" + str(port))
+    print("Welcome to GOMOKU")
     print("USERNAME")
     username = input("> ")
     print("PLAYER ID NUMBER")
-    unq_pid = input("> ")
+    pid = input("> ")
     # Login with our unique pid.
     # Talk to the server and see what we can get.
     # Get a chat_socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        chat_socket = s.connect((host, port1))
-        game_socket = s.connect((host, port2))
-        # Get your player number from the server.
-        pid = 0
-        stdscr = initialize()  # Starts the Curses application.
-        board = init_board()
-        game_running = True
-        one_begin_x = 1
-        one_begin_y = 15
-        two_begin_x = 70
-        two_begin_y = 15
-        thr_begin_x = 121
-        thr_begin_y = 15
-        height = 40
-        width = 40
-        # Window 1 takes commands for the game.
-        win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
-        # Window 2 carries the chat.
-        win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
-        # Window 3 displays the current game board.
-        win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
-        # Window 4 displays the message that the player is currently typing out.
-        win4 = curses.newwin((height // 4), width,
-                             ((two_begin_y) + ((3 * height) // 4)), two_begin_x)
-        print_title(stdscr)
-        box1 = Textbox(win1)
-        box2 = Textbox(win4)
-        chat = Chat(win2)
-        print("Game starting.")
-        try:
-            while game_running:
-                # Receive a GIPS
-                gips = recv_gips(game_socket)
-                print("Received a GIPS packet.")
-                # Decode the gips.
-                pack = decode_gips(gips)
-                # Check if someone won.
-                if pack.is_win is 0:
-                    print("Game continuing.")
-                    pass
-                elif pack.is_win is pid:
-                    game_running = False
-                    print("You win!")
+    # Get your player number from the server.
+    stdscr = initialize()  # Starts the Curses application.
+    try:
+        logging.warning("Trying to connect to the server.")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        logging.warning("Socket created, connecting... " + str(sock))
+        sock.connect((host, port))
+        logging.warning("Socket issue check: " + str(sock))
+    except Exception:
+        logging.critical("Server could not be reached!")
+        down(stdscr)
+        print("Couldn't connect to the server. Check your internet connection and try again.")
+        sys.exit(0)
+    upid = login(sock, pid, username)
+    pid = sock.recv(4)
+    logging.debug("Received PID: " + str(pid))
+    logging.debug("Pointer to sock: " + str(sock))
+    board = init_board()
+    game_running = True
+    one_begin_x = 1
+    one_begin_y = 15
+    two_begin_x = 70
+    two_begin_y = 15
+    thr_begin_x = 121
+    thr_begin_y = 15
+    height = 40
+    width = 40
+    # Window 1 takes commands for the game.
+    win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
+    # Window 2 carries the chat.
+    win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
+    # Window 3 displays the current game board.
+    win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
+    # Window 4 displays the message that the player is currently typing out.
+    win4 = curses.newwin((height // 4), width,
+                         ((two_begin_y) + ((3 * height) // 4)), two_begin_x)
+    print_title(stdscr)
+    box1 = Textbox(win1)
+    box2 = Textbox(win4)
+    chat = Chat(win2)
+    logging.debug("Game starting.")
+    try:
+        while game_running:
+            # Receive a GIPS
+            logging.debug("Starting the loop.")
+            gips = GIPS(sock)
+            logging.debug("The GIPS is defined.")
+            gips.recv()
+            logging.debug("Received a GIPS packet.")
+            # Decode the gips.
+            gips.unpack()
+            # Check if someone won.
+            display_board(board, win3)
+            logging.debug("Current value of winner: " + str(gips.is_win))
+            if gips.is_win == 0:
+                logging.debug("Game continuing.")
+                pass
+            elif gips.is_win == pid:
+                game_running = False
+                print("You win!")
+                logging.warning("This client won.")
+                break
+            elif gips.is_win != 0 and gips.is_win != pid:
+                game_running = False
+                print("You lose.")
+                logging.warning("This client lost.")
+                break
+            elif gips.move_a == -1 and gips.move_b == -1:
+                logging.warning("This client received an invalid move.")
+            else:
+                pass  # Keep doing your thing buddy you're doing great
+            # Else update the board.
+            board = update_board(gips, board)
+            stdscr.refresh()  # This line begins the interface logic.
+            display_board(board, win3)
+            stdscr.refresh()  # This begins the user interaction
+            c = stdscr.getch()
+            if c == ord('q'):
+                game_running = False  # Exit the while loop
+            if c == ord('m'):
+                # Get the next move and send it.
+                box1.edit()
+                stuff = box1.gather()
+                # Split the move into two components.
+                move = (str(stuff)).split(' ')
+                 # Check move validity.
+                # If the move is not valid:
+                if not move_is_valid(move):
+                    # Send 'invalid move' to chat.
+                    send_to_chat(sock, "server: Invalid move, "
+                                 + str(username) + "!")
                 else:
-                    game_running = False
-                    print("You lose.")
-                    # Else update the board.
-                    board = update_board(pack, board)
-                    stdscr.refresh()  # This line begins the interface logic. 
-                    display_board(board, win3)
-                    stdscr.refresh()  # This begins the user interaction
-                    c = stdscr.getch()
-                    if c == ord('q'):
-                        game_running = False  # Exit the while loop
-                        if c == ord('m'):
-                            # Get the next move and send it.
-                            box1.edit()
-                            stuff = box1.gather()
-                            # Split the move into two components.
-                            move = (str(stuff)).split(' ')
-                            # Check move validity.
-                            # If the move is not valid:
-                            if not move_is_valid(move):
-                                # Send 'invalid move' to chat.
-                                send_to_chat(chat_socket, "server: Invalid move, "
-                                             + str(username) + "!")
-                            else:
-                                # Otherwise:
-                                # Encode a GIPS
-                                gips = encode_gips(username, pid, move)
-                                # Send the GIPS
-                                send_gips(game_socket, gips)
-                                if c == ord('c'):
-                                    box2.edit()
-                                    stuff = box2.gather()
-                                    message = str(username) + ": " + str(stuff)
-                                    # Send message to the server as a bytestring.
-                                    send_to_chat(chat_socket, message)
-                                    stdscr.refresh() # Redraws the screen.
-        except Exception as e:
-            logging.exception("Exception caught")
-            down(stdscr)
-            down(stdscr)  # Breaks the application down and ends it.
+                    # Otherwise:
+                    # Encode a GIPS
+                    gips.pack(pid, gips.is_win, move[0], move[1])
+                    # Send the GIPS
+                    gips.send()
+            if c == ord('c'):
+                box2.edit()
+                stuff = box2.gather()
+                message = str(username) + ": " + str(stuff)
+                # Send message to the server as a bytestring.
+                send_to_chat(sock, message)
+                stdscr.refresh() # Redraws the screen.
+        down(stdscr)
+        sys.exit(0)
+    except Exception:
+        logging.exception("Exception caught")
+        down(stdscr)  # Breaks the application down and ends it.
+        sys.exit(0)
 
 
-def encode_gips(username, pid, move):
-    print("Encoding GIPS object to byte struct")
-    pass
+def login(sock, upid, username):
+    sock.send(struct.pack("I", int(upid)))
+    send_string(sock, username)
+    upid = sock.recv(4)
+    logging.debug(str(upid))
+    return upid
 
 
-def decode_gips(gips):
-    print("Decoding packet")
-    return GIPS(gips)
-
-
-def send_gips(sock, gips):
-    print("Sending a gips")
-    pass
-
-
-def recv_gips(sock):
-    print("Waiting for a GIPS")
-    pass
+def send_string(sock, string):
+    string = bytes(string, 'utf-8')
+    sent = sock.send(string)
+    if sent != (len(string)):
+        logging.warning("Bytes sent DID NOT MATCH")
 
 
 def send_to_chat(sock, message):
-    print(str(messge) + " to chat")
-    pass
+    logging.debug(str(message) + " to chat")
 
 
 def update_board(gips, board):
-    print("Updating to the next board.")
+    logging.debug("Updating to the next board.")
+    if gips.pid == 1:
+        board[gips.move_x] = 'B'
+    elif gips.pid == 2:
+        board[gips.move_y] = 'W'
     return board
 
 
 def move_is_valid(move):
-    if int(move[0]) < 8 and int(move[0]) > 0:
-        if int(move[1]) < 8 and int(move[1]) > 0:
+    if 8 > int(move[0]) > 0:
+        if 8 > int(move[1]) > 0:
             return True
         else:
             return False
@@ -167,9 +240,9 @@ def display_board(board, win):
         for b in a:
             win.addch(y, x, ord(b))
             y += 2
-            y = 1
-            x += 4
-            win.refresh()
+        y = 1
+        x += 4
+    win.refresh()
 
 
 def init_board():
@@ -187,12 +260,6 @@ def initialize():
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
-    sys.stdout = open("log.txt", "a")
-    sys.stderr = open("log.txt", "a")
-    print("")
-    print("****************************************************************")
-    print("New client started")
-    print("****************************************************************")
     return stdscr
 
 
@@ -203,13 +270,6 @@ def down(stdscr):
     curses.endwin()
     import doctest
     doctest.testmod()
-    print("****************************************************************")
-    print("Client exiting.")
-    print("****************************************************************")
-    print("")
-    sys.stdout.close()
-    sys.stdout.close()
-    sys.exit(0)
 
 
 def print_title(stdscr):
