@@ -61,7 +61,9 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
   int r_sockfd;
   int *start_socks;
+  
   while(true){
+ 
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
     c_add(&c_head, r_sockfd);
