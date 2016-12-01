@@ -33,22 +33,32 @@ class GIPS (object):
     def unpack(self):
         self.is_win = 0
         try:
-            t = struct.unpack('cccc', self.gips) 
-            self.pid = int(t[0])
-            self.is_win = int(t[1])
-            self.move_x = int(t[2])
-            self.move_y = int(t[3])
+            t = struct.unpack('cccc', self.gips)
+            self.pid = int.from_bytes(t[0], byteorder='big')
+            self.is_win = int.from_bytes(t[1], byteorder='big')
+            self.move_x = int.from_bytes(t[2], byteorder='big')
+            self.move_y = int.from_bytes(t[3], byteorder='big')
         except:
             logging.critical("socket.recv call DID NOT BLOCK")
             logging.exception("Exception text")
 
 
     def pack(self, pid, is_win, move_x, move_y):
+        logging.debug("Packing: " + str(pid) + " " + str(is_win) +
+                      " " + str(move_x) + " " + str(move_y))
         self.is_win = is_win
         self.pid = pid
         self.move_x = move_x
         self.move_y = move_y
-        self.gips = struct.pack('cccc', pid, is_win, move_x, move_y)
+        try:
+            self.gips = struct.pack('cccc',
+                                ctypes.c_char(int.from_bytes(pid,
+                                                             byteorder="big")),
+                                ctypes.c_char(is_win),
+                                ctypes.c_char(move_x),
+                                ctypes.c_char(move_y))
+        except:
+            logging.debug("Pack did not work even remotely.")
 
     def send(self):
         self.sock.send(self.gips)
@@ -60,7 +70,8 @@ class GIPS (object):
 
 def main():
     id = str(random.randrange(100))
-    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG)
+    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG,
+                        format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
     host = "localhost"
     port = 32200
     logging.info("Trying to connect on " + str(host) + ":" + str(port))
@@ -87,6 +98,7 @@ def main():
         sys.exit(0)
     upid = login(sock, pid, username)
     pid = sock.recv(4)
+    logging.debug("Received PID: " + str(pid))
     logging.debug("Pointer to sock: " + str(sock))
     board = init_board()
     game_running = True
@@ -165,7 +177,7 @@ def main():
                 else:
                     # Otherwise:
                     # Encode a GIPS
-                    gips = GIPS.pack(username, pid, move[0], move[1])
+                    gips.pack(pid, gips.is_win, move[0], move[1])
                     # Send the GIPS
                     gips.send()
             if c == ord('c'):
@@ -199,7 +211,7 @@ def send_string(sock, string):
 
 
 def send_to_chat(sock, message):
-    logging.debug(str(messge) + " to chat")
+    logging.debug(str(message) + " to chat")
 
 
 def update_board(gips, board):
@@ -212,8 +224,8 @@ def update_board(gips, board):
 
 
 def move_is_valid(move):
-    if int(move[0]) < 8 and int(move[0]) > 0:
-        if int(move[1]) < 8 and int(move[1]) > 0:
+    if 8 > int(move[0]) > 0:
+        if 8 > int(move[1]) > 0:
             return True
         else:
             return False
