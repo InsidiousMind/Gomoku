@@ -32,7 +32,7 @@ BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/IO_sighandle.o bui
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
 # MAKE RULES
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
-make: dir server client
+make: dir server client curses
 
 dir:
 	mkdir -p build/lib/
@@ -46,13 +46,17 @@ server: $(SRV_OBJ) $(DEP_OBJ)
 client: $(CLIENT_OBJ) $(DEP_OBJ)
 	$(CC) -o build/bin/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-all: dir server client
+curses:
+	cp src/client/curses-client.py build/bin/
+
+all: dir server client curses
 
 clean:
 	rm -rf build
 	rm -rf vgcore.*
-	rm test
-	rm src/client/*.txt
+	rm -rf test
+	rm -rf *.*.*.txt
+	rm -rf *.txt
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
