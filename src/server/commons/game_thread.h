@@ -32,6 +32,7 @@ typedef struct game_s {
   int whoTurn;
   int playerWin;
   int player1Taken;
+  bool clientDisconnect;
 
   pargs args;
 
