@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
+
 //Shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/database.h"

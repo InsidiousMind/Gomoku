@@ -3,14 +3,14 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <signal.h>
 #include <stdbool.h>
+#include <string.h>
 
 //shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/glogic.h"
 #include "../../lib/database.h"
-#include "../../lib/IO_sighandle.h"
+
 //commons
 #include "server_db.h"
 #include "game_thread.h"
@@ -24,9 +24,9 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo);
 char getOtherPlayersPID(char pid);
 void sendPID(char pid, int reply_sock_fd);
 bool isMyTurn(game *gameInfo, char pid);
-void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
+int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 int genUPID();
-
+void earlyExit(BYTE PID, char **username, int reply_sock_fd);
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF GAME THREAD
@@ -119,32 +119,39 @@ void *subserver(void *arguments)
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
   
   //first packet twe receive is the clients 'Expected' unique PID
-  if(recv(reply_sock_fd, &uPID, sizeof(int), 0) == -1)
+  if((read_count = recv(reply_sock_fd, &uPID, sizeof(int), 0)) == -1)
     perror("[!!!] error: receive fail in subserver");
-  
+  if(read_count == 0){
+    printf("Client Disconnected\n");
+    earlyExit(PID, NULL, reply_sock_fd);
+  }
   //next packet is the clients Username
   int BUFFERSIZE = 256;
   char *username = calloc(1, BUFFERSIZE*sizeof(char));
   if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
     perror("[!!] error: receive fail in subserver");
-  username[read_count] = '\0';
-  printf("%s\n", username);
+  if(read_count == 0){
+    printf("Client Disconnected\n");
+      earlyExit(PID, &username, reply_sock_fd);
+    }
+    
+    username[read_count] = '\0';
+    printf("%s\n", username);
 
-  //check if username and uPID match/exist
-  //if they don't, send the player a uniquePID
-  pthread_mutex_lock(&gameInfo->args.head_access);
-  if(isPlayerTaken(&head, uPID, username, fd) == true){
-    uPID = genUPID();
-    send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
-  }else{
-    send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
-  }
-  pthread_mutex_unlock(&gameInfo->args.head_access);
+    //check if username and uPID match/exist
+    //if they don't, send the player a uniquePID
+    pthread_mutex_lock(&gameInfo->args.head_access);
+    if(isPlayerTaken(&head, uPID, username, fd) == true){
+      uPID = genUPID();
+      send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
+    }else{
+      send(reply_sock_fd, &uPID, sizeof(uPID), MSG_NOSIGNAL);
+    }
+    pthread_mutex_unlock(&gameInfo->args.head_access);
 
-  signal(SIGINT, INThandle);
-
-  if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
-    perror("[!!!] error: Game Loop Fail");
+    if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
+      perror("[!!!] error: Game Loop Fail");
+      earlyExit(PID, &username, reply_sock_fd);
   }
 
   //in the future could have subserver return with win and record player in GameServer removing
@@ -158,6 +165,14 @@ void *subserver(void *arguments)
 
   free(username);
 
+  pthread_exit(NULL);
+}
+
+void earlyExit(BYTE PID, char **username, int reply_sock_fd){
+  char *temp = username ? *username : "NA";
+  printf("%s: %s %s %c %s\n", "Player", temp, "of", (char) PID, "client exited");
+  close(reply_sock_fd);
+  if(username) free(temp);
   pthread_exit(NULL);
 }
 
@@ -190,7 +205,15 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     while(isMyTurn(gameInfo, pid) != true) sleep(1);
 
     //send other players moves
-    sendMoves(reply_sock_fd, numTurns, pid, gameInfo);
+    if(sendMoves(reply_sock_fd, numTurns, pid, gameInfo) == -1 ) {
+     
+      for(i = 0; i < HEIGHT; i++){
+        free(playerBoard[i]);
+      }
+      free(playerBoard);
+      free(player_info);
+      return -1;
+    }
 
     int wpid = 0;
     pthread_mutex_lock(&gameInfo->gameInfo_access);
@@ -201,6 +224,10 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 
     if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
       perror("[!!!] ERROR: receive error in GameLoop");
+    if(read_count == 0){
+      printf("Client Disconnected\n");
+      return -1;
+    }
 
     //add the move to the board, and to the respective client arrays keeping track of
     //each players moves
@@ -232,33 +259,32 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 //check for what moves to send
 //if no one has moved yet (IE player 1 to move first)
 //a dummy gips packet with -1 -1 is sent
-void sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
+int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
 
   char otherPID = getOtherPlayersPID(pid);
 
-  if(numTurns == 0 && pid == 1)
-
-    send_to(pack(otherPID, FALSE, -1,-1), reply_sock_fd);
-
-  else{
-
+  if(numTurns == 0 && pid == 1) {
+  
+    if (send_to(pack(otherPID, FALSE, -1, -1, 0), reply_sock_fd) == -1) {
+      printf("Could not send; Other Client Disconnected or the Pipe is Broken\n");
+      return -1;
+    }
+  
+  }else{
+   
     pthread_mutex_lock(&gameInfo->gameInfo_access);
-    sendOtherPlayerGIPS(pid, otherPID, reply_sock_fd, gameInfo->play1Moves, gameInfo->play2Moves, gameInfo->playerWin);
+    if( send_to(pack(otherPID,
+                (char) gameInfo->playerWin,
+                (BYTE) (pid == 1 ? gameInfo->play2Moves[0] : gameInfo->play1Moves[0]),
+                (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]), 0),
+                reply_sock_fd) == -1){
+      printf("Could Not Send; Other Client Disconnected or the Pipe is Broken\n");
+      return -1;
+    }
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
 
   }
-}
-
-//send OTHER players moves
-//send other PID
-//send  players turn
-void sendOtherPlayerGIPS(char pid, char otherPID, int sockfd, int play1Moves[2], int play2Moves[2], int isWin) {
-
-
-  if (pid == 1)
-    send_to(pack(otherPID, (char) isWin, (char) play2Moves[0], (char) play2Moves[1]), sockfd);
-  else 
-    send_to(pack(otherPID, (char) isWin, (char) play1Moves[0], (char) play1Moves[1]), sockfd);
+  return 0;
 }
 
 //checks for a win using "check for win" in glogic library
