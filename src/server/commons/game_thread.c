@@ -22,11 +22,12 @@ void turn(game *gameInfo);
 int checkWin(char **board, char pid, int sockfd, game *gameInfo);
 char getOtherPlayersPID(char pid);
 int sendPID(char pid, int reply_sock_fd);
+
 bool isMyTurn(game *gameInfo, char pid);
 int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 int genUPID();
 void earlyExit(BYTE PID, char **username, int reply_sock_fd, game **gameInfo);
-
+int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd);
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF GAME THREAD
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
@@ -120,25 +121,13 @@ void *subserver(void *arguments)
   //first packet twe receive is the clients 'Expected' unique PID
   if((read_count = recv(reply_sock_fd, &uPID, sizeof(int), 0)) == -1)
     perror("[!!!] error: receive fail in subserver");
-  if(read_count == 0){
-    printf("Client Disconnected\n");
-    pthread_mutex_lock(&gameInfo->gameInfo_access);
-    if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
-    pthread_mutex_unlock(&gameInfo->gameInfo_access);
-    earlyExit(PID, NULL, reply_sock_fd, &gameInfo);
-  }
+  if(read_count == 0) detectedExit(&gameInfo, PID, NULL, reply_sock_fd);
   //next packet is the clients Username
   int BUFFERSIZE = 256;
   char *username = calloc(1, BUFFERSIZE*sizeof(char));
   if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
     perror("[!!] error: receive fail in subserver");
-  if(read_count == 0){
-    printf("Client Disconnected\n");
-    pthread_mutex_lock(&gameInfo->gameInfo_access);
-    if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
-    pthread_mutex_unlock(&gameInfo->gameInfo_access);
-    earlyExit(PID, &username, reply_sock_fd, &gameInfo);
-  }
+  if(read_count == 0) detectedExit(&gameInfo, PID, &username, reply_sock_fd);
     
     username[read_count] = '\0';
     printf("%s\n", username);
@@ -148,26 +137,17 @@ void *subserver(void *arguments)
     pthread_mutex_lock(&gameInfo->args.head_access);
     if(isPlayerTaken(&head, uPID, username, fd) == true){
       uPID = genUPID();
-      if(send(reply_sock_fd, &uPID, sizeof(uPID), 0) == -1) {
-        printf("Client Disconnect\n");
-        pthread_mutex_lock(&gameInfo->gameInfo_access);
-        if (!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
-        pthread_mutex_unlock(&gameInfo->gameInfo_access);
-        earlyExit(PID, &username, reply_sock_fd, &gameInfo);
-      }
+      if(send(reply_sock_fd, &(uPID), sizeof(uPID), 0) == -1)
+        detectedExit(&gameInfo, PID, &username, reply_sock_fd);
     }else{
-      if(send(reply_sock_fd, &uPID, sizeof(uPID), 0) == -1){
-        printf("Client Disconnect\n");
-        pthread_mutex_lock(&gameInfo->gameInfo_access);
-        if (!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
-        pthread_mutex_unlock(&gameInfo->gameInfo_access);
-        earlyExit(PID, &username, reply_sock_fd, &gameInfo);
-      }
+      if(send(reply_sock_fd, &uPID, sizeof(uPID), 0) == -1)
+        detectedExit(&gameInfo, PID, &username, reply_sock_fd);
     }
     pthread_mutex_unlock(&gameInfo->args.head_access);
 
     if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
       perror("[!!!] error: Game Loop Fail");
+      detectedExit(&gameInfo, PID, &username, reply_sock_fd);
       earlyExit(PID, &username, reply_sock_fd, &gameInfo);
   }
 
@@ -185,6 +165,15 @@ void *subserver(void *arguments)
   pthread_exit(NULL);
 }
 
+int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
+  game *tempInfo = *gameInfo;
+  printf("Client Disconnect\n");
+  pthread_mutex_lock(&tempInfo->gameInfo_access);
+  if (!tempInfo->clientDisconnect) tempInfo->clientDisconnect = true;
+  pthread_mutex_unlock(&tempInfo->gameInfo_access);
+  earlyExit(PID, &(*username), reply_sock_fd, &tempInfo);
+  return 0;
+}
 void earlyExit(BYTE PID, char **username, int reply_sock_fd, game **gameInfo){
   game *tempInfo = *gameInfo;
   char *temp = username ? *username : "NA";
@@ -219,10 +208,12 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   //wait until other players turn is over,
   //can't play the game all at once!
   do {
-
     //wait until player turn
-    while(isMyTurn(gameInfo, pid) != true) sleep(1);
-
+    while((isMyTurn(gameInfo, pid)) != true) sleep(1);
+    bool clientDC;
+    clientDC =  gameInfo->clientDisconnect;
+    if(clientDC) return -1;
+    
     //send other players moves
     if(sendMoves(reply_sock_fd, numTurns, pid, gameInfo) == -1 ) {
      
@@ -244,10 +235,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
       perror("[!!!] ERROR: receive error in GameLoop");
     if(read_count == 0){
-      printf("Client Disconnected\n");
-      pthread_mutex_lock(&gameInfo->gameInfo_access);
-      if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
-        pthread_mutex_unlock(&gameInfo->gameInfo_access);
       return -1;
     }
 
@@ -289,8 +276,6 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
   
     if (send_to(pack(otherPID, FALSE, -1, -1, 0), reply_sock_fd) == -1) {
       printf("Could not send; Other Client Disconnected or the Pipe is Broken\n");
-      pthread_mutex_lock(&gameInfo->gameInfo_access);
-      if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
       return -1;
     }
   
@@ -302,8 +287,6 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[0] : gameInfo->play1Moves[0]),
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]), 0),
                 reply_sock_fd) == -1){
-      printf("Could Not Send; Other Client Disconnected or the Pipe is Broken\n");
-      if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
       return -1;
     }
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
@@ -330,8 +313,6 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
   if ((p1win == true) || (p2win == true)) {
 
     if(send(sockfd, &npid, sizeof(int), 0) == -1){
-      printf("Client Disconnect\n");
-      if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
       return -1;
     }
       
@@ -345,8 +326,6 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
   } else {
 
     if(send(sockfd, &noWin, sizeof(int), 0) == -1){
-      printf("Client Disconnect\n");
-      if(!gameInfo->clientDisconnect) gameInfo->clientDisconnect = true;
       return -1;
     }
 
@@ -405,7 +384,6 @@ char getOtherPlayersPID(char pid){
 
 int sendPID(char pid, int reply_sock_fd){
   if(send(reply_sock_fd, &pid, sizeof(char), 0) == -1){
-    printf("Client Disconnect\n");
     return -1;
   }
   return 0;
@@ -421,10 +399,8 @@ bool isMyTurn(game *gameInfo, char pid){
   clientDC = gameInfo->clientDisconnect;
   pthread_mutex_unlock(&gameInfo->gameInfo_access);
   
-  if(currentTurn == pid || clientDC)
-    return true;
-  else
-    return false;
+  if(currentTurn == pid || clientDC) return true;
+  else return 0;
 } 
 
 
