@@ -10,6 +10,7 @@ import struct
 import random
 import ctypes
 
+
 class Chat (threading.Thread):
     def __init__(self, win):
         self.win = win

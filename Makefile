@@ -51,8 +51,9 @@ all: dir server client
 clean:
 	rm -rf build
 	rm -rf vgcore.*
-	rm test
-	rm src/client/*.txt
+	rm -rf test
+	rm -rf src/client/*.txt
+	rm -rf *.txt
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
