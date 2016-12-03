@@ -28,6 +28,7 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo);
 int genUPID();
 void earlyExit(BYTE PID, char **username, int reply_sock_fd, game **gameInfo);
 int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd);
+int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int reply_sock_fd);
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF GAME THREAD
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
@@ -65,7 +66,7 @@ void *startGameServer(void *args){
     perror("failed to start subserver\n");
   else
     printf("subserver %lu started\n", (unsigned long) pthread);
-
+    
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
 
@@ -80,6 +81,7 @@ void *startGameServer(void *args){
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
 
 
+
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF CLIENT THREAD
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
@@ -87,7 +89,6 @@ void *startGameServer(void *args){
 void *subserver(void *arguments)
 {
   //get the arguments
-
   BYTE PID;
   int uPID = 0, reply_sock_fd, fd;
   Node *head; 
@@ -147,8 +148,10 @@ void *subserver(void *arguments)
 
     if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
       perror("[!!!] error: Game Loop Fail");
-      detectedExit(&gameInfo, PID, &username, reply_sock_fd);
-      earlyExit(PID, &username, reply_sock_fd, &gameInfo);
+      if(gameInfo->clientDisconnect)  otherClientDisconnected(&gameInfo, PID, &username,
+                                                              reply_sock_fd);
+      else
+        detectedExit(&gameInfo, PID, &username, reply_sock_fd);
   }
 
   //in the future could have subserver return with win and record player in GameServer removing
@@ -165,12 +168,34 @@ void *subserver(void *arguments)
   pthread_exit(NULL);
 }
 
+int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
+  game *tempInfo = *gameInfo;
+  char *tempuser = *username;
+  ssize_t read_count = 0;
+  
+  //asking client if it would want to join another game
+  if(send(reply_sock_fd, (const void *) -1, sizeof(int), 0) == -1) {
+    printf("Other client disconnected, too\n");
+    earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
+  }
+  char resp;
+  if( (read_count = recv(reply_sock_fd, &resp, sizeof(char), 0)) == 0) {
+    printf("Other client disconnected, too\n");
+    earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
+  }
+  free(tempuser);
+  pthread_exit(NULL);  //telling detached to change variable to indicate setting isPlaying to
+}
+
 int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
   game *tempInfo = *gameInfo;
+  
   printf("Client Disconnect\n");
+ 
   pthread_mutex_lock(&tempInfo->gameInfo_access);
   if (!tempInfo->clientDisconnect) tempInfo->clientDisconnect = true;
   pthread_mutex_unlock(&tempInfo->gameInfo_access);
+
   earlyExit(PID, &(*username), reply_sock_fd, &tempInfo);
   return 0;
 }

@@ -25,6 +25,7 @@ int* startGame(c_head **head);
 
 
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
+  
   c_head *c_head = NULL;
   int sock_fd;
   Node *game_head = *((Node **) temp);

@@ -6,7 +6,9 @@
 #define SERVER_SERVER_CONNECTIONS_H
 typedef struct connectionList {
   int sockfd;
+  int pairedSockfd;
   bool isPlaying;
+  
   struct connectionList *next;
 } cList;
 
@@ -18,7 +20,7 @@ typedef struct connectionList {
 //(this was more complicated than i thought to implement)
 
 typedef struct headCList {
-  int sockfd, size;
+  int sockfd, pairedSockfd, size;
   bool isPlaying;
   struct connectionList *next;
 } c_head;

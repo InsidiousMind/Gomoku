@@ -199,7 +199,12 @@ int main() {
     if (isWin != 0)
       break;
   }
-
+  if(isWin == -1){
+    printf("\n The other client has Disconnected. Would you like to attempt to connect to another client waiting to play? [Y/n] ");
+    char resp = getchar();
+    if(resp == 'Y' || resp == 'y') send(sock, &resp, sizeof(char), 0);
+    else exit(0);
+  }
   if(isWin != pid)
     printf("You Lose! :-(\n");
   else

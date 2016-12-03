@@ -72,13 +72,15 @@ void c_del(c_head **head, int sockfd){
   c_head *t_head = *head; 
   
   if(t_head->size == 1) {
-    t_head = NULL; 
+    setPlaying(&t_head, t_head->pairedSockfd);
+    t_head = NULL;
     free(t_head);
     *head = t_head;
     return;
   }
   while(temp != NULL){
     if(t_head->sockfd == sockfd){
+      setPlaying(&t_head, t_head->pairedSockfd);
       to_head(&(curr->next), head, t_head->size-1);
       curr->next = NULL; 
       free(curr);
@@ -86,6 +88,7 @@ void c_del(c_head **head, int sockfd){
     }
     else if (temp->sockfd == sockfd){
 
+      setPlaying(&t_head, t_head->pairedSockfd);
       //this was the only way, since cannot compare pointers since
       //dealing with two different structs, c_head and cList
       if(t_head->next->sockfd == curr->next->sockfd) 
@@ -98,7 +101,7 @@ void c_del(c_head **head, int sockfd){
       *head = t_head;
       return;
     }
-      
+
     curr = temp;
     temp = temp->next;
   }
@@ -189,6 +192,7 @@ void cnode(c_head **src_node, cList **dest_node){
   dest->sockfd = src->sockfd;
   dest->isPlaying = src->isPlaying;
   dest->next = src->next;
+  dest->pairedSockfd = src->pairedSockfd;
 }
 
 void to_head(cList **src_node, c_head **dest_node, int size){
@@ -199,4 +203,5 @@ void to_head(cList **src_node, c_head **dest_node, int size){
   dest->isPlaying = src->isPlaying;
   dest->size = size;
   dest->next = src->next;
+  dest->pairedSockfd = src->pairedSockfd;
 }
