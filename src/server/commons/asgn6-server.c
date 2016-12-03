@@ -22,6 +22,8 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 int* startGame(c_head **head);
+
+
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   c_head *c_head = NULL;
   int sock_fd;
@@ -62,11 +64,12 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
   int r_sockfd;
   int *start_socks;
-  
-  while(true){
+ //TODO: Has to be a way to inform client that it's paired client has disconnected
+  //
+w: while(true){
  
     if ((r_sockfd = accept_client(sock_fd)) == -1)
-      continue;
+      goto w;
     c_add(&c_head, r_sockfd);
 
     parseConnections(&c_head);
@@ -76,20 +79,22 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
       gameSrvInfo->reply_sock_fd[1] = start_socks[1];
       if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
        printf("Failed to start Game Server");
+      
+      //invert isPlaying
       setPlaying(&c_head, start_socks[0]);
       setPlaying(&c_head, start_socks[1]);
+      
       free(start_socks);
     }
   }
 }
-    
-  
-  
 
 //checks for a valid game, and if it can find one
 //returns the two socket connections to start one
 int* startGame(c_head **head){
+  
   int *start_socks = calloc(2, sizeof(int));
+ 
   if( (start_socks[0] = find(head, -1)) == -1)
     return NULL;
   if( (start_socks[1] = find(head, start_socks[0])) == -1)
