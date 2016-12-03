@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
+
 //Shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/database.h"
@@ -61,7 +62,9 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
   int r_sockfd;
   int *start_socks;
+  
   while(true){
+ 
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
     c_add(&c_head, r_sockfd);

@@ -32,7 +32,7 @@ void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
   gips *z;
   board[a][b] = stone;
-  z = pack(player, false, a, b);
+  z = pack(player, false, a, b, false);
   send_to(z, sock);
 }
 
@@ -151,7 +151,11 @@ int main() {
   //Name and stuff
   if (sock != -1) {
     uniquePID = login(sock, uniquePID, name) ;
-    recv(sock, &pid, sizeof(char), 0);
+    recv(sock, &pid, sizeof(char), MSG_WAITALL);
+    if(errno || pid == 0 || pid == -1) {
+      printf("shutdown");
+      exit(1);
+    }
     //TODO
     //Inform user of Unique PID (If it was the one they requested or different)
     if(pid == 1) {
@@ -171,8 +175,7 @@ int main() {
 
     printf("Wait your turn!\n");
     
-    signal(SIGINT, INThandle);
-    recv(sock, player_info, sizeof(player_info), 0);
+    recv(sock, player_info, sizeof(player_info), MSG_WAITALL);
     
     //break if win, if first turn don't do anything, else get the move 
     if (player_info->isWin != 0) break;
