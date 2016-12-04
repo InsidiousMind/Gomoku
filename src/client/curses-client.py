@@ -28,8 +28,8 @@ class GIPS (object):
         logging.debug(self.sock)
         self.pid = 0
         self.is_win = 0
-        self.move_x = 0
-        self.move_y = 0
+        self.move_x = -1
+        self.move_y = -1
 
     def unpack(self):
         self.is_win = 0
@@ -39,6 +39,10 @@ class GIPS (object):
             self.is_win = int.from_bytes(t[1], byteorder='big')
             self.move_x = int.from_bytes(t[2], byteorder='big')
             self.move_y = int.from_bytes(t[3], byteorder='big')
+            if self.move_x == 255:
+                self.move_x = -1
+            if self.move_y == 255:
+                self.move_y = -1
         except:
             logging.critical("socket.recv call DID NOT BLOCK")
             logging.exception("Exception text")
@@ -70,8 +74,7 @@ class GIPS (object):
 
 
 def main():
-    id = str(random.randrange(100))
-    logging.basicConfig(filename=(id + 'log.txt'), level=logging.DEBUG,
+    logging.basicConfig(filename='log.txt', level=logging.DEBUG,
                         format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
     host = "localhost"
     port = 32200
@@ -98,7 +101,7 @@ def main():
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
     upid = login(sock, pid, username)
-    pid = sock.recv(4)
+    pid = sock.recv(1)
     logging.debug("Received PID: " + str(pid))
     logging.debug("Pointer to sock: " + str(sock))
     board = init_board()
@@ -184,7 +187,7 @@ def main():
                     gips.pack(pid, gips.is_win, move[0], move[1])
                     # Send the GIPS
                     gips.send()
-                    update_board(gips, board)
+                    board = update_board(gips, board)
                     display_board(board, win3)
             if c == ord('c'):
                 box2.edit()
@@ -198,6 +201,10 @@ def main():
     except Exception:
         logging.exception("Exception caught")
         down(stdscr)  # Breaks the application down and ends it.
+        sys.exit(0)
+    except KeyboardInterrupt:
+        logging.exception("SIGINT received")
+        down(stdscr)
         sys.exit(0)
 
 
@@ -224,10 +231,14 @@ def update_board(gips, board):
     logging.debug("Updating to the next board.")
     logging.debug("move_x: " + str(gips.move_x))
     logging.debug("move_y: " + str(gips.move_y))
+    if gips.move_x == -1 or gips.move_y == -1:
+        logging.debug("Returning board unchanged.")
+        return board
     if gips.pid == 1:
-        board[gips.move_x] = 'B'
+        board[gips.move_x][gips.move_y] = 'B'
     elif gips.pid == 2:
-        board[gips.move_y] = 'W'
+        board[gips.move_x][gips.move_y] = 'W'
+    logging.debug("Returning updated board.")
     return board
 
 
@@ -245,6 +256,7 @@ def move_is_valid(move):
 def display_board(board, win):
     x = 1
     y = 1
+    logging.debug(board)
     for a in board:
         for b in a:
             win.addch(y, x, ord(b))
