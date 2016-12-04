@@ -163,8 +163,7 @@ int accept_client(int serv_sock) {
   struct sockaddr_storage client_addr;
   char client_printable_addr[INET6_ADDRSTRLEN];
 
-  if ((reply_sock_fd = accept(serv_sock,
-          (struct sockaddr *) &client_addr, &sin_size)) == -1) {
+  if ((reply_sock_fd = accept(serv_sock, (struct sockaddr *) &client_addr, &sin_size)) == -1) {
     perror("socket accept error\n");
   } else {
     inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *) &client_addr),
