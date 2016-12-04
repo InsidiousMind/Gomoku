@@ -7,21 +7,20 @@ import logging
 from curses.textpad import Textbox
 import socket
 import struct
-import random
 import ctypes
 
 
-class Chat (threading.Thread):
+class Chat(threading.Thread):
     def __init__(self, win):
         self.win = win
 
-    def update():
+    def update(self):
         # Get a chat message.
         # Add the chat message to win.
         self.win.refresh()
 
 
-class GIPS (object):
+class GIPS(object):
     def __init__(self, sock):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
@@ -47,7 +46,6 @@ class GIPS (object):
             logging.critical("socket.recv call DID NOT BLOCK")
             logging.exception("Exception text")
 
-
     def pack(self, pid, is_win, move_x, move_y):
         logging.debug("Packing: " + str(pid) + " " + str(is_win) +
                       " " + str(move_x) + " " + str(move_y))
@@ -57,11 +55,11 @@ class GIPS (object):
         self.move_y = move_y
         try:
             self.gips = struct.pack('cccc',
-                                ctypes.c_char(int.from_bytes(pid,
-                                                             byteorder="big")),
-                                ctypes.c_char(is_win),
-                                ctypes.c_char(move_x),
-                                ctypes.c_char(move_y))
+                                    ctypes.c_char(int.from_bytes(pid,
+                                                                 byteorder="big")),
+                                    ctypes.c_char(is_win),
+                                    ctypes.c_char(move_x),
+                                    ctypes.c_char(move_y))
         except:
             logging.debug("Pack did not work even remotely.")
 
@@ -154,7 +152,7 @@ def main():
                 print("You lose.")
                 logging.warning("This client lost.")
                 break
-            elif gips.move_a == -1 and gips.move_b == -1:
+            elif gips.move_x == -1 and gips.move_y == -1:
                 logging.warning("This client received an invalid move.")
             else:
                 pass  # Keep doing your thing buddy you're doing great
@@ -174,8 +172,8 @@ def main():
                 move = (str(stuff)).split(' ')
                 move.remove('\n')
                 for m in move:
-                     m = int(m)
-                 # Check move validity.
+                    m = int(m)
+                    # Check move validity.
                 # If the move is not valid:
                 if not move_is_valid(move):
                     # Send 'invalid move' to chat.
@@ -195,7 +193,7 @@ def main():
                 message = str(username) + ": " + str(stuff)
                 # Send message to the server as a bytestring.
                 send_to_chat(sock, message)
-                stdscr.refresh() # Redraws the screen.
+                stdscr.refresh()  # Redraws the screen.
         down(stdscr)
         sys.exit(0)
     except Exception:
@@ -294,21 +292,21 @@ def down(stdscr):
 
 
 def print_title(stdscr):
-    stdscr.addstr(0,0,"GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU")
-    stdscr.addstr(1,0,"GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU")
-    stdscr.addstr(2,0,"GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
-    stdscr.addstr(3,0,"GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
-    stdscr.addstr(4,0,"GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU")
-    stdscr.addstr(5,0,"GG         OO      OO MM M   M MM OO      OO KKK        UU     UU")
-    stdscr.addstr(6,0,"GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU")
-    stdscr.addstr(7,0,"GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU")
-    stdscr.addstr(8,0,"GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
-    stdscr.addstr(9,0,"GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
-    stdscr.addstr(10,0,"GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU")
-    stdscr.addstr(11,0,"GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU")
-    stdscr.addstr(14,70,"Chat")
-    stdscr.addstr(14,1,"Game Window")
-    stdscr.addstr(14,120,"The Board")
+    stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU")
+    stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU")
+    stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
+    stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
+    stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU")
+    stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU")
+    stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU")
+    stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU")
+    stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
+    stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
+    stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU")
+    stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU")
+    stdscr.addstr(14, 70, "Chat")
+    stdscr.addstr(14, 1, "Game Window")
+    stdscr.addstr(14, 120, "The Board")
 
 
 if __name__ == "__main__":
