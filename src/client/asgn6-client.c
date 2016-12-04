@@ -57,7 +57,6 @@ int main() {
   printf("Player ID: ");
   scanf("%d", &uniquePID);
 
-  
   printf("Gomoku Client for Linux\n");
 
   bool keepPlaying = true;

@@ -14,6 +14,7 @@
 //commons
 #include "server_db.h"
 #include "game_thread.h"
+#include "server_connections.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -71,6 +72,7 @@ void *startGameServer(void *args){
   pthread_join(pthread2, NULL);
 
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
+    
   free(gameInfo);
 
   pthread_exit(NULL);

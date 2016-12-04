@@ -38,12 +38,13 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
+  gameSrvInfo->c_head = c_head;
   pthread_t pthread;
 
   //make the thread detached
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  //pthread_attr_t attr;
+  //pthread_attr_init(&attr);
+  //pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 
   sock_fd = get_server_socket(HOST, HTTPPORT);
@@ -53,7 +54,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   }
   
   /*once two clients connect init a game server
-   *              Game Server(detached)
+   *              Game Server
    *              /        \
    *             /          \
    *   Client Thread      Client Thread  ( both attached to game server)
@@ -79,7 +80,7 @@ while(true){
     if( (start_socks = startGame(&c_head)) != NULL) {
       gameSrvInfo->reply_sock_fd[0] = start_socks[0];
       gameSrvInfo->reply_sock_fd[1] = start_socks[1];
-      if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
+      if((pthread_create(&pthread, NULL, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
        printf("Failed to start Game Server");
       
       //invert isPlaying
