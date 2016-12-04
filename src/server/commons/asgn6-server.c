@@ -38,6 +38,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
+  gameSrvInfo->c_head = c_head;
   pthread_t pthread;
 
   //make the thread detached
@@ -57,7 +58,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   }
   
   /*once two clients connect init a game server
-   *              Game Server(detached)
+   *              Game Server
    *              /        \
    *             /          \
    *   Client Thread      Client Thread  ( both attached to game server)
