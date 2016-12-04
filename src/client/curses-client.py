@@ -69,7 +69,7 @@ class GIPS (object):
         self.sock.send(self.gips)
 
     def recv(self):
-        self.gips = self.sock.recv(4)
+        self.gips = self.sock.recv(5)
         logging.debug("Received: " + str(self.gips))
 
 
