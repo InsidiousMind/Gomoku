@@ -1,20 +1,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <stdbool.h>
 #include "gips.h"
-
 //Some functions to compress what we send over the nets
 
 //packs info needed for playing the game into a struct
 //using chars to make the package as small as possible
 
-gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b) {
+gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b, BYTE isEarlyExit) {
   static gips info;
 
   info.pid = pid; //1 if player1, 2 if player2
   info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
   info.move_a = move_a; //move || first board == own player turn,
   info.move_b = move_b; //move         EVERY OTHER board === OTHER PLAYER move
+  info.isEarlyExit = isEarlyExit;
   return &info;
 }
 
@@ -26,7 +27,7 @@ int send_to(gips *info, int sock) {
   int bytesleft = sizeof(info), n;
   int len = sizeof(info);
   while (total < len) {
-    n = (int) send(sock, &(*(info + total)), bytesleft, 0);
+    n = (int) send(sock, &(*(info + total)), bytesleft, MSG_NOSIGNAL);
     if (n == -1) {
       perror("[!!!] could not send");
       break;

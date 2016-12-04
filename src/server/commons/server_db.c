@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <stdbool.h>
+
 #include "../../lib/gips.h"
 
 #include "../../lib/database.h"

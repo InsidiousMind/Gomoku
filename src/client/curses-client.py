@@ -10,6 +10,7 @@ import struct
 import random
 import ctypes
 
+
 class Chat (threading.Thread):
     def __init__(self, win):
         self.win = win
@@ -168,6 +169,9 @@ def main():
                 stuff = box1.gather()
                 # Split the move into two components.
                 move = (str(stuff)).split(' ')
+                move.remove('\n')
+                for m in move:
+                     m = int(m)
                  # Check move validity.
                 # If the move is not valid:
                 if not move_is_valid(move):
@@ -180,6 +184,8 @@ def main():
                     gips.pack(pid, gips.is_win, move[0], move[1])
                     # Send the GIPS
                     gips.send()
+                    update_board(gips, board)
+                    display_board(board, win3)
             if c == ord('c'):
                 box2.edit()
                 stuff = box2.gather()
@@ -216,6 +222,8 @@ def send_to_chat(sock, message):
 
 def update_board(gips, board):
     logging.debug("Updating to the next board.")
+    logging.debug("move_x: " + str(gips.move_x))
+    logging.debug("move_y: " + str(gips.move_y))
     if gips.pid == 1:
         board[gips.move_x] = 'B'
     elif gips.pid == 2:
@@ -224,6 +232,7 @@ def update_board(gips, board):
 
 
 def move_is_valid(move):
+    logging.debug("Move: " + str(move))
     if 8 > int(move[0]) > 0:
         if 8 > int(move[1]) > 0:
             return True

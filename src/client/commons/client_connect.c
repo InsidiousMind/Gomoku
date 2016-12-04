@@ -50,7 +50,7 @@ int login(int sock, int uniquePID, char *username) {
 
   int upid = uniquePID;
   //get pid from the server based on the username.
-  send(sock, &upid, sizeof(int), 0);
+  send(sock, &upid, sizeof(int), MSG_NOSIGNAL);
   send_mesg(username, sock);
   recv(sock, &upid, sizeof(int), 0);
   return upid;
