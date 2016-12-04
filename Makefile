@@ -6,7 +6,7 @@
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//
 
 CC = cc
-CFLAGS = -Wextra -Wall -lpthread -g
+CFLAGS = -Wextra -Wall -lpthread -g -Wshadow
 
 #Server
 

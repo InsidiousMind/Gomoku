@@ -14,6 +14,7 @@
 //commons
 #include "server_db.h"
 #include "game_thread.h"
+#include "server_connections.h"
 
 void *subserver(void *args); //starts subserver
 int gameLoop(int reply_sock_fd, char pid, void **args);
@@ -69,8 +70,9 @@ void *startGameServer(void *args){
     
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-
+    
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
+    
   free(gameInfo);
 
   pthread_exit(NULL);
@@ -124,7 +126,7 @@ void *subserver(void *arguments)
     perror("[!!!] error: receive fail in subserver");
   if(read_count == 0) detectedExit(&gameInfo, PID, NULL, reply_sock_fd);
   //next packet is the clients Username
-  int BUFFERSIZE = 256;
+  size_t BUFFERSIZE = 256;
   char *username = calloc(1, BUFFERSIZE*sizeof(char));
   if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
     perror("[!!] error: receive fail in subserver");

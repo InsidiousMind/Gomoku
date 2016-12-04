@@ -66,7 +66,8 @@ int main() {
     establish_connection(sock, &uniquePID, &name, &pid);
     isWin = gameLoop(&player_info, &name, sock, (char) pid);
     if (player_info->isEarlyExit == -1) {
-      printf("\n The other client has Disconnected. Connect to another client waiting to play? [Y/n]: ");
+      printf("\n The other client has Disconnected. Connect to another client waiting to play? "
+                 "[Y/n]: ");
       //grab the newline first
       char resp = (char) getchar();
       resp = (char) getchar();

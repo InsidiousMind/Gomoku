@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <fcntl.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
 
@@ -37,6 +38,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
+  gameSrvInfo->c_head = c_head;
   pthread_t pthread;
 
   //make the thread detached
@@ -126,7 +128,11 @@ int get_server_socket(char *hostname, char *port) {
       continue;
     }
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-      printf("socket option\n");
+      printf("socket option: setsockopt\n");
+      continue;
+    }
+    if( (fcntl(server_socket, F_SETFD, O_NONBLOCK)) == -1){
+      printf("socket option: fctnl\n");
       continue;
     }
 
