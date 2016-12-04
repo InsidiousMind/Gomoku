@@ -70,7 +70,8 @@ void *startGameServer(void *args){
     
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-    
+  
+  parseConnections(&gameSrvInfo->conn_head);
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
     
   free(gameInfo);
@@ -185,8 +186,8 @@ int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int repl
     printf("Other client disconnected, too\n");
     earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
   }
-  free(tempuser);
-  pthread_exit(NULL);  //telling detached to change variable to indicate setting isPlaying to
+  earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
+  pthread_exit(NULL);
 }
 
 int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
@@ -201,10 +202,11 @@ int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
   earlyExit(PID, &(*username), reply_sock_fd, &tempInfo);
   return 0;
 }
+
 void earlyExit(BYTE PID, char **username, int reply_sock_fd, game **gameInfo){
   game *tempInfo = *gameInfo;
   char *temp = username ? *username : "NA";
-  printf("%s: %s %s %c %s\n", "Player", temp, "of", (char) PID, "client exited");
+  printf("%s: %s %s %c %s\n", "Player", temp, "of", (char) PID, "client socket closed");
   close(reply_sock_fd);
   if(username) free(temp);
   pthread_exit(NULL);
@@ -258,22 +260,24 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
     if(wpid!=0)
       break;
-
-    if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
-      perror("[!!!] ERROR: receive error in GameLoop");
-    if(read_count == 0){
-      return -1;
+    
+    if(!clientDC) {
+      if ((read_count = (int) recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1) {
+        perror("[!!!] ERROR: receive error in GameLoop");
+        return -1;
+      }
+      if (read_count == 0) {
+        return -1;
+      }
+      //add the move to the board, and to the respective client arrays keeping track of
+      //each players moves
+      playerBoard = addMove(player_info->move_a, player_info->move_b, player_info->pid, playerBoard,
+                            gameInfo);
+            //check for a win
+      isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
     }
 
-    //add the move to the board, and to the respective client arrays keeping track of
-    //each players moves
-    playerBoard = addMove(player_info->move_a, player_info->move_b,
-        player_info->pid, playerBoard, gameInfo);
-
-    //check for a win
-    if(! clientDC) isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
-
-    //switch the turn 
+    //switch the turn
     turn(gameInfo);
 
     numTurns++;

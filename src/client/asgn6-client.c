@@ -48,9 +48,8 @@ int main() {
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   
-  int uniquePID, pid;
+  int uniquePID, pid, sock;
   
-  int sock = connect_to_server();
   
   printf("Username: ");
   readWord(name, (int) (strlen(name) + 1));
@@ -63,6 +62,7 @@ int main() {
   bool keepPlaying = true;
   int isWin;
   while(keepPlaying) {
+    sock = connect_to_server();
     establish_connection(sock, &uniquePID, &name, &pid);
     isWin = gameLoop(&player_info, &name, sock, (char) pid);
     if (player_info->isEarlyExit == -1) {
@@ -73,6 +73,7 @@ int main() {
       resp = (char) getchar();
       if (resp == 'Y' || resp == 'y') {
         send(sock, &resp, sizeof(char), 0);
+        close(sock);
         keepPlaying = true;
       } else exit(0);
     }else keepPlaying = false;

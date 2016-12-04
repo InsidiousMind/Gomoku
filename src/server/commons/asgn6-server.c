@@ -27,7 +27,7 @@ int* startGame(c_head **head);
 
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   
-  c_head *c_head = NULL;
+  c_head *conn_head = NULL;
   int sock_fd;
   Node *game_head = *((Node **) temp);
 
@@ -38,16 +38,19 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->fd = fd;
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
-  gameSrvInfo->c_head = c_head;
   pthread_t pthread;
 
   //make the thread detached
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  //pthread_attr_t attr;
+  //pthread_attr_init(&attr);
+  //pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 
   sock_fd = get_server_socket(HOST, HTTPPORT);
+  if( (fcntl(sock_fd, F_SETFD, O_NONBLOCK)) == -1) {
+    printf("socket option: fctnl\n");
+    exit(1);
+  }
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
     exit(1);
@@ -73,19 +76,20 @@ while(true){
  
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
-    c_add(&c_head, r_sockfd);
-
-    parseConnections(&c_head);
+  
+    c_add(&conn_head, r_sockfd);
+    gameSrvInfo->conn_head = conn_head;
+    parseConnections(&conn_head);
     
-    if( (start_socks = startGame(&c_head)) != NULL) {
+    if( (start_socks = startGame(&conn_head)) != NULL) {
       gameSrvInfo->reply_sock_fd[0] = start_socks[0];
       gameSrvInfo->reply_sock_fd[1] = start_socks[1];
-      if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
+      if((pthread_create(&pthread, NULL, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
        printf("Failed to start Game Server");
       
       //invert isPlaying
-      setPlaying(&c_head, start_socks[0]);
-      setPlaying(&c_head, start_socks[1]);
+      setPlaying(&conn_head, start_socks[0]);
+      setPlaying(&conn_head, start_socks[1]);
       
       free(start_socks);
     }
@@ -131,11 +135,6 @@ int get_server_socket(char *hostname, char *port) {
       printf("socket option: setsockopt\n");
       continue;
     }
-    if( (fcntl(server_socket, F_SETFD, O_NONBLOCK)) == -1){
-      printf("socket option: fctnl\n");
-      continue;
-    }
-
     if (bind(server_socket, p->ai_addr, p->ai_addrlen) == -1) {
       printf("socket bind \n");
       continue;
