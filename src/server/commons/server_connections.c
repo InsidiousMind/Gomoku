@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
-<<<<<<< HEAD
-//#include <ares_build.h>
-=======
->>>>>>> 3a75fd3b7d187fc696698a9f581dce048b9d36ce
 #include <string.h>
 #include "server_connections.h"
 
@@ -125,7 +121,7 @@ int find(c_head **head, int found){
   for(i = 1; i < t_head->size; i++) {
     if(temp->isPlaying == false && temp->sockfd != found) {
       return temp->sockfd;
-    }
+    } else temp = temp->next;
   }
   return -1;
 }

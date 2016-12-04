@@ -67,10 +67,10 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   int *start_socks;
  //TODO: Has to be a way to inform client that it's paired client has disconnected
   //
-w: while(true){
+while(true){
  
     if ((r_sockfd = accept_client(sock_fd)) == -1)
-      goto w;
+      continue;
     c_add(&c_head, r_sockfd);
 
     parseConnections(&c_head);

@@ -229,19 +229,18 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     return -1;
 
   int read_count;
-
+  bool clientDC;
   //wait until other players turn is over,
   //can't play the game all at once!
   do {
     //wait until player turn
     while((isMyTurn(gameInfo, pid)) != true) sleep(1);
-    bool clientDC;
+    pthread_mutex_lock(&gameInfo->gameInfo_access);
     clientDC =  gameInfo->clientDisconnect;
-    if(clientDC) return -1;
+    pthread_mutex_unlock(&gameInfo->gameInfo_access);
     
     //send other players moves
     if(sendMoves(reply_sock_fd, numTurns, pid, gameInfo) == -1 ) {
-     
       for(i = 0; i < HEIGHT; i++){
         free(playerBoard[i]);
       }
@@ -249,7 +248,8 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
       free(player_info);
       return -1;
     }
-
+    
+    //check for win
     int wpid = 0;
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     wpid = gameInfo->playerWin;
@@ -268,15 +268,16 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     playerBoard = addMove(player_info->move_a, player_info->move_b,
         player_info->pid, playerBoard, gameInfo);
 
-    //check for a win 
-    isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
+    //check for a win
+    if(! clientDC) isWin = checkWin(playerBoard, pid, reply_sock_fd, gameInfo);
 
     //switch the turn 
     turn(gameInfo);
 
     numTurns++;
-
-  } while (isWin == 0 && read_count != -1 && read_count != 0);
+    
+  //while client has not disconnected/won
+  } while (isWin == 0 && read_count != -1 && read_count != 0 && !clientDC);
 
   printf("%s%d%s", "Game ended for pid ", pid, " Performing cleanup...\n");
 
@@ -285,9 +286,9 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
   free(playerBoard);
   free(player_info);
-
-  return isWin;
-
+  
+  if(clientDC) return -1;
+  else return isWin;
 }
 
 //check for what moves to send
@@ -296,21 +297,25 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
 int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
 
   char otherPID = getOtherPlayersPID(pid);
-
+  BYTE win = 0;
   if(numTurns == 0 && pid == 1) {
-  
-    if (send_to(pack(otherPID, FALSE, -1, -1, 0), reply_sock_fd) == -1) {
+    pthread_mutex_lock(&gameInfo->gameInfo_access);
+    if(gameInfo->clientDisconnect) win = -1;
+    pthread_mutex_unlock(&gameInfo->gameInfo_access);
+    
+    if (send_to(pack(otherPID, FALSE, -1, -1, win), reply_sock_fd) == -1) {
       printf("Could not send; Other Client Disconnected or the Pipe is Broken\n");
       return -1;
     }
   
   }else{
-   
     pthread_mutex_lock(&gameInfo->gameInfo_access);
+    if(gameInfo->clientDisconnect)  win = -1;
     if( send_to(pack(otherPID,
                 (char) gameInfo->playerWin,
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[0] : gameInfo->play1Moves[0]),
-                (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]), 0),
+                (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]),
+                 win),
                 reply_sock_fd) == -1){
       return -1;
     }

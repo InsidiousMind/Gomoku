@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <stdbool.h>
 #include "gips.h"
-
 //Some functions to compress what we send over the nets
 
 //packs info needed for playing the game into a struct

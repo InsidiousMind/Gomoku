@@ -10,7 +10,7 @@ typedef struct {
   BYTE move_b;
   //this is just a boolean for the client. If the other client exited before the
   //game was over, this is  set to 1
-  BYTE isEarlyExit;
+  int isEarlyExit;
 } gips;
 
 gips *pack(BYTE pid, BYTE isWin, BYTE move_x, BYTE move_y, BYTE isEarlyExit);
