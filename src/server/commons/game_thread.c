@@ -150,7 +150,7 @@ void *subserver(void *arguments)
     pthread_mutex_unlock(&gameInfo->args.head_access);
 
     if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
-      perror("[!!!] error: Game Loop Fail");
+      perror("[!!!]: Game Loop");
       if(gameInfo->clientDisconnect)  otherClientDisconnected(&gameInfo, PID, &username,
                                                               reply_sock_fd);
       else
@@ -175,7 +175,6 @@ int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int repl
   game *tempInfo = *gameInfo;
   char *tempuser = *username;
   ssize_t read_count = 0;
-  
   //asking client if it would want to join another game
   if(send(reply_sock_fd, (const void *) -1, sizeof(int), 0) == -1) {
     printf("Other client disconnected, too\n");
@@ -359,15 +358,9 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
 
     return pid;
 
-  } else {
-
-    if(send(sockfd, &noWin, sizeof(int), 0) == -1){
+  } else if(send(sockfd, &noWin, sizeof(int), 0) == -1){
       return -1;
-    }
-
-    return 0;
-
-  }
+  } else return 0;
 }
 
 

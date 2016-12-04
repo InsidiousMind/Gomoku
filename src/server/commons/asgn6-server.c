@@ -29,7 +29,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   
   c_head *conn_head = NULL;
   int sock_fd;
-  Node *game_head = *((Node **) temp);
+  Node *game_head = *temp;
 
   gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
 

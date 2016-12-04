@@ -48,7 +48,7 @@ int main() {
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   
-  int uniquePID, pid, sock;
+  int uniquePID, pid = 0, sock;
   
   
   printf("Username: ");
@@ -236,7 +236,7 @@ int gameLoop(gips **player_info, char **name, int sock, char pid){
   free(board);
   free(moves);
   
-  return -1;
+  return isWin;
 
 }
 
