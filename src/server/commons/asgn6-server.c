@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <fcntl.h>
 #include "asgn6-server.h"
 #include "game_thread.h"
 
@@ -129,7 +130,10 @@ int get_server_socket(char *hostname, char *port) {
       printf("socket option\n");
       continue;
     }
-
+    if (fcntl(server_socket, F_SETFD, O_NONBLOCK)  == -1){
+      printf("[!!ERROR!!] socket option: fcntl \n");
+      continue;
+    }
     if (bind(server_socket, p->ai_addr, p->ai_addrlen) == -1) {
       printf("socket bind \n");
       continue;

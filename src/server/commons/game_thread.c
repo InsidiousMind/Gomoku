@@ -257,8 +257,10 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     if(wpid!=0)
       break;
 
-    if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1)
+    if((read_count = recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1) {
       perror("[!!!] ERROR: receive error in GameLoop");
+      return -1;
+    }
     if(read_count == 0){
       return -1;
     }
