@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
+//#include <ares_build.h>
 #include <string.h>
 #include "server_connections.h"
 
