@@ -150,7 +150,7 @@ void *subserver(void *arguments)
     pthread_mutex_unlock(&gameInfo->args.head_access);
 
     if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
-      perror("[!!!]: Game Loop");
+      perror("[!!!]: Game Loop, client disconnect? : ");
       if(gameInfo->clientDisconnect)  otherClientDisconnected(&gameInfo, PID, &username,
                                                               reply_sock_fd);
       else
@@ -174,17 +174,6 @@ void *subserver(void *arguments)
 int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int reply_sock_fd){
   game *tempInfo = *gameInfo;
   char *tempuser = *username;
-  ssize_t read_count = 0;
-  //asking client if it would want to join another game
-  if(send(reply_sock_fd, (const void *) -1, sizeof(int), 0) == -1) {
-    printf("Other client disconnected, too\n");
-    earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
-  }
-  char resp;
-  if( (read_count = recv(reply_sock_fd, &resp, sizeof(char), 0)) == 0) {
-    printf("Other client disconnected, too\n");
-    earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
-  }
   earlyExit(PID, &tempuser, reply_sock_fd, &tempInfo);
   pthread_exit(NULL);
 }
@@ -337,9 +326,9 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
   int npid = (int) pid;
   int noWin = 0;
 
-  //call on checkForWin from glogic for subsequent PID's. 
+  //call on checkForWin from glogic for subsequent PID's.
   //have to do it seperately
-  if (pid % 2 == 0) 
+  if (pid % 2 == 0)
     p2win = check_for_win_server(board);
   else
     p1win = check_for_win_server(board);

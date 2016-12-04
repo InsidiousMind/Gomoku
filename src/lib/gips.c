@@ -57,7 +57,7 @@ int send_mesg(char *str, int sock) {
   }
   len = total;
   return n == -1 ? -1 : total;
-}
+
 
 int send_misc(void *thing, int sock){
 

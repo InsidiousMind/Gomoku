@@ -67,11 +67,11 @@ int main() {
     if (player_info->isEarlyExit == -1) {
       printf("\n The other client has Disconnected. Connect to another client waiting to play? "
                  "[Y/n]: ");
-      //grab the newline first
-      char resp = (char) getchar();
-      resp = (char) getchar();
-      if (resp == 'Y' || resp == 'y') {
-        send(sock, &resp, sizeof(char), 0);
+
+      char c = getchar();
+      if(c == '\n') c = getchar();
+      
+      if (c == 'Y' || c == 'y') {
         close(sock);
         keepPlaying = true;
       } else exit(0);

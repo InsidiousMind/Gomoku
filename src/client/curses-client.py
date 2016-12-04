@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import curses
 import sys
@@ -12,9 +12,10 @@ import ctypes
 
 class Chat(threading.Thread):
     def __init__(self, win):
+        super().__init__()
         self.win = win
 
-    def update(self):
+    def update(self=None):
         # Get a chat message.
         # Add the chat message to win.
         self.win.refresh()
@@ -125,7 +126,8 @@ def main():
     box1 = Textbox(win1)
     box2 = Textbox(win4)
     chat = Chat(win2)
-    logging.debug("Game starting.")
+#    logging.debug("Game starting.")
+    print("game starting")
     try:
         while game_running:
             # Receive a GIPS
