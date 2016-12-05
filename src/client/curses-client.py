@@ -10,6 +10,7 @@ from socket import htonl
 from socket import ntohl
 import struct
 import ctypes
+import time
 
 
 class Chat(threading.Thread):
@@ -21,6 +22,9 @@ class Chat(threading.Thread):
         # Get a chat message.
         # Add the chat message to win.
         self.win.refresh()
+
+    def run(self):
+        time.sleep(1)
 
 
 # define screen variables
