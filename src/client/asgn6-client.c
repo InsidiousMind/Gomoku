@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
 
 //shared libraries
 #include "../lib/database.h"
@@ -38,7 +39,7 @@ int checkValid(int *moves, char stone, char *name, char **board );
 void print_player(Player *play);
 void get_move(char ***t_board, gips *z, char stone);
 void send_move(int a, int b, char **board, int sock, char player, char stone);
-void establish_connection(int sock, int *uniquePID, char **username, int *pid);
+void establish_connection(int sock, uint32_t *uniquePID, char **username, int *pid);
 
 int main() {
 
@@ -48,7 +49,8 @@ int main() {
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips*));
   
-  int uniquePID, pid = 0, sock;
+  int pid = 0, sock;
+  uint32_t uniquePID;
   
   
   printf("Username: ");
@@ -84,7 +86,6 @@ int main() {
     printf("You Win!! :-)\n");
   
   Player *player = malloc(sizeof(Player));
- 
   recv(sock, player, sizeof(Player), 0);
   print_player(player);
 
@@ -202,8 +203,8 @@ int gameLoop(gips **player_info, char **name, int sock, char pid){
   while (board != NULL) {
 
     printf("Wait your turn!\n");
-    
-    recv(sock, p_info, sizeof(p_info), MSG_WAITALL);
+   //receive a gips
+    receive_gips(sock, &p_info);
     
     //break if win, if first turn don't do anything, else get the move
     if(p_info->isWin != 0) return p_info->isWin;
@@ -249,7 +250,7 @@ char getOtherStone(char pid){
   else return 'B';
 }
 //sets variables pid etc
-void establish_connection(int sock, int *uniquePID, char **username, int *pid){
+void establish_connection(int sock, uint32_t *uniquePID, char **username, int *pid){
   
   char *name = *username;
   

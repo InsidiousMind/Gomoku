@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
+#include <arpa/inet.h>
 
 //shared libraries
 #include "../../lib/gips.h"
@@ -93,7 +95,8 @@ void *subserver(void *arguments)
 {
   //get the arguments
   BYTE PID;
-  int uPID = 0, reply_sock_fd, fd;
+  uint32_t uPID = 0;
+  int reply_sock_fd, fd;
   Node *head; 
 
   game *gameInfo = ((game *) arguments);
@@ -125,6 +128,7 @@ void *subserver(void *arguments)
   //first packet twe receive is the clients 'Expected' unique PID
   if((read_count = recv(reply_sock_fd, &uPID, sizeof(int), 0)) == -1)
     perror("[!!!] error: receive fail in subserver");
+  uPID = ntohl(uPID);
   if(read_count == 0) detectedExit(&gameInfo, PID, NULL, reply_sock_fd);
   //next packet is the clients Username
   size_t BUFFERSIZE = 256;
@@ -134,21 +138,26 @@ void *subserver(void *arguments)
   if(read_count == 0) detectedExit(&gameInfo, PID, &username, reply_sock_fd);
     
     username[read_count] = '\0';
-    printf("%s\n", username);
 
     //check if username and uPID match/exist
     //if they don't, send the player a uniquePID
     pthread_mutex_lock(&gameInfo->args.head_access);
     if(isPlayerTaken(&head, uPID, username, fd) == true){
       uPID = genUPID();
+      uPID = htonl(uPID);
       if(send(reply_sock_fd, &(uPID), sizeof(uPID), 0) == -1)
         detectedExit(&gameInfo, PID, &username, reply_sock_fd);
+      uPID = ntohl(uPID);
     }else{
+     uPID = htonl(uPID);
       if(send(reply_sock_fd, &uPID, sizeof(uPID), 0) == -1)
         detectedExit(&gameInfo, PID, &username, reply_sock_fd);
+      uPID = ntohl(uPID);
     }
     pthread_mutex_unlock(&gameInfo->args.head_access);
-
+  
+    printf("%s %s %d %s %d\n", username, "with PID:", PID, "and uPID: ", uPID);
+  
     if ((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1) {
       perror("[!!!]: Game Loop, client disconnect? : ");
       if(gameInfo->clientDisconnect)  otherClientDisconnected(&gameInfo, PID, &username,
@@ -250,7 +259,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
       break;
     
     if(!clientDC) {
-      if ((read_count = (int) recv(reply_sock_fd, player_info, sizeof(player_info), 0)) == -1) {
+      if((read_count = receive_gips(reply_sock_fd, &player_info )) == -1){
         perror("[!!!] ERROR: receive error in GameLoop");
         return -1;
       }
@@ -306,7 +315,7 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     if(gameInfo->clientDisconnect)  win = -1;
     if( send_to(pack(otherPID,
-                (char) gameInfo->playerWin,
+                (BYTE) gameInfo->playerWin,
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[0] : gameInfo->play1Moves[0]),
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]),
                  win),
