@@ -188,11 +188,11 @@ def gameLoop(board, pid, username, screen, stdscr, sock, gips):
             pass
         else:  # update board
             board = update_board(gips, board)
-            stdscr.refresh()  # This line begins the interface logic.
-            display_board(board, screen.win3)
-            stdscr.refresh()  # This begins the user interaction
-            c = stdscr.getch()
-            game_running = checkKeys(c, screen, stdscr, gips, board, pid, sock, username)
+        stdscr.refresh()  # This line begins the interface logic.
+        display_board(board, screen.win3)
+        stdscr.refresh()  # This begins the user interaction
+        c = stdscr.getch()
+        game_running = checkKeys(c, screen, stdscr, gips, board, pid, sock, username)
     return gips
 
 
@@ -257,13 +257,10 @@ def update_board(gips, board):
     logging.debug("Updating to the next board.")
     logging.debug("move_x: " + str(gips.move_a))
     logging.debug("move_y: " + str(gips.move_b))
-    if gips.move_a == -1 or gips.move_b == -1:
-        logging.debug("Returning board unchanged.")
-        return board
     if gips.pid == 1:
-        board[gips.move_a][gips.move_b] = 'B'
+        board[int(gips.move_a)][int(gips.move_b)] = 'B'
     elif gips.pid == 2:
-        board[gips.move_a][gips.move_b] = 'W'
+        board[int(gips.move_a)][int(gips.move_b)] = 'W'
     logging.debug("Returning updated board.")
     return board
 
