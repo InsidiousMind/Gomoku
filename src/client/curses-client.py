@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 
 import curses
 import sys
@@ -11,6 +11,7 @@ from socket import ntohl
 import struct
 import ctypes
 import time
+import inspect
 
 
 class Chat(threading.Thread):
@@ -123,6 +124,7 @@ class GIPS(object):
 def main():
     logging.basicConfig(filename='log.txt', level=logging.DEBUG,
                         format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
+    logging.debug("Client initializing!")
     host = "localhost"
     port = 32200
     logging.info("Trying to connect on " + str(host) + ":" + str(port))
@@ -156,23 +158,24 @@ def main():
     # GOOD UP TO HERE (With send/recv)
     screen = Screen(40, 40, 1, 15, 70, 15, 121, 15)
     screen.print_title(stdscr)
-
     logging.debug("Game starting.")
     print("game starting")
     try:
         gips = GIPS(sock)
         logging.debug("The GIPS is defined.")
         gips = gameLoop(board, pid, username, screen, stdscr, sock, gips)
-        down(stdscr)
-        sys.exit(0)
+        halt(stdscr)
     except Exception:
         logging.exception("Exception caught")
-        down(stdscr)  # Breaks the application down and ends it.
-        sys.exit(0)
+        halt(stdscr)
     except KeyboardInterrupt:
         logging.exception("SIGINT received")
-        down(stdscr)
-        sys.exit(0)
+        halt(stdscr)
+
+
+def halt(stdscr):  # Just to cut down on a few lines in main()
+    down(stdscr)
+    sys.exit(0)
 
 
 def gameLoop(board, pid, username, screen, stdscr, sock, gips):
@@ -321,6 +324,7 @@ def down(stdscr):
     curses.endwin()
     import doctest
     doctest.testmod()
+    logging.log(inspect.stack())
 
 
 if __name__ == "__main__":
