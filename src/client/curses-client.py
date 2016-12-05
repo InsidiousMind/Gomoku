@@ -39,8 +39,8 @@ class Screen(object):
         # Window 4 displays the message that the player is currently typing out.
         self.win4 = curses.newwin((height // 4), width,
                                   ((two_begin_y) + ((3 * height) // 4)), two_begin_x)
-        self.box1 = Textbox(self.win1)
-        self.box2 = Textbox(self.win4)
+        self.game = Textbox(self.win1)
+        self.board_mesg = Textbox(self.win4)
         self.chat = Chat(self.win2)
 
     def print_title(self, stdscr):
@@ -201,8 +201,8 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
         return False
     if c == ord('m'):
         # Get the next move and send it.
-        screen.box1.edit()
-        stuff = screen.box1.gather()
+        screen.game.edit()
+        stuff = screen.game.gather()
         # Split the move into two components.
         move = (str(stuff)).split(' ')
         move.remove('\n')  # kill the newline
@@ -229,8 +229,8 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
             display_board(board, screen.win3)
             return True
     if c == ord('c'):
-        screen.box2.edit()
-        stuff = screen.box2.gather()
+        screen.board_mesg.edit()
+        stuff = screen.board_mesg.gather()
         message = str(username) + ": " + str(stuff)
         # Send message to the server as a bytestring.
         send_to_chat(sock, message)
