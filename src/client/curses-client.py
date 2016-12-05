@@ -8,6 +8,7 @@ from curses.textpad import Textbox
 import socket
 import struct
 import ctypes
+import time
 
 
 class Chat(threading.Thread):
@@ -15,10 +16,13 @@ class Chat(threading.Thread):
         super().__init__()
         self.win = win
 
-    def update(self=None):
+    def update(self):
         # Get a chat message.
         # Add the chat message to win.
         self.win.refresh()
+
+    def run(self):
+        time.sleep(1)
 
 
 class GIPS(object):
@@ -126,7 +130,7 @@ def main():
     box1 = Textbox(win1)
     box2 = Textbox(win4)
     chat = Chat(win2)
-#    logging.debug("Game starting.")
+    # logging.debug("Game starting.")
     print("game starting")
     try:
         while game_running:
