@@ -210,11 +210,16 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
             m = int(m)
             # Check move validity.
         # If the move is not valid:
+        #make moves ints
+        move = list(map(int, move))
         if not move_is_valid(move):
             # Send 'invalid move' to chat.
             send_to_chat(sock, "server: Invalid move, "
                          + str(username) + "!")
         else:
+            #subtract 1 from moves
+            move[0] -=1
+            move[1] -=1
             # Otherwise:
             # Encode a GIPS
             gips.pack(pid, gips.isWin, move[0], move[1], 0)
@@ -222,6 +227,7 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
             gips.send()
             board = update_board(gips, board)
             display_board(board, screen.win3)
+            return True
     if c == ord('c'):
         screen.box2.edit()
         stuff = screen.box2.gather()
@@ -229,6 +235,7 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
         # Send message to the server as a bytestring.
         send_to_chat(sock, message)
         stdscr.refresh()  # Redraws the screen.
+        return True
 
 
 def login(sock, upid, username):
