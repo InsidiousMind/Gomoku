@@ -33,9 +33,6 @@ void earlyExit(BYTE PID, char **username, int reply_sock_fd, game **gameInfo);
 int detectedExit(game **gameInfo, BYTE PID, char **username, int reply_sock_fd);
 int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int reply_sock_fd);
 
-// 50 BYTES LONG TO ACKNOWLEDGE RECV
-typedef unsigned char ACK[50];
-
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF GAME THREAD
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
@@ -81,7 +78,7 @@ void *startGameServer(void *args){
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
     
   free(gameInfo);
-
+  printf("Threads Exited Successfully :D\n");
   pthread_exit(NULL);
 }
 
@@ -243,13 +240,7 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     clientDC =  gameInfo->clientDisconnect;
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
-    ACK acksend;
-    //send other players moves
-    ssize_t n = 0;
-    /*if( (n = send(reply_sock_fd, &acksend, 50, 0)) == -1){
-      printf("[!!!] ACK SEND CALL FAILED\n");
-      continue;
-    } else printf("%s %d\n", "number of bytes sent by ACKSEND: ", (int) n);*/
+
     if(sendMoves(reply_sock_fd, numTurns, pid, gameInfo) == -1 ) {
       for(i = 0; i < HEIGHT; i++){
         free(playerBoard[i]);
