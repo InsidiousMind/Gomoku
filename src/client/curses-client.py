@@ -38,8 +38,10 @@ class Chat(threading.Thread):
 
 
 # define screen variables
+
 class Screen(object):
     def __init__(self, height, width, one_begin_x, one_begin_y, two_begin_x, two_begin_y, thr_begin_x, thr_begin_y):
+        self.stdscr = self.initialize()  # Starts the Curses application.
         # Window 1 takes commands for the game.
         self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
         # Window 2 carries the chat.
@@ -53,23 +55,36 @@ class Screen(object):
         self.board_mesg = Textbox(self.win4)
         # self.chat = Chat(self.win2)
 
-    @staticmethod
-    def print_title(stdscr):
-        stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
-        stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
-        stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
-        stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
-        stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
-        stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU", curses.A_BLINK)
-        stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
-        stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU", curses.A_BLINK)
-        stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
-        stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
-        stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
-        stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
-        stdscr.addstr(14, 70, "Chat")
-        stdscr.addstr(14, 1, "Game Window")
-        stdscr.addstr(14, 120, "The Board")
+
+    def initialize(self):
+        stdscr = curses.initscr()
+        stdscr.clear()
+        curses.noecho()
+        curses.cbreak()
+        stdscr.keypad(True)
+        return stdscr
+
+
+    def halt(self):  # Just to cut down on a few lines in main()
+        down(self.stdscr)
+        sys.exit(0)
+
+    def print_title(self):
+        self.stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
+        self.stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
+        self.stdscr.addstr(14, 70, "Chat")
+        self.stdscr.addstr(14, 1, "Game Window")
+        self.stdscr.addstr(14, 120, "The Board")
 
 
 class GIPS(object):
@@ -150,6 +165,7 @@ class GIPS(object):
 
 # noinspection PyBroadException
 def main():
+
     file_id = str(random.randrange(1000))
     logging.basicConfig(filename='log' + file_id + '.txt', level=logging.DEBUG,
                         format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
@@ -166,18 +182,9 @@ def main():
     # Talk to the server and see what we can get.
     # Get a chat_socket
     # Get your player number from the server.
-    stdscr = initialize()  # Starts the Curses application.
-    try:
-        logging.warning("Trying to connect to the server.")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        logging.warning("Socket created, connecting... " + str(sock))
-        sock.connect((host, port))
-        logging.warning("Socket issue check: " + str(sock))
-    except Exception:
-        logging.critical("Server could not be reached!")
-        down(stdscr)
-        print("Couldn't connect to the server. Check your internet connection and try again.")
-        sys.exit(0)
+
+    sock = establish_connection(host, port)
+
     login(sock, upid, username)
     pid = ord(sock.recv(1))
     logging.debug("Received PID: " + str(pid))
@@ -186,28 +193,40 @@ def main():
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
     screen = Screen(40, 40, 1, 15, 70, 15, 121, 15)
-    screen.print_title(stdscr)
+    screen.print_title()
     logging.debug("Game starting.")
     print("game starting")
+    gips = GIPS(sock)
     try:
-        gips = GIPS(sock)
         logging.debug("The GIPS is defined.")
-        game_loop(board, pid, username, screen, stdscr, sock, gips)
-        halt(stdscr)
+        game_loop(board, pid, username, screen, sock, gips)
+        screen.halt()
     except Exception:
         logging.exception("Exception caught")
-        halt(stdscr)
+        gips.sock.shutdown()
+        gips.sock.close()
+        screen.halt()
     except KeyboardInterrupt:
         logging.exception("SIGINT received")
-        halt(stdscr)
+        gips.sock.shutdown()
+        gips.sock.close()
+        screen.halt()
 
 
-def halt(stdscr):  # Just to cut down on a few lines in main()
-    down(stdscr)
-    sys.exit(0)
+def establish_connection(host, port):
+    try:
+        logging.warning("Trying to connect to the server.")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        logging.warning("Socket created, connecting... " + str(sock))
+        sock.connect((host, port))
+        logging.warning("Socket issue check: " + str(sock))
+        return sock
+    except Exception:
+        logging.critical("Server could not be reached!")
+        print("Couldn't connect to the server. Check your internet connection and try again.")
+        sys.exit(0)
 
-
-def game_loop(board, pid, username, screen, stdscr, sock, gips):
+def game_loop(board, pid, username, screen, sock, gips):
     game_running = True
     while gips.isWin == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
@@ -222,15 +241,14 @@ def game_loop(board, pid, username, screen, stdscr, sock, gips):
         else:  # update board
             logging.debug("Updating the board after the recv call.")
             board = update_board(gips, board)
-        stdscr.refresh()  # This line begins the interface logic.
+        screen.stdscr.refresh()  # This line begins the interface logic.
         display_board(board, screen.win3)
-        stdscr.refresh()  # This begins the user interaction
-        c = stdscr.getch()
-        game_running = check_keys(c, screen, stdscr, gips, board, pid, sock, username)
-    return gips
+        screen.stdscr.refresh()  # This begins the user interaction
+        c = screen.stdscr.getch()
+        game_running = check_keys(c, screen, gips, board, pid, sock, username)
 
 
-def check_keys(c, screen, stdscr, gips, board, pid, sock, username):
+def check_keys(c, screen, gips, board, pid, sock, username):
     logging.debug("checkKeys")
     if c == ord('q'):
         logging.debug("Key: q")
@@ -270,7 +288,7 @@ def check_keys(c, screen, stdscr, gips, board, pid, sock, username):
         message = "\v" + str(username) + ": " + str(stuff)
         # Send message to the server as a bytestring.
         send_to_chat(sock, message)
-        stdscr.refresh()  # Redraws the screen.
+        screen.stdscr.refresh()  # Redraws the screen.
         return True
 
 
@@ -346,15 +364,6 @@ def init_board():
     'o'
     """
     return [['o' for x in range(8)] for y in range(8)]
-
-
-def initialize():
-    stdscr = curses.initscr()
-    stdscr.clear()
-    curses.noecho()
-    curses.cbreak()
-    stdscr.keypad(True)
-    return stdscr
 
 
 def down(stdscr):
