@@ -23,6 +23,7 @@ class Chat(threading.Thread):
     def update(self):
         # Get a chat message.
         msg = self.sock.recv(1024)
+        # This next bit just implements some kind of half-working auto-scrollingc
         if self.row >= 40:
             self.win.clear()
             self.row = 0
