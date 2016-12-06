@@ -246,10 +246,12 @@ def update_board(gips, board):
     logging.debug("Updating to the next board.")
     logging.debug("move_x: " + str(gips.move_a))
     logging.debug("move_y: " + str(gips.move_b))
+    #because of the way curses displays the board
+    #board[b][a] so not inverted
     if gips.pid == 1:
-        board[int(gips.move_a)][int(gips.move_b)] = 'B'
+        board[int(gips.move_b)][int(gips.move_a)] = 'B'
     elif gips.pid == 2:
-        board[int(gips.move_a)][int(gips.move_b)] = 'W'
+        board[int(gips.move_b)][int(gips.move_a)] = 'W'
     logging.debug("Returning updated board.")
     return board
 
