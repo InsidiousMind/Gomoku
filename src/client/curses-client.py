@@ -11,21 +11,29 @@ from socket import ntohl
 import struct
 import ctypes
 import time
-import inspect
+import traceback
+import random
 
 
 class Chat(threading.Thread):
-    def __init__(self, win):
+    def __init__(self, win, sock):
         super().__init__()
         self.win = win
+        self.row = 0
+        self.col = 0
 
     def update(self):
         # Get a chat message.
+        msg = self.sock.recv(1024)
+        win.addstr(self.row, self.col, msg)
+        self.row += 1
         # Add the chat message to win.
         self.win.refresh()
 
     def run(self):
-        time.sleep(1)
+        while True:
+            time.sleep(1)
+            self.update()
 
 
 # define screen variables
@@ -42,7 +50,7 @@ class Screen(object):
                                   ((two_begin_y) + ((3 * height) // 4)), two_begin_x)
         self.game = Textbox(self.win1)
         self.board_mesg = Textbox(self.win4)
-        self.chat = Chat(self.win2)
+        # self.chat = Chat(self.win2)
 
     def print_title(self, stdscr):
         stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU")
@@ -84,6 +92,7 @@ class GIPS(object):
         self.isEarlyExit = isEarlyExit
 
     def send(self):
+        logging.debug("Sending.")
         self.sock.send(struct.pack('ccccc', int(self.pid).to_bytes(1, sys.byteorder), \
                                    int(self.isWin).to_bytes(1, sys.byteorder), \
                                    int(self.move_a).to_bytes(1, sys.byteorder), \
@@ -136,8 +145,9 @@ class GIPS(object):
 
 
 def main():
-    logging.basicConfig(filename='log.txt', level=logging.DEBUG,
-                        format='[%(asctime)-15s] %(message)s LINE: %(lineno)d')
+    file_id = str(random.randrange(1000))
+    logging.basicConfig(filename='log' + file_id + '.txt', level=logging.DEBUG,
+            format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
     logging.debug("Client initializing!")
     host = "localhost"
     port = 32200
@@ -202,8 +212,10 @@ def gameLoop(board, pid, username, screen, stdscr, sock, gips):
         display_board(board, screen.win3)
         logging.debug("Current value of winner: " + str(gips.isWin))
         if gips.move_a == -1 and gips.move_b == -1:
+            logging.debug("Placeholder move.")
             pass
         else:  # update board
+            logging.debug("Updating the board after the recv call.")
             board = update_board(gips, board)
         stdscr.refresh()  # This line begins the interface logic.
         display_board(board, screen.win3)
@@ -214,35 +226,36 @@ def gameLoop(board, pid, username, screen, stdscr, sock, gips):
 
 
 def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
+    logging.debug("checkKeys")
     if c == ord('q'):
+        logging.debug("Key: q")
         return False
     if c == ord('m'):
+        logging.debug("Key: m")
         # Get the next move and send it.
         screen.game.edit()
         stuff = screen.game.gather()
         # Split the move into two components.
         move = (str(stuff)).split(' ')
-        move.remove('\n')  # kill the newline
-        # Check move validity.
+        move.remove('\n')  # kill the newline=
+        for m in move:
+            m = int(m)
         # If the move is not valid:
         #make moves ints
         move = list(map(int, move))
-        if not move_is_valid(move):
-            # Send 'invalid move' to chat.
-            send_to_chat(sock, "server: Invalid move, "
-                         + str(username) + "!")
-        else:
-            #subtract 1 from moves
-            move[len(move)-1] -= 1
-            move[(len(move)-2)] -= 1
-            # Otherwise:
-            # Encode a GIPS
-            gips.pack(pid, gips.isWin, move[len(move)-2], move[len(move)-1], 0)
-            # Send the GIPS
-            gips.send()
-            board = update_board(gips, board)
-            display_board(board, screen.win3)
-            return True
+        while not move_is_valid(move):
+            send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
+        #subtract 1 from moves
+        move[len(move)-1] -= 1
+        move[(len(move)-2)] -= 1
+        # Otherwise:
+        # Encode a GIPS
+        gips.pack(pid, gips.isWin, move[len(move)-2], move[len(move)-1], 0)
+        # Send the GIPS
+        gips.send()
+        board = update_board(gips, board)
+        display_board(board, screen.win3)
+        return True
     if c == ord('c'):
         screen.board_mesg.edit()
         stuff = screen.board_mesg.gather()
@@ -273,6 +286,7 @@ def send_string(sock, string):
 
 def send_to_chat(sock, message):
     logging.debug(str(message) + " to chat")
+    sock.send(bytes(message, 'utf-8'))
 
 
 def update_board(gips, board):
@@ -291,12 +305,15 @@ def update_board(gips, board):
 
 def move_is_valid(move):
     logging.debug("Move: " + str(move))
-    if 8 > int(move[0]) > 0:
-        if 8 > int(move[1]) > 0:
+    if 9 > int(move[0]) > 0:
+        if 9 > int(move[1]) > 0:
+            logging.debug("Valid")
             return True
         else:
+            logging.debug("Invalid")
             return False
     else:
+        logging.debug("Invalid.")
         return False
 
 
@@ -331,14 +348,14 @@ def initialize():
     return stdscr
 
 
-def down(stdscr):
+def down(stdscr): 
+    logging.debug("Breaking down the application.")
     curses.nocbreak()
     stdscr.keypad(False)
     curses.echo()
     curses.endwin()
     import doctest
     doctest.testmod()
-    logging.log(inspect.stack())
 
 
 if __name__ == "__main__":
