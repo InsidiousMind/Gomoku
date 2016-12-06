@@ -169,10 +169,24 @@ void *subserver(void *arguments)
 
   //in the future could have subserver return with win and record player in GameServer removing
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
-
+  
+  int recRet = 0;
   pthread_mutex_lock(&(gameInfo->args.head_access));
-  recPlayer(uPID, PID, username, win, head, reply_sock_fd, fd);
+  recRet = recPlayer(uPID, PID, username, win, head, reply_sock_fd, fd);
   pthread_mutex_unlock(&(gameInfo->args.head_access));
+  /*if(recRet == -1){
+    if(gameInfo->clientDisconnect)  otherClientDisconnected(&gameInfo, PID, &username,
+                                                            reply_sock_fd);
+    else detectedExit(&gameInfo, PID, &username, reply_sock_fd);
+  }*/
+  char ack;
+  if(PID != gameInfo->playerWin){
+    int r_count;
+    if( (r_count = recv(reply_sock_fd, &ack, sizeof(char), 0)) == 0 || r_count == -1){
+      if(gameInfo->clientDisconnect) otherClientDisconnected(&gameInfo, PID, &username,
+                                                             reply_sock_fd);
+    }
+  }
 
   close(reply_sock_fd);
 

@@ -1,15 +1,16 @@
 #include <stdbool.h>
+#include <arpa/inet.h>
 
 #ifndef DATABASE_H
 #define DATABASE_H
 
 typedef struct player {
-  int userid;
+  uint32_t userid;
   char username[20];
-  int wins;
-  int losses;
-  int ties;
-  int index;
+  uint32_t wins;
+  uint32_t losses;
+  uint32_t ties;
+  uint32_t index;
 } Player;
 
 

@@ -19,6 +19,8 @@ class Player(object):
         self.wins = wins
         self.losses = losses
         self.ties = ties
+    def print_player(self):
+        print(str(self.name) +' UPID: ' + str(self.upid)+ ' has ' + str(self.wins) + ' wins ' + str(self.losses) + ' losses ' + ' and ' + str(self.ties) + ' ties.')
 
 
 class Chat(threading.Thread):
@@ -53,18 +55,36 @@ class Screen(object):
     def __init__(self, height, width, one_begin_x,
                  one_begin_y, two_begin_x, two_begin_y,
                  thr_begin_x, thr_begin_y, player):
+        #init for screen in main
+        #screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
+
         self.stdscr = self.initialize()  # Starts the Curses application.
         # Window 1 takes commands for the game.
         self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
+        #self.win1_sub = self.win1.derwin(1, 1)
+        #self.win1.box()
+
         # Window 2 carries the chat.
         self.win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
+        #self.win2_sub = self.win2.derwin(2, 1)
+        #self.win2.box()
+
         # Window 3 displays the current game board.
         self.win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
+        #self.win3_sub = self.win2.derwin(2, 1)
+        #self.win3.box()
+
         # Window 4 displays the message that the player is currently typing out.
         self.win4 = curses.newwin((height // 4), width,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
+        #self.win4_sub = self.win4.derwin(2, 1)
+        #self.win4.box()
+
+        #takes messages for the game
         self.game = Textbox(self.win1)
+        #takes messages for current gameboard
         self.board_mesg = Textbox(self.win4)
+        #commands for game
         self.chat = Chat(self.win2, self.stdscr)
         self.player = player
 
@@ -79,7 +99,6 @@ class Screen(object):
 
     def halt(self):  # Just to cut down on a few lines in main()
         down(self.stdscr)
-        sys.exit(0)
 
     def print_title(self):
         self.stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
@@ -134,6 +153,12 @@ class GIPS(object):
 
     def recv(self):
         self.sock.setblocking(True)
+        self.pid = ord(self.sock.recv(1))
+        self.isWin = ord(self.sock.recv(1))
+        self.move_a = ord(self.sock.recv(1))
+        self.move_b = ord(self.sock.recv(1))
+        self.isEarlyExit = ord(self.sock.recv(1))
+        ''''
         data = bytearray()
         while not data:
             data = self.recv_timeout()
@@ -147,6 +172,7 @@ class GIPS(object):
         self.move_a = data[2]
         self.move_b = data[3]
         self.isEarlyExit = data[4]
+        '''
         if self.move_a == 255:
             self.move_a = -1
         if self.move_b == 255:
@@ -200,34 +226,49 @@ def main():
 
     player = Player(username, upid, 0, 0, 0)
 
-    sock = establish_connection(host, port)
 
-    login(sock, upid, username)
-    pid = ord(sock.recv(1))
-    logging.debug("Received PID: " + str(pid))
-    logging.debug("Pointer to sock: " + str(sock))
-    board = init_board()
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
     screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
     screen.print_title()
     logging.debug("Game starting.")
     print("game starting")
-    gips = GIPS(sock)
+    gips = GIPS
     try:
         logging.debug("The GIPS is defined.")
-        game_loop(board, pid, username, screen, sock, gips)
-        screen.halt()
+        keepPlaying = True
+        while(keepPlaying):
+            sock = establish_connection(host, port)
+            gips = GIPS(sock)
+            login(sock, upid, username)
+            pid = ord(sock.recv(1))
+            board = init_board()
+            gips = game_loop(board, pid, username, screen, sock, gips)
+            if gips.isEarlyExit == 1 and gips.isWin == 0:
+                screen.halt()
+                print("Thanks for playing!!!")
+                gips.sock.shutdown(socket.SHUT_RDWR)
+                gips.sock.close()
+                sys.exit(0)
+            else:
+                screen.halt()
+                print("Thanks for playing!!!")
+                #end sequence
+                end_game(gips, screen, pid)
+
+
     except Exception:
         logging.exception("Exception caught")
-        gips.sock.shutdown()
+        gips.sock.shutdown(socket.SHUT_RDWR)
         gips.sock.close()
         screen.halt()
+        sys.exit(0)
     except KeyboardInterrupt:
         logging.exception("SIGINT received")
-        gips.sock.shutdown()
+        gips.sock.shutdown(socket.SHUT_RDWR)
         gips.sock.close()
         screen.halt()
+        sys.exit(0)
 
 
 # noinspection PyBroadException
@@ -245,26 +286,53 @@ def establish_connection(host, port):
         sys.exit(0)
 
 
+def end_game (gips, screen, pid):
+    if(gips.isWin == pid):
+        print("You Win! :-}")
+    else:
+        print("You Lost! :-{")
+    player = gips.sock.recv(40)
+    player = struct.unpack('@icccccccccccccccccccciiii', player)
+    screen.player.upid = ntohl(player[0])
+    screen.player.name = ''
+    for x in range(1, 21):
+        screen.player.name += player[x].decode("utf-8")
+    print(screen.player.name)
+    screen.player.wins = ntohl(player[21])
+    screen.player.losses = ntohl(player[22])
+    screen.player.ties = ntohl(player[23])
+    if(pid != gips.isWin):
+        gips.sock.send(bytes(b'x01'))
+    print("Your new stats are:")
+    screen.player.print_player()
+    gips.sock.shutdown(socket.SHUT_RDWR)
+    gips.sock.close()
+    sys.exit(0)
+
+
 def game_loop(board, pid, username, screen, sock, gips):
     game_running = True
     while gips.isWin == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
         gips.recv()
-        logging.debug("Received a GIPS packet.")
-        # Check if someone won.
-        display_board(board, screen.win3)
-        logging.debug("Current value of winner: " + str(gips.isWin))
-        if gips.move_a == -1 and gips.move_b == -1:
-            logging.debug("Placeholder move.")
+
+        if gips.isWin != 0 or gips.isEarlyExit != 0:
+            return gips
+        elif gips.move_a == -1 and gips.move_b == -1:
             pass
-        else:  # update board
-            logging.debug("Updating the board after the recv call.")
+        else:  # update board, get move
             board = update_board(gips, board)
+
         screen.stdscr.refresh()  # This line begins the interface logic.
         display_board(board, screen.win3)
         screen.stdscr.refresh()  # This begins the user interaction
         c = screen.stdscr.getch()
         game_running = check_keys(c, screen, gips, board, pid, sock, username)
+        isWin = gips.sock.recv(4)
+        isWin = struct.unpack('!i', isWin)
+        isWin = ntohl(isWin[0])
+        gips.isWin = isWin
+    return gips
 
 
 def check_keys(c, screen, gips, board, pid, sock, username):

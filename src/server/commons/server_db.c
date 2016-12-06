@@ -4,6 +4,8 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <arpa/inet.h>
 
 #include "../../lib/gips.h"
 
@@ -14,7 +16,8 @@ void initp(Player **player, int userid, char *username, int wins, int losses, in
 //record player data to player's entry in struct
 //if player doesn't exist, create an entry
 
-void recPlayer(int uPID, BYTE PID, char *username, int isWin, Node *head, int sockfd, int fd)
+int recPlayer(uint32_t uPID, BYTE PID, char *username, int isWin, Node *head, int sockfd, int
+fd)
 {
 
   Player *player;
@@ -30,7 +33,19 @@ void recPlayer(int uPID, BYTE PID, char *username, int isWin, Node *head, int so
 
 
   player = getPlayer(uPID, fd, username, &head);
-  send(sockfd, player, sizeof(Player), 0);
+  player->userid = htonl(player->userid);
+  player->wins = htonl(player->wins);
+  player->losses = htonl(player->losses);
+  player->ties = htonl(player->ties);
+  player->index = htonl(player->index);
+ 
+  if(send(sockfd, player, sizeof(Player), 0) == -1){
+    free(player);
+    return -1;
+  }else{
+    free(player);
+    return 0;
+  }
 }
 
 //index is set in update/add
