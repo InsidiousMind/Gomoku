@@ -23,6 +23,9 @@ class Chat(threading.Thread):
     def update(self):
         # Get a chat message.
         msg = self.sock.recv(1024)
+        if self.row >= 40:
+            self.win.clear()
+            self.row = 0
         self.win.addstr(self.row, self.col, msg)
         self.row += 1
         # Add the chat message to win.
