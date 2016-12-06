@@ -53,18 +53,18 @@ class Screen(object):
         # self.chat = Chat(self.win2)
 
     def print_title(self, stdscr):
-        stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU")
-        stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU")
-        stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
-        stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
-        stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU")
-        stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU")
-        stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU")
-        stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU")
-        stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU")
-        stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
-        stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU")
-        stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU")
+        stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
+        stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
+        stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
+        stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU", curses.A_BLINK)
+        stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU", curses.A_BLINK)
+        stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU",curses.A_BLINK)
+        stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
+        stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
         stdscr.addstr(14, 70, "Chat")
         stdscr.addstr(14, 1, "Game Window")
         stdscr.addstr(14, 120, "The Board")
@@ -240,23 +240,23 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
         # Split the move into two components.
         move = (str(stuff)).split(' ')
         move.remove('\n')  # kill the newline=
-        for m in move:
-            m = int(m)
         # If the move is not valid:
         #make moves ints
         move = list(map(int, move))
         while not move_is_valid(move):
             send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
+        screen.win1.clear()
         #subtract 1 from moves
-        move[len(move)-1] -= 1
-        move[(len(move)-2)] -= 1
+        move[0] -= 1
+        move[1] -= 1
         # Otherwise:
         # Encode a GIPS
-        gips.pack(pid, gips.isWin, move[len(move)-2], move[len(move)-1], 0)
+        gips.pack(pid, gips.isWin, move[0], move[1], 0)
         # Send the GIPS
         gips.send()
         board = update_board(gips, board)
         display_board(board, screen.win3)
+        moves = []
         return True
     if c == ord('c'):
         screen.board_mesg.edit()
