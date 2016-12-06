@@ -1,23 +1,21 @@
 #!/usr/bin/env python
 
 import curses
+import logging
+import random
+import socket
+import struct
 import sys
 import threading
-import logging
-from curses.textpad import Textbox
-import socket, struct, sys, time
-from socket import htonl
-from socket import ntohl
-import struct
-import ctypes
 import time
-import traceback
-import random
+from curses.textpad import Textbox
+from socket import ntohl
 
 
 class Chat(threading.Thread):
     def __init__(self, win, sock):
         super().__init__()
+        self.sock = sock
         self.win = win
         self.row = 0
         self.col = 0
@@ -47,12 +45,13 @@ class Screen(object):
         self.win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
         # Window 4 displays the message that the player is currently typing out.
         self.win4 = curses.newwin((height // 4), width,
-                                  ((two_begin_y) + ((3 * height) // 4)), two_begin_x)
+                                  (two_begin_y + ((3 * height) // 4)), two_begin_x)
         self.game = Textbox(self.win1)
         self.board_mesg = Textbox(self.win4)
         # self.chat = Chat(self.win2)
 
-    def print_title(self, stdscr):
+    @staticmethod
+    def print_title(stdscr):
         stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU")
         stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU")
         stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU")
@@ -82,33 +81,32 @@ class GIPS(object):
         self.move_b = -1
         self.isEarlyExit = 0
 
-    def pack(self, pid, isWin, move_a, move_b, isEarlyExit):
-        logging.debug("Packing: " + str(pid) + " " + str(isWin) +
+    def pack(self, pid, is_win, move_a, move_b, is_early_exit):
+        logging.debug("Packing: " + str(pid) + " " + str(is_win) +
                       " " + str(move_a) + " " + str(move_b))
-        self.isWin = isWin
+        self.isWin = is_win
         self.pid = pid
         self.move_a = move_a
         self.move_b = move_b
-        self.isEarlyExit = isEarlyExit
+        self.isEarlyExit = is_early_exit
 
     def send(self):
         logging.debug("Sending.")
-        self.sock.send(struct.pack('ccccc', int(self.pid).to_bytes(1, sys.byteorder), \
-                                   int(self.isWin).to_bytes(1, sys.byteorder), \
-                                   int(self.move_a).to_bytes(1, sys.byteorder), \
-                                   int(self.move_b).to_bytes(1, sys.byteorder), \
+        self.sock.send(struct.pack('ccccc', int(self.pid).to_bytes(1, sys.byteorder),
+                                   int(self.isWin).to_bytes(1, sys.byteorder),
+                                   int(self.move_a).to_bytes(1, sys.byteorder),
+                                   int(self.move_b).to_bytes(1, sys.byteorder),
                                    int(self.isEarlyExit).to_bytes(1, sys.byteorder)))
 
     def recv(self):
         self.sock.setblocking(True)
         data = bytearray()
-        while(not data):
+        while not data:
             data = self.recv_timeout()
             time.sleep(0.1)
-            if(data):
+            if data:
                 data = list(map(int, data))
-            i = len(data)
-            while( data and data[0] == 0):
+            while data and data[0] == 0:
                 data.remove(data[0])
         self.pid = data[0]
         self.isWin = data[1]
@@ -121,11 +119,11 @@ class GIPS(object):
             self.move_b = -1
         logging.debug("Received: " + str(self))
 
-    ## timeout after receiving for a little bit
+    # timeout after receiving for a little bit
     def recv_timeout(self, timeout=2):
         self.sock.setblocking(False)
         total_data = bytearray()
-        data = bytes()
+        # data = bytes()
         begin = time.time()
         while 1:
             # if you got some data, then break after wait sec
@@ -134,6 +132,7 @@ class GIPS(object):
             # if you got no data at all, wait a little longer
             elif time.time() - begin > timeout * 2:
                 break
+            # noinspection PyBroadException
             try:
                 data = self.sock.recv(8)
                 if data:
@@ -146,10 +145,11 @@ class GIPS(object):
         return total_data
 
 
+# noinspection PyBroadException
 def main():
     file_id = str(random.randrange(1000))
     logging.basicConfig(filename='log' + file_id + '.txt', level=logging.DEBUG,
-            format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
+                        format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
     logging.debug("Client initializing!")
     host = "localhost"
     port = 32200
@@ -175,7 +175,7 @@ def main():
         down(stdscr)
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
-    upid = login(sock, upid, username)
+    login(sock, upid, username)
     pid = ord(sock.recv(1))
     logging.debug("Received PID: " + str(pid))
     logging.debug("Pointer to sock: " + str(sock))
@@ -189,7 +189,7 @@ def main():
     try:
         gips = GIPS(sock)
         logging.debug("The GIPS is defined.")
-        gips = gameLoop(board, pid, username, screen, stdscr, sock, gips)
+        game_loop(board, pid, username, screen, stdscr, sock, gips)
         halt(stdscr)
     except Exception:
         logging.exception("Exception caught")
@@ -204,7 +204,7 @@ def halt(stdscr):  # Just to cut down on a few lines in main()
     sys.exit(0)
 
 
-def gameLoop(board, pid, username, screen, stdscr, sock, gips):
+def game_loop(board, pid, username, screen, stdscr, sock, gips):
     game_running = True
     while gips.isWin == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
@@ -223,11 +223,11 @@ def gameLoop(board, pid, username, screen, stdscr, sock, gips):
         display_board(board, screen.win3)
         stdscr.refresh()  # This begins the user interaction
         c = stdscr.getch()
-        game_running = checkKeys(c, screen, stdscr, gips, board, pid, sock, username)
+        game_running = check_keys(c, screen, stdscr, gips, board, pid, sock, username)
     return gips
 
 
-def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
+def check_keys(c, screen, stdscr, gips, board, pid, sock, username):
     logging.debug("checkKeys")
     if c == ord('q'):
         logging.debug("Key: q")
@@ -240,19 +240,19 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
         # Split the move into two components.
         move = (str(stuff)).split(' ')
         move.remove('\n')  # kill the newline=
-        for m in move:
-            m = int(m)
+        # for m in move:
+        #    m = int(m)
         # If the move is not valid:
-        #make moves ints
+        # make moves ints
         move = list(map(int, move))
         while not move_is_valid(move):
             send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
-        #subtract 1 from moves
-        move[len(move)-1] -= 1
-        move[(len(move)-2)] -= 1
+        # subtract 1 from moves
+        move[len(move) - 1] -= 1
+        move[(len(move) - 2)] -= 1
         # Otherwise:
         # Encode a GIPS
-        gips.pack(pid, gips.isWin, move[len(move)-2], move[len(move)-1], 0)
+        gips.pack(pid, gips.isWin, move[len(move) - 2], move[len(move) - 1], 0)
         # Send the GIPS
         gips.send()
         board = update_board(gips, board)
@@ -295,8 +295,8 @@ def update_board(gips, board):
     logging.debug("Updating to the next board.")
     logging.debug("move_x: " + str(gips.move_a))
     logging.debug("move_y: " + str(gips.move_b))
-    #because of the way curses displays the board
-    #board[b][a] so not inverted
+    # because of the way curses displays the board
+    # board[b][a] so not inverted
     if gips.pid == 1:
         board[int(gips.move_b)][int(gips.move_a)] = 'B'
     elif gips.pid == 2:
@@ -332,12 +332,13 @@ def display_board(board, win):
     win.refresh()
 
 
+# noinspection PyUnusedLocal
 def init_board():
-    '''
+    """
     >>> board = init_board()
     >>> board[0][0]
     'o'
-    '''
+    """
     return [['o' for x in range(8)] for y in range(8)]
 
 
@@ -350,7 +351,7 @@ def initialize():
     return stdscr
 
 
-def down(stdscr): 
+def down(stdscr):
     logging.debug("Breaking down the application.")
     curses.nocbreak()
     stdscr.keypad(False)
