@@ -77,6 +77,7 @@ int receive_gips(int sock, gips **info){
   
   return n == -1 ? -1 : total; //-1 on fail 0 on success
 }
+
 int send_mesg(char *str, int sock) {
 
   int total = 0;

@@ -73,25 +73,6 @@ class GIPS(object):
         self.move_a = -1
         self.isEarlyExit = 0
 
-    '''
-    def unpack(self):
-        self.is_win = 0
-        try:
-            t = struct.unpack('ccccc', self.gips)
-            self.pid = int.from_bytes(t[0], byteorder='big')
-            self.is_win = int.from_bytes(t[1], byteorder='big')
-            self.move_a = int.from_bytes(t[2], byteorder='big')
-            self.move_a = int.from_bytes(t[3], byteorder='big')
-            self.isEarlyExit = int.from_bytes(t[4], byteorder='big')
-            if self.move_a == 255:
-                self.move_a = -1
-            if self.move_b == 255:
-                self.move_b = -1
-        except:
-            logging.critical("socket.recv call DID NOT BLOCK")
-            logging.exception("Exception text")
-    '''
-
     def pack(self, pid, isWin, move_a, move_b, isEarlyExit):
         logging.debug("Packing: " + str(pid) + " " + str(isWin) +
                       " " + str(move_a) + " " + str(move_b))
@@ -209,9 +190,7 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
         # Split the move into two components.
         move = (str(stuff)).split(' ')
         move.remove('\n')  # kill the newline
-        for m in move:
-            m = int(m)
-            # Check move validity.
+        # Check move validity.
         # If the move is not valid:
         #make moves ints
         move = list(map(int, move))
@@ -221,11 +200,11 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
                          + str(username) + "!")
         else:
             #subtract 1 from moves
-            move[0] -=1
-            move[1] -=1
+            move[len(move)-1] -= 1
+            move[(len(move)-2)] -= 1
             # Otherwise:
             # Encode a GIPS
-            gips.pack(pid, gips.isWin, move[0], move[1], 0)
+            gips.pack(pid, gips.isWin, move[len(move)-2], move[len(move)-1], 0)
             # Send the GIPS
             gips.send()
             board = update_board(gips, board)
