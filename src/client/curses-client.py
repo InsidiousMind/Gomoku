@@ -12,6 +12,15 @@ from curses.textpad import Textbox
 from socket import ntohl
 
 
+class Player(object):
+    def __init__(self, name, upid, wins, losses, ties):
+        self.name = name
+        self.upid = upid
+        self.wins = wins
+        self.losses = losses
+        self.ties = ties
+
+
 class Chat(threading.Thread):
     def __init__(self, win, sock):
         super().__init__()
@@ -43,8 +52,7 @@ class Chat(threading.Thread):
 class Screen(object):
     def __init__(self, height, width, one_begin_x,
                  one_begin_y, two_begin_x, two_begin_y,
-                 thr_begin_x, thr_begin_y):
-
+                 thr_begin_x, thr_begin_y, player):
         self.stdscr = self.initialize()  # Starts the Curses application.
         # Window 1 takes commands for the game.
         self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
@@ -58,17 +66,16 @@ class Screen(object):
         self.game = Textbox(self.win1)
         self.board_mesg = Textbox(self.win4)
         self.chat = Chat(self.win2, self.stdscr)
-        #self.player = player
+        self.player = player
 
-
-    def initialize(self):
+    @staticmethod
+    def initialize():
         stdscr = curses.initscr()
         stdscr.clear()
         curses.noecho()
         curses.cbreak()
         stdscr.keypad(True)
         return stdscr
-
 
     def halt(self):  # Just to cut down on a few lines in main()
         down(self.stdscr)
@@ -90,13 +97,11 @@ class Screen(object):
         self.stdscr.addstr(14, 70, "Chat")
         self.stdscr.addstr(14, 1, "Game Window")
         self.stdscr.addstr(14, 120, "The Board")
-        '''
-        self.stdscr.addstr(0, 50, "Player: " + str(self.player.name))
-        self.stdscr.addstr(1, 50, "Unique PID: " + str(self.player.pid))
-        self.stdscr.addstr(2, 50, "Wins: " + str(self.player.wins))
-        self.stdscr.addstr(3, 50, "Losses: " + str(self.player.losses))
-        self.stdscr.addstr(4, 50, "Ties:" + str(self.player.ties))
-        '''
+        self.stdscr.addstr(0, 70, "Player: " + str(self.player.name))
+        self.stdscr.addstr(1, 70, "Unique PID: " + str(self.player.upid))
+        self.stdscr.addstr(2, 70, "Wins: " + str(self.player.wins))
+        self.stdscr.addstr(3, 70, "Losses: " + str(self.player.losses))
+        self.stdscr.addstr(4, 70, "Ties:" + str(self.player.ties))
 
 
 class GIPS(object):
@@ -176,7 +181,6 @@ class GIPS(object):
 
 # noinspection PyBroadException
 def main():
-
     file_id = str(random.randrange(1000))
     logging.basicConfig(filename='log' + file_id + '.txt', level=logging.DEBUG,
                         format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
@@ -194,6 +198,8 @@ def main():
     # Get a chat_socket
     # Get your player number from the server.
 
+    player = Player(username, upid, 0, 0, 0)
+
     sock = establish_connection(host, port)
 
     login(sock, upid, username)
@@ -203,7 +209,7 @@ def main():
     board = init_board()
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
-    screen = Screen(40, 40, 1, 15, 70, 15, 121, 15)
+    screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
     screen.print_title()
     logging.debug("Game starting.")
     print("game starting")
@@ -224,6 +230,7 @@ def main():
         screen.halt()
 
 
+# noinspection PyBroadException
 def establish_connection(host, port):
     try:
         logging.warning("Trying to connect to the server.")
@@ -236,6 +243,7 @@ def establish_connection(host, port):
         logging.critical("Server could not be reached!")
         print("Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
+
 
 def game_loop(board, pid, username, screen, sock, gips):
     game_running = True
