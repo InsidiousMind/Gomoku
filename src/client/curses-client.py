@@ -102,11 +102,14 @@ class GIPS(object):
     def recv(self):
         self.sock.setblocking(True)
         data = bytearray()
-        self.sock.recv(50)
+        rand = self.sock.recv(50)
         while(not data):
             data = self.recv_timeout()
+        data = list(map(int, data))
         for a in data:
-            if a == bytes(b"0x00"):
+            if a != 0:
+                break
+            else:
                 data.remove(a)
         self.pid = data[0]
         self.isWin = data[1]
@@ -320,7 +323,7 @@ def move_is_valid(move):
 def display_board(board, win):
     x = 1
     y = 1
-    logging.debug(board)
+    logging.debug("board")
     for a in board:
         for b in a:
             win.addch(y, x, ord(b))

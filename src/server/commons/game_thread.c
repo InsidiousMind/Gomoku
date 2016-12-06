@@ -245,7 +245,11 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
     ACK acksend;
     //send other players moves
-    if(send(reply_sock_fd, &acksend, 50, 0))
+    ssize_t n = 0;
+    if( (n = send(reply_sock_fd, &acksend, 50, 0)) == -1){
+      printf("[!!!] ACK SEND CALL FAILED\n");
+      continue;
+    } else printf("%s %d\n", "number of bytes sent by ACKSEND: ", (int) n);
     if(sendMoves(reply_sock_fd, numTurns, pid, gameInfo) == -1 ) {
       for(i = 0; i < HEIGHT; i++){
         free(playerBoard[i]);
@@ -400,11 +404,11 @@ void turn(game *gameInfo) {
 
   if (gameInfo->whoTurn == 1) {
     gameInfo->whoTurn = 2;
-    pthread_mutex_unlock(&gameInfo->gameInfo_access);
   } else {
     gameInfo->whoTurn = 1;
-    pthread_mutex_unlock(&gameInfo->gameInfo_access);
   }
+  
+  pthread_mutex_unlock(&gameInfo->gameInfo_access);
 }
 
 char getOtherPlayersPID(char pid){
