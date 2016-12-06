@@ -226,7 +226,7 @@ def checkKeys(c, screen, stdscr, gips, board, pid, sock, username):
     if c == ord('c'):
         screen.board_mesg.edit()
         stuff = screen.board_mesg.gather()
-        message = str(username) + ": " + str(stuff)
+        message = "\v" + str(username) + ": " + str(stuff)
         # Send message to the server as a bytestring.
         send_to_chat(sock, message)
         stdscr.refresh()  # Redraws the screen.
