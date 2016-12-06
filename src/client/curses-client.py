@@ -25,7 +25,7 @@ class Chat(threading.Thread):
     def update(self):
         # Get a chat message.
         msg = self.sock.recv(1024)
-        win.addstr(self.row, self.col, msg)
+        self.win.addstr(self.row, self.col, msg)
         self.row += 1
         # Add the chat message to win.
         self.win.refresh()
@@ -102,15 +102,14 @@ class GIPS(object):
     def recv(self):
         self.sock.setblocking(True)
         data = bytearray()
-        rand = self.sock.recv(50)
         while(not data):
             data = self.recv_timeout()
-        data = list(map(int, data))
-        for a in data:
-            if a != 0:
-                break
-            else:
-                data.remove(a)
+            time.sleep(0.1)
+            if(data):
+                data = list(map(int, data))
+            i = len(data)
+            while( data and data[0] == 0):
+                data.remove(data[0])
         self.pid = data[0]
         self.isWin = data[1]
         self.move_a = data[2]
@@ -136,7 +135,7 @@ class GIPS(object):
             elif time.time() - begin > timeout * 2:
                 break
             try:
-                data = self.sock.recv(8192)
+                data = self.sock.recv(8)
                 if data:
                     total_data.extend(data)
                     begin = time.time()

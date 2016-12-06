@@ -204,6 +204,8 @@ int gameLoop(gips **player_info, char **name, int sock, char pid){
 
     printf("Wait your turn!\n");
    //receive a gips
+    char randBuff [50];
+    recv(sock, &randBuff, sizeof(char)*50, 0);
     receive_gips(sock, &p_info);
     
     //break if win, if first turn don't do anything, else get the move
