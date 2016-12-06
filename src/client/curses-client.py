@@ -5,7 +5,7 @@ import sys
 import threading
 import logging
 from curses.textpad import Textbox
-import socket
+import socket, struct, sys, time
 from socket import htonl
 from socket import ntohl
 import struct
@@ -66,11 +66,12 @@ class GIPS(object):
     def __init__(self, sock):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
+        self.ack = bytearray()
         logging.debug(self.sock)
         self.pid = 0
         self.isWin = 0
         self.move_a = -1
-        self.move_a = -1
+        self.move_b = -1
         self.isEarlyExit = 0
 
     def pack(self, pid, isWin, move_a, move_b, isEarlyExit):
@@ -90,16 +91,48 @@ class GIPS(object):
                                    int(self.isEarlyExit).to_bytes(1, sys.byteorder)))
 
     def recv(self):
-        self.pid = ord(self.sock.recv(1))
-        self.isWin = ord(self.sock.recv(1))
-        self.move_a = ord(self.sock.recv(1))
-        self.move_b = ord(self.sock.recv(1))
-        self.isEarlyExit = ord(self.sock.recv(1))
+        self.sock.setblocking(True)
+        data = bytearray()
+        self.sock.recv(50)
+        while(not data):
+            data = self.recv_timeout()
+        for a in data:
+            if a == bytes(b"0x00"):
+                data.remove(a)
+        self.pid = data[0]
+        self.isWin = data[1]
+        self.move_a = data[2]
+        self.move_b = data[3]
+        self.isEarlyExit = data[4]
         if self.move_a == 255:
             self.move_a = -1
         if self.move_b == 255:
             self.move_b = -1
         logging.debug("Received: " + str(self))
+
+    ## timeout after receiving for a little bit
+    def recv_timeout(self, timeout=2):
+        self.sock.setblocking(False)
+        total_data = bytearray()
+        data = bytes()
+        begin = time.time()
+        while 1:
+            # if you got some data, then break after wait sec
+            if total_data and time.time() - begin > timeout:
+                break
+            # if you got no data at all, wait a little longer
+            elif time.time() - begin > timeout * 2:
+                break
+            try:
+                data = self.sock.recv(8192)
+                if data:
+                    total_data.extend(data)
+                    begin = time.time()
+                else:
+                    time.sleep(0.1)
+            except:
+                pass
+        return total_data
 
 
 def main():
