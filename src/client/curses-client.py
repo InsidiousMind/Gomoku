@@ -23,7 +23,7 @@ class Chat(threading.Thread):
     def update(self):
         # Get a chat message.
         msg = self.sock.recv(1024)
-        # This next bit just implements some kind of half-working auto-scrollingc
+        # This next bit just implements some kind of half-working auto-scrolling
         if self.row >= 40:
             self.win.clear()
             self.row = 0
@@ -41,7 +41,10 @@ class Chat(threading.Thread):
 # define screen variables
 
 class Screen(object):
-    def __init__(self, height, width, one_begin_x, one_begin_y, two_begin_x, two_begin_y, thr_begin_x, thr_begin_y):
+    def __init__(self, height, width, one_begin_x,
+                 one_begin_y, two_begin_x, two_begin_y,
+                 thr_begin_x, thr_begin_y):
+
         self.stdscr = self.initialize()  # Starts the Curses application.
         # Window 1 takes commands for the game.
         self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
@@ -54,7 +57,8 @@ class Screen(object):
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
         self.game = Textbox(self.win1)
         self.board_mesg = Textbox(self.win4)
-        # self.chat = Chat(self.win2)
+        self.chat = Chat(self.win2, self.stdscr)
+        #self.player = player
 
 
     def initialize(self):
@@ -86,13 +90,19 @@ class Screen(object):
         self.stdscr.addstr(14, 70, "Chat")
         self.stdscr.addstr(14, 1, "Game Window")
         self.stdscr.addstr(14, 120, "The Board")
+        '''
+        self.stdscr.addstr(0, 50, "Player: " + str(self.player.name))
+        self.stdscr.addstr(1, 50, "Unique PID: " + str(self.player.pid))
+        self.stdscr.addstr(2, 50, "Wins: " + str(self.player.wins))
+        self.stdscr.addstr(3, 50, "Losses: " + str(self.player.losses))
+        self.stdscr.addstr(4, 50, "Ties:" + str(self.player.ties))
+        '''
 
 
 class GIPS(object):
     def __init__(self, sock):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
-        self.ack = bytearray()
         logging.debug(self.sock)
         self.pid = 0
         self.isWin = 0
@@ -271,7 +281,7 @@ def check_keys(c, screen, gips, board, pid, sock, username):
             send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
         screen.win1.clear()
 
-        #subtract 1 from moves
+        # subtract 1 from moves
         move[0] -= 1
         move[1] -= 1
         # Otherwise:
@@ -281,7 +291,7 @@ def check_keys(c, screen, gips, board, pid, sock, username):
         gips.send()
         board = update_board(gips, board)
         display_board(board, screen.win3)
-        moves = []
+        # moves = []
         return True
     if c == ord('c'):
         screen.board_mesg.edit()
