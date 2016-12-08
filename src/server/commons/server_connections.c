@@ -221,5 +221,4 @@ int *getSockets(c_head **t_head){
     sockets[i] = temp->sockfd;
   }
   return sockets;
-  
 }
