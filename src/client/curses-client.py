@@ -19,8 +19,11 @@ class Player(object):
         self.wins = wins
         self.losses = losses
         self.ties = ties
+
     def print_player(self):
-        print(str(self.name) +' UPID: ' + str(self.upid)+ ' has ' + str(self.wins) + ' wins ' + str(self.losses) + ' losses ' + ' and ' + str(self.ties) + ' ties.')
+        print('{0} UPID: {1} has {2} wins {3} losses  and {4} ties.'.format(str(self.name), str(self.upid),
+                                                                            str(self.wins), str(
+                self.losses), str(self.ties)))
 
 
 class Chat(threading.Thread):
@@ -55,36 +58,36 @@ class Screen(object):
     def __init__(self, height, width, one_begin_x,
                  one_begin_y, two_begin_x, two_begin_y,
                  thr_begin_x, thr_begin_y, player):
-        #init for screen in main
-        #screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
+        # init for screen in main
+        # screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
 
         self.stdscr = self.initialize()  # Starts the Curses application.
         # Window 1 takes commands for the game.
         self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
-        #self.win1_sub = self.win1.derwin(1, 1)
-        #self.win1.box()
+        # self.win1_sub = self.win1.derwin(1, 1)
+        # self.win1.box()
 
         # Window 2 carries the chat.
         self.win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
-        #self.win2_sub = self.win2.derwin(2, 1)
-        #self.win2.box()
+        # self.win2_sub = self.win2.derwin(2, 1)
+        # self.win2.box()
 
         # Window 3 displays the current game board.
         self.win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
-        #self.win3_sub = self.win2.derwin(2, 1)
-        #self.win3.box()
+        # self.win3_sub = self.win2.derwin(2, 1)
+        # self.win3.box()
 
         # Window 4 displays the message that the player is currently typing out.
         self.win4 = curses.newwin((height // 4), width,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
-        #self.win4_sub = self.win4.derwin(2, 1)
-        #self.win4.box()
+        # self.win4_sub = self.win4.derwin(2, 1)
+        # self.win4.box()
 
-        #takes messages for the game
+        # takes messages for the game
         self.game = Textbox(self.win1)
-        #takes messages for current gameboard
+        # takes messages for current gameboard
         self.board_mesg = Textbox(self.win4)
-        #commands for game
+        # commands for game
         self.chat = Chat(self.win2, self.stdscr)
         self.player = player
 
@@ -226,7 +229,6 @@ def main():
 
     player = Player(username, upid, 0, 0, 0)
 
-
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
     screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
@@ -236,8 +238,8 @@ def main():
     gips = GIPS
     try:
         logging.debug("The GIPS is defined.")
-        keepPlaying = True
-        while(keepPlaying):
+        keep_playing = True
+        while keep_playing:
             sock = establish_connection(host, port)
             gips = GIPS(sock)
             login(sock, upid, username)
@@ -253,9 +255,8 @@ def main():
             else:
                 screen.halt()
                 print("Thanks for playing!!!")
-                #end sequence
+                # end sequence
                 end_game(gips, screen, pid)
-
 
     except Exception:
         logging.exception("Exception caught")
@@ -286,8 +287,8 @@ def establish_connection(host, port):
         sys.exit(0)
 
 
-def end_game (gips, screen, pid):
-    if(gips.isWin == pid):
+def end_game(gips, screen, pid):
+    if gips.isWin == pid:
         print("You Win! :-}")
     else:
         print("You Lost! :-{")
@@ -301,7 +302,7 @@ def end_game (gips, screen, pid):
     screen.player.wins = ntohl(player[21])
     screen.player.losses = ntohl(player[22])
     screen.player.ties = ntohl(player[23])
-    if(pid != gips.isWin):
+    if pid != gips.isWin:
         gips.sock.send(bytes(b'x01'))
     print("Your new stats are:")
     screen.player.print_player()
@@ -328,10 +329,10 @@ def game_loop(board, pid, username, screen, sock, gips):
         screen.stdscr.refresh()  # This begins the user interaction
         c = screen.stdscr.getch()
         game_running = check_keys(c, screen, gips, board, pid, sock, username)
-        isWin = gips.sock.recv(4)
-        isWin = struct.unpack('!i', isWin)
-        isWin = ntohl(isWin[0])
-        gips.isWin = isWin
+        is_win = gips.sock.recv(4)
+        is_win = struct.unpack('!i', is_win)
+        is_win = ntohl(is_win[0])
+        gips.isWin = is_win
     return gips
 
 
