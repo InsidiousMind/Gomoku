@@ -12,6 +12,7 @@
 #include "../../lib/database.h"
 
 void initp(Player **player, int userid, char *username, int wins, int losses, int ties);
+int sendp(Player **play, int sockfd);
 
 //record player data to player's entry in struct
 //if player doesn't exist, create an entry
@@ -30,19 +31,57 @@ fd)
     head = add(fd, getIndex(fd), &head, &player);
 
   }else update(fd, &head, uPID, isWin==PID, !(isWin == PID), 0);
-
-
   player = getPlayer(uPID, fd, username, &head);
+  
+  if(sendp(&player, sockfd) == -1) return -1;
+  else return 0;
+}
+
+int sendPlayer(uint32_t uPID, char *username, Node *head, int sockfd, int fd){
+  Player *player;
+ 
+  if(doesPlayerExist(&head, uPID, username) == false) {
+    player = calloc(1, sizeof(Player));
+    initp(&player, uPID, username, 0, 0,0);
+    head = add(fd, getIndex(fd), &head, &player);
+  }
+  
+  player = getPlayer(uPID, fd, username, &head);
+  if(sendp(&player, sockfd) == -1) return -1;
+  else return 0;
+  
+}
+
+void player_htonl(Player **play){
+  Player *player = *play;
+  
   player->userid = htonl(player->userid);
   player->wins = htonl(player->wins);
   player->losses = htonl(player->losses);
   player->ties = htonl(player->ties);
   player->index = htonl(player->index);
- 
+  *play = player;
+}
+
+void player_ntohl(Player **play){
+  Player *player = *play;
+  
+  player->userid = ntohl(player->userid);
+  player->wins = ntohl(player->wins);
+  player->losses = ntohl(player->losses);
+  player->ties = ntohl(player->losses);
+  player->index = ntohl(player->index);
+  *play = player;
+}
+
+int sendp(Player **play, int sockfd){
+  Player *player = *play;
+  
+  player_htonl(&player);
   if(send(sockfd, player, sizeof(Player), 0) == -1){
     free(player);
     return -1;
-  }else{
+  } else {
     free(player);
     return 0;
   }
