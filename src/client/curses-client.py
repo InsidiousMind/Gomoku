@@ -35,6 +35,14 @@ class Player(object):
         self.losses = int(player[22])
         self.ties = int(player[23])
 
+    def update_win(self, screen):
+        screen.win5.clear()
+        screen.win5.addstr(0, 0, "Player: " + str(self.name))
+        screen.win5.addstr(1, 0, "Unique PID: " + str(self.upid))
+        screen.win5.addstr(2, 0, "Wins: " + str(self.wins))
+        screen.win5.addstr(3, 0, "Losses: " + str(self.losses))
+        screen.win5.addstr(4, 0, "Ties:" + str(self.ties))
+        screen.win5.refresh()
 
 class Chat(threading.Thread):
     def __init__(self, win, sock):
@@ -93,14 +101,17 @@ class Screen(object):
         # self.win4_sub = self.win4.derwin(2, 1)
         # self.win4.box()
 
+        #win5 is the textbox for player stats
+        self.win5 = curses.newwin(10, 16, 0, 70)
+
         # takes messages for the game
         self.game = Textbox(self.win1)
         # takes messages for current gameboard
         self.board_mesg = Textbox(self.win4)
         # commands for game
         self.chat = Chat(self.win2, self.stdscr)
-        self.player = player
 
+        self.player = player
     @staticmethod
     def initialize():
         stdscr = curses.initscr()
@@ -113,6 +124,8 @@ class Screen(object):
     def halt(self):  # Just to cut down on a few lines in main()
         down(self.stdscr)
 
+    #75-> that way
+    #12 down
     def print_title(self):
         self.stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
         self.stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
@@ -129,11 +142,6 @@ class Screen(object):
         self.stdscr.addstr(14, 70, "Chat")
         self.stdscr.addstr(14, 1, "Game Window")
         self.stdscr.addstr(14, 120, "The Board")
-        self.stdscr.addstr(0, 70, "Player: " + str(self.player.name))
-        self.stdscr.addstr(1, 70, "Unique PID: " + str(self.player.upid))
-        self.stdscr.addstr(2, 70, "Wins: " + str(self.player.wins))
-        self.stdscr.addstr(3, 70, "Losses: " + str(self.player.losses))
-        self.stdscr.addstr(4, 70, "Ties:" + str(self.player.ties))
 
 
 class GIPS(object):
@@ -204,8 +212,10 @@ def main():
     # GOOD UP TO HERE (With send/recv)
     screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
     screen.print_title()
+    screen.player.update_win(screen)
     logging.debug("Game starting.")
-    print("game starting")
+    screen.stdscr.addstr(5, 70, "The game will be starting shortly...", curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
+    screen.stdscr.refresh()
     gips = GIPS
     try:
         logging.debug("The GIPS is defined.")
@@ -214,8 +224,14 @@ def main():
             sock = establish_connection(host, port)
             gips = GIPS(sock)
             login(sock, upid, username)
+
+            screen.stdscr.clear()
+            screen.print_title()
+            screen.stdscr.refresh()
+
             pid = ord(sock.recv(1))
             screen.player.recv_player(sock)
+            screen.player.update_win(screen)
             board = init_board()
             gips = game_loop(board, pid, username, screen, gips)
             if gips.isEarlyExit == 1 and gips.is_win == 0:

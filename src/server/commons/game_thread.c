@@ -141,20 +141,21 @@ void *subserver(void *arguments) {
   
   //check if username and uPID match/exist
   //if they don't, send the player a uniquePID
+  int send_ret = 0;
   pthread_mutex_lock(&gameInfo->args.head_access);
   if (isPlayerTaken(&head, uPID, username, fd) == true) {
     uPID = (uint32_t) genUPID();
     uPID = htonl(uPID);
-    if (send(reply_sock_fd, &(uPID), sizeof(uPID), 0) == -1)
-      c_exit(&gameInfo, PID, &username, reply_sock_fd);
+    send_ret = send(reply_sock_fd, &(uPID), sizeof(uPID), 0);
     uPID = ntohl(uPID);
   } else {
     uPID = htonl(uPID);
-    if (send(reply_sock_fd, &uPID, sizeof(uPID), 0) == -1)
-      c_exit(&gameInfo, PID, &username, reply_sock_fd);
+    send_ret = send(reply_sock_fd, &uPID, sizeof(uPID), 0);
     uPID = ntohl(uPID);
   }
   pthread_mutex_unlock(&gameInfo->args.head_access);
+  
+  if(send_ret == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
   
   if ((sendPID(PID, reply_sock_fd) == -1))
     c_exit(&gameInfo, PID, &username, reply_sock_fd);
@@ -306,6 +307,7 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
   char otherPID = getOtherPlayersPID(pid);
   BYTE win = 0;
   if(numTurns == 0 && pid == 1) {
+    
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     if(gameInfo->clientDisconnect) win = -1;
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
@@ -316,17 +318,18 @@ int sendMoves(int reply_sock_fd, int numTurns, char pid, game *gameInfo){
     }
   
   }else{
+    int send_ret = 0;
     pthread_mutex_lock(&gameInfo->gameInfo_access);
     if(gameInfo->clientDisconnect)  win = -1;
-    if( send_to(pack(otherPID,
+      
+    send_ret = send_to(pack(otherPID,
                 (BYTE) gameInfo->playerWin,
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[0] : gameInfo->play1Moves[0]),
                 (BYTE) (pid == 1 ? gameInfo->play2Moves[1] : gameInfo->play1Moves[1]),
                  win),
-                reply_sock_fd) == -1){
-      return -1;
-    }
+                reply_sock_fd);
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
+    if(send_ret == -1) return -1;
 
   }
   return 0;
@@ -355,7 +358,7 @@ int checkWin(char **board, char pid, int sockfd, game *gameInfo) {
       
 
     pthread_mutex_lock(&gameInfo->gameInfo_access);
-    gameInfo->playerWin = npid;
+      gameInfo->playerWin = npid;
     pthread_mutex_unlock(&gameInfo->gameInfo_access);
 
     return pid;
@@ -396,13 +399,11 @@ char **addMove(char move_a, char move_b, char pid, char **board, game *gameInfo)
 void turn(game *gameInfo) {
 
   pthread_mutex_lock(&gameInfo->gameInfo_access);
-
   if (gameInfo->whoTurn == 1) {
     gameInfo->whoTurn = 2;
   } else {
     gameInfo->whoTurn = 1;
   }
-  
   pthread_mutex_unlock(&gameInfo->gameInfo_access);
 }
 
@@ -426,8 +427,8 @@ bool isMyTurn(game *gameInfo, char pid){
   int currentTurn, clientDC;
   
   pthread_mutex_lock(&gameInfo->gameInfo_access);
-  currentTurn = gameInfo->whoTurn;
-  clientDC = gameInfo->clientDisconnect;
+    currentTurn = gameInfo->whoTurn;
+    clientDC = gameInfo->clientDisconnect;
   pthread_mutex_unlock(&gameInfo->gameInfo_access);
   
   if(currentTurn == pid || clientDC) return true;
