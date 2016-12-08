@@ -9,8 +9,9 @@ typedef struct game_srv_args
   int reply_sock_fd[2];
   int fd;
   Node *head;
+  pthread_mutex_t *head_access; // access for head node of Player Database
   c_head *conn_head;
-  pthread_mutex_t *head_access;
+  pthread_mutex_t conn_head_access; //access for head node of Connection LL
 
 } gameArgs;
 

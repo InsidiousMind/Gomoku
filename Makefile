@@ -12,8 +12,8 @@ CFLAGS = -Wextra -Wall -lpthread -g -Wshadow
 
 SRV_SRC = src/server/
 SRV_DEP = src/server/commons/
-SRV_OBJ = main.o asgn6-server.o game_thread.o server_db.o server_connections.o
-BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/game_thread.o build/server/server_db.o build/server/server_connections.o
+SRV_OBJ = main.o asgn6-server.o game_thread.o server_db.o server_connections.o chat_thread.o
+BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/game_thread.o build/server/server_db.o build/server/server_connections.o build/server/chat_thread.o
 
 #Client
 
@@ -68,7 +68,7 @@ clean:
 main.o: $(DEP_OBJ) $(SRV_SRC)main.c $(SRV_DEP)asgn6-server.h
 	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
-asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)IO_sighandle.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h
+asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)IO_sighandle.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h $(SRV_DEP)chat_thread.h
 	$(CC) -c src/server/commons/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(SRV_DEP)game_thread.c $(SRV_DEP)server_db.h $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(SRV_DEP)game_thread.h
@@ -101,5 +101,8 @@ server_db.o: $(LIB_SRC)database.h $(LIB_SRC)gips.h $(SRV_DEP)server_db.h
 
 server_connections.o: $(SRV_DEP)server_connections.h
 	$(CC) -c src/server/commons/server_connections.c -o build/server/server_connections.o $(CFLAGS)
+
+chat_thread.o: $(LIB_SRC)database.h $(SRV_DEP)chat_thread.h
+	$(CC) -c src/server/commons/chat_thread.c -o build/server/chat_thread.o $(CFLAGS)
 
 

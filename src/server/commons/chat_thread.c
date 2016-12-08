@@ -1,3 +1,12 @@
+/*
+ *A multi-synchronous chat server using poll()
+ * this server has a timeout of 100ms at which point if no event occured it will
+ * call itself recursively. If a socket is ready to receive, however, it performs a
+ * recv with MSG_PEEK to check if the first character is a \v
+ * if it is, then it will take that message, parse it, and send it every other socket
+ * connection in the list of socket descriptors
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/select.h>
@@ -7,15 +16,17 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <memory.h>
-#include <database.h>
 
 //
 // Created by insi on 12/8/16.
 //
 
 //server shared includes
-#include "chat_thread.h"
 #include "server_connections.h"
+#include "../../lib/database.h"
+#include "chat_thread.h"
+
+char* concat(const char *s1, const char *s2) ;
 
 // \v == chat mesg
 
@@ -24,20 +35,37 @@ void poll_for_chat(void *args){
   char buf[1025];
   int i, rv;
   c_head *conn_head = chatInfo->conn_head;
+  pthread_mutex_t conn_head_access = chatInfo->conn_head_access;
+  pthread_mutex_t db_head_access = chatInfo->db_head_access;
+  
   
   struct pollfd ufds[conn_head->size];
-  while(conn_head->size <= 0){/*do nothing */ usleep(1000);}
+  
+  int head_size;
+  pthread_mutex_lock(&conn_head_access);
+  head_size = conn_head->size;
+  pthread_mutex_unlock(&conn_head_access);
+  
+  while(head_size <= 1){
+    usleep(1000);
+    pthread_mutex_lock(&conn_head_access);
+    head_size = conn_head->size;
+    pthread_mutex_unlock(&conn_head_access);
+  }
   
   //get an array of sockets from the linkedList keeping track of connections
-  int *sockets = getSockets(&(*conn_head));
+  pthread_mutex_lock(&conn_head_access);
+  int *sockets = getSockets(&conn_head);
+  head_size = conn_head->size;
+  pthread_mutex_unlock(&conn_head_access);
   
   //set events to watch for on each socket connection
-  for(i = 0; i < conn_head->size; i++){
+  for(i = 0; i < head_size; i++){
     ufds[i].fd = sockets[i];
     ufds[i].events = POLLIN | POLLOUT;
   }
   // wait for events on the sockets, 1 second timeout
-  rv = poll(ufds, conn_head->size, 100);
+  rv = poll(ufds, head_size, 100);
   
   //-1 == error; 0 == timeout
   if(rv == -1)
@@ -49,7 +77,7 @@ void poll_for_chat(void *args){
     for (i = 0; i < conn_head->size; i++) {
       if (ufds[i].revents & POLLIN) { //data ready to be recved on this socket
         char peek;
-        int read_count = recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK);
+        int read_count = (int) recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK);
         if(peek == '\v'){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
           if(read_count == 0 || read_count == -1){
@@ -63,10 +91,11 @@ void poll_for_chat(void *args){
             memmove(buf,buf+len_of_upid,strlen(buf));
             
             char* filling = ": \0";
-            long uPID = strtol(&c_upid, NULL, 10);
+            long uPID = strtol(c_upid, NULL, 10);
             Player *play;
+            pthread_mutex_lock(&db_head_access);
             play = fpuPID(uPID, chatInfo->db_fd, &(chatInfo->db_head));
-            
+            pthread_mutex_unlock(&db_head_access);
             //form the message credentials
             char* leftP = "(\0";
             char* rightP =")\0";
@@ -84,12 +113,14 @@ void poll_for_chat(void *args){
             free(msg_begin);
             free(msg);
             int not_send = i; //we got the msg from this socket
-            for(int i = 0; i < conn_head->size; i++) {
-              if(not_send = i){
+            for(i = 0; i < head_size; i++) {
+              if(not_send == i){
                 /*do nothing*/
               }else if (send(ufds[i].fd, msg_finish, strlen(msg_finish), 0) == -1) {
                 printf("could not send to socket; possible disconnect");
+                pthread_mutex_lock(&conn_head_access);
                 parseConnections(&conn_head);
+                pthread_mutex_unlock(&conn_head_access);
                 continue;
               }
             }
@@ -103,7 +134,9 @@ void poll_for_chat(void *args){
       }else if ((ufds[i].revents & POLLERR) || (ufds[i].revents & POLLHUP) ||
           (ufds[i].revents & POLLNVAL)) {
         //check if any errors occured
+        pthread_mutex_lock(&conn_head_access);
         parseConnections(&conn_head);
+        pthread_mutex_unlock(&conn_head_access);
       }
     } //end for loop
   }

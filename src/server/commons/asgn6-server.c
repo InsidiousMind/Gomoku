@@ -16,6 +16,7 @@
 #include "../../lib/gips.h"
 #include "../../lib/database.h"
 #include "server_connections.h"
+#include "chat_thread.h"
 
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
@@ -28,10 +29,11 @@ int* startGame(c_head **head);
 void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   
   c_head *conn_head = NULL;
+  pthread_mutex_t conn_head_access = PTHREAD_MUTEX_INITIALIZER;
   int sock_fd;
   Node *game_head = *temp;
 
-  gameArgs *gameSrvInfo = malloc(sizeof(gameArgs));
+  gameArgs *gameSrvInfo = calloc(1, sizeof(gameArgs));
 
   // game info for managing the player records. Once the game ends, it is automatically written
   // to the file
@@ -39,7 +41,9 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   gameSrvInfo->head = game_head;
   gameSrvInfo->head_access = head_access;
   gameSrvInfo->conn_head = conn_head;
+  gameSrvInfo->conn_head_access = conn_head_access;
   pthread_t pthread;
+  pthread_t chat_subserver;
 
   //make the thread detached
   //pthread_attr_t attr;
@@ -71,14 +75,24 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
   int r_sockfd;
   int *start_socks;
- //TODO: Has to be a way to inform client that it's paired client has disconnected
+  chatArgs *chatSrvInfo = calloc(1, sizeof(chatArgs)) ;
+  chatSrvInfo->conn_head = conn_head;
+  chatSrvInfo->conn_head_access = conn_head_access;
+  chatSrvInfo->db_head = *temp;
+  chatSrvInfo->db_head_access = *head_access;
+  chatSrvInfo->db_fd = fd;
+  chatSrvInfo->stop = false;
+  if((pthread_create(&chat_subserver, NULL, (void*)poll_for_chat, (void*) chatSrvInfo)) != 0)
+    printf("Failed to start chat server\n");
   //
 while(true){
  
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
+    pthread_mutex_lock(&conn_head_access);
+     c_add(&conn_head, r_sockfd);
+    pthread_mutex_unlock(&conn_head_access);
   
-    c_add(&conn_head, r_sockfd);
     gameSrvInfo->conn_head = conn_head;
     parseConnections(&conn_head);
     
@@ -86,11 +100,13 @@ while(true){
       gameSrvInfo->reply_sock_fd[0] = start_socks[0];
       gameSrvInfo->reply_sock_fd[1] = start_socks[1];
       if((pthread_create(&pthread, NULL, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
-       printf("Failed to start Game Server");
+       printf("Failed to start Game Server\n");
       
       //invert isPlaying
+      pthread_mutex_lock(&conn_head_access);
       setPlaying(&conn_head, start_socks[0]);
       setPlaying(&conn_head, start_socks[1]);
+      pthread_mutex_unlock(&conn_head_access);
       
       free(start_socks);
     }
