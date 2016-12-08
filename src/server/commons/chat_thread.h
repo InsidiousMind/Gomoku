@@ -14,6 +14,5 @@ typedef struct chat_args {
   bool stop;
   int db_fd;
 } chatArgs;
-
-void poll_for_chat(void *args);
+void chat_subserver(void *args);
 #endif //SERVER_CHAT_THREAD_H

@@ -27,19 +27,32 @@
 #include "chat_thread.h"
 
 char* concat(const char *s1, const char *s2) ;
-
+int poll_for_chat(chatArgs *chatInfo);
 // \v == chat mesg
+void chat_subserver(void *args){
+ 
+ chatArgs *chatInfo = ((chatArgs*) args);
 
-void poll_for_chat(void *args){
-  chatArgs *chatInfo = ((chatArgs*) args);
+  int ret = 0;
+ 
+ if(chatInfo->stop){
+    pthread_exit(NULL);
+ }else{
+    ret = poll_for_chat(chatInfo);
+ }
+  
+}
+int poll_for_chat(chatArgs *chatInfo){
+
   char buf[1025];
   int i, rv;
   c_head *conn_head = chatInfo->conn_head;
   pthread_mutex_t conn_head_access = chatInfo->conn_head_access;
   pthread_mutex_t db_head_access = chatInfo->db_head_access;
-  
-  
-  struct pollfd ufds[conn_head->size];
+   
+   pthread_mutex_lock(&conn_head_access);
+    struct pollfd ufds[conn_head->size];
+   pthread_mutex_unlock(&conn_head_access);
   
   int head_size;
   pthread_mutex_lock(&conn_head_access);
@@ -47,7 +60,7 @@ void poll_for_chat(void *args){
   pthread_mutex_unlock(&conn_head_access);
   
   while(head_size <= 1){
-    usleep(1000);
+    usleep(250000); //250 milliseconds
     pthread_mutex_lock(&conn_head_access);
     head_size = conn_head->size;
     pthread_mutex_unlock(&conn_head_access);
@@ -71,8 +84,10 @@ void poll_for_chat(void *args){
   if(rv == -1)
   {
     perror("poll"); //error occurred in poll()
+    return -1;
   } else if (rv == 0) {
     /*do nothing */
+    return 0;
   } else {
     for (i = 0; i < conn_head->size; i++) {
       if (ufds[i].revents & POLLIN) { //data ready to be recved on this socket
@@ -141,13 +156,7 @@ void poll_for_chat(void *args){
     } //end for loop
   }
   free(sockets);
-  
-  //and do it allll over again
-  if(chatInfo->stop){
-    pthread_exit(NULL);
-  }else{
-    poll_for_chat((void*) chatInfo);
-  }
+  return 0;
 }
 
 //concatenates char s1 with char s2, so you get a string like
