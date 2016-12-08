@@ -205,3 +205,21 @@ void to_head(cList **src_node, c_head **dest_node, int size){
   dest->next = src->next;
   dest->pairedSockfd = src->pairedSockfd;
 }
+
+int *getSockets(c_head **t_head){
+  int i;
+  c_head  *head = *t_head;
+  cList *temp;
+  
+  int *sockets = calloc(head->size, sizeof(int));
+  
+  sockets[0] = head->sockfd;
+
+  temp = head->next;
+
+  for (i = 1; i < head->size; i++, temp = temp->next) {
+    sockets[i] = temp->sockfd;
+  }
+  return sockets;
+  
+}

@@ -21,6 +21,7 @@ typedef struct connectionList {
 
 typedef struct headCList {
   int sockfd, pairedSockfd, size;
+  //int *sockets; make a dynamic array to hold every socket
   bool isPlaying;
   struct connectionList *next;
 } c_head;
@@ -31,4 +32,5 @@ void c_del(c_head **head, int sockfd);
 int find(c_head **head, int found);
 void setPlaying(c_head **head, int sockfd);
 void parseConnections(c_head **head);
+int *getSockets(c_head **t_head);
 #endif //SERVER_SERVER_CONNECTIONS_H

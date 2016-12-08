@@ -131,6 +131,7 @@ void *subserver(void *arguments)
   char *username = calloc(1, BUFFERSIZE*sizeof(char));
   if((read_count = recv(reply_sock_fd, username, BUFFERSIZE, 0)) == -1)
     perror("[!!] error: receive fail in subserver");
+<<<<<<< Updated upstream
   if(read_count == 0) detectedExit(&gameInfo, PID, &username, reply_sock_fd);
     
     username[read_count] = '\0';
@@ -155,14 +156,68 @@ void *subserver(void *arguments)
                                                               reply_sock_fd);
       else
         detectedExit(&gameInfo, PID, &username, reply_sock_fd);
+=======
+  if (read_count == 0) c_exit(&gameInfo, PID, &username, reply_sock_fd);
+  
+  username[read_count] = '\0';
+  
+  //check if username and uPID match/exist
+  //if they don't, send the player a uniquePID
+  int send_ret = 0;
+  pthread_mutex_lock(&gameInfo->args.head_access);
+  if (isPlayerTaken(&head, uPID, username, fd) == true) {
+    uPID = (uint32_t) genUPID();
+    uPID = htonl(uPID);
+    send_ret = send(reply_sock_fd, &(uPID), sizeof(uPID), 0);
+    uPID = ntohl(uPID);
+  } else {
+    uPID = htonl(uPID);
+    send_ret = send(reply_sock_fd, &uPID, sizeof(uPID), 0);
+    uPID = ntohl(uPID);
+  }
+  pthread_mutex_unlock(&gameInfo->args.head_access);
+  
+  if(send_ret == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
+  
+  if ((sendPID(PID, reply_sock_fd) == -1))
+    c_exit(&gameInfo, PID, &username, reply_sock_fd);
+    
+  pthread_mutex_lock(&(gameInfo->args.head_access));
+  //send player stats
+  int ret_sendp = sendPlayer(uPID, username, head, reply_sock_fd, fd);
+  //record player in database(if new)
+  recPlayer(uPID, PID, username, -1, head, fd);
+  pthread_mutex_unlock(&(gameInfo->args.head_access));
+  
+  //kill thread if client exited
+  if(ret_sendp == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
+  
+  printf("%s %s %d %s %d\n", username, "with PID:", PID, "and uPID: ", uPID);
+  
+  if (((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1)) {
+    perror("[!!!]: Game Loop, client disconnect? : ");
+    c_exit(&gameInfo, PID, &username, reply_sock_fd);
+>>>>>>> Stashed changes
   }
 
   //in the future could have subserver return with win and record player in GameServer removing
   printf("%s%d%s", "GameLoop over for uPid ", uPID, " Performing cleanup...\n");
+<<<<<<< Updated upstream
 
   pthread_mutex_lock(&(gameInfo->args.head_access));
   recPlayer(uPID, PID, username, win, head, reply_sock_fd, fd);
   pthread_mutex_unlock(&(gameInfo->args.head_access));
+=======
+  
+  Player **player;
+  //TODO possible failures: recPlayer
+  pthread_mutex_lock(&(gameInfo->args.head_access));
+  player = (Player **) recPlayer(uPID, PID, username, win, head, fd);
+  pthread_mutex_unlock(&(gameInfo->args.head_access));
+  
+  //send player after recording it
+  if(sendp(player, reply_sock_fd) == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
+>>>>>>> Stashed changes
 
   close(reply_sock_fd);
 
