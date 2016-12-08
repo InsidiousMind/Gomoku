@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "../../lib/gips.h"
 
@@ -46,13 +47,15 @@ int connect_to_server() {
   else return -1;
 }
 
-int login(int sock, int uniquePID, char *username) {
+int login(int sock, uint32_t uniquePID, char *username) {
 
-  int upid = uniquePID;
+  uint32_t upid = uniquePID;
   //get pid from the server based on the username.
+  upid = htonl(upid);
   send(sock, &upid, sizeof(int), MSG_NOSIGNAL);
   send_mesg(username, sock);
   recv(sock, &upid, sizeof(int), 0);
+  upid = ntohl(upid);
   return upid;
 }
 

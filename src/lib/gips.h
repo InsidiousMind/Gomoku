@@ -8,8 +8,6 @@ typedef struct {
   BYTE isWin;
   BYTE move_a;
   BYTE move_b;
-  //this is just a boolean for the client. If the other client exited before the
-  //game was over, this is  set to 1
   BYTE isEarlyExit;
 } gips;
 
@@ -18,9 +16,7 @@ gips *pack(BYTE pid, BYTE isWin, BYTE move_x, BYTE move_y, BYTE isEarlyExit);
 int send_to(gips *info, int sock);
 
 int send_mesg(char *str, int sock);
-
-int send_misc(void *str, int sock);
-
+int receive_gips(int sock, gips **info);
 #endif /*GIPS_H*/
 
 #ifndef DEPTH
