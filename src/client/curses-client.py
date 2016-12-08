@@ -342,22 +342,31 @@ def check_keys(c, screen, gips, board, pid, sock, username):
         logging.debug("Key: q")
         return False
     if c == ord('m'):
-        logging.debug("Key: m")
-        # Get the next move and send it.
-        screen.game.edit()
-        stuff = screen.game.gather()
-        # Split the move into two components.
-        move = (str(stuff)).split(' ')
-        move.remove('\n')  # kill the newline=
-        # for m in move:
-        #    m = int(m)
-        # If the move is not valid:
-        # make moves ints
-        move = list(map(int, move))
-        while not move_is_valid(move):
-            send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
+        done = False
+        while not done:
+            screen.win1.clear()
+            logging.debug("Key: m")
+            # Get the next move and send it.
+            screen.game.edit()
+            stuff = screen.game.gather()
+            # Split the move into two components.
+            if len(stuff) == 0:
+                done = False
+                continue
+            move = (str(stuff)).split(' ')
+            
+            move.remove('\n')  # kill the newline=
+            # for m in move:
+            #    m = int(m)
+            # If the move is not valid:
+            # make moves ints
+            move = list(map(int, move))
+            if not move_is_valid(move):
+                send_to_chat(sock, "server: Invalid move, " + str(username) + "!")
+                done = False
+                continue
+            done = True
         screen.win1.clear()
-
         # subtract 1 from moves
         move[0] -= 1
         move[1] -= 1
