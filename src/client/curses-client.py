@@ -142,7 +142,7 @@ class GIPS(object):
         self.sock = sock
         logging.debug(self.sock)
         self.pid = 0
-        self.isWin = 0
+        self.is_win = 0
         self.move_a = -1
         self.move_b = -1
         self.isEarlyExit = 0
@@ -150,7 +150,7 @@ class GIPS(object):
     def pack(self, pid, is_win, move_a, move_b, is_early_exit):
         logging.debug("Packing: " + str(pid) + " " + str(is_win) +
                       " " + str(move_a) + " " + str(move_b))
-        self.isWin = is_win
+        self.is_win = is_win
         self.pid = pid
         self.move_a = move_a
         self.move_b = move_b
@@ -159,7 +159,7 @@ class GIPS(object):
     def send(self):
         logging.debug("Sending.")
         self.sock.send(struct.pack('ccccc', int(self.pid).to_bytes(1, sys.byteorder),
-                                   int(self.isWin).to_bytes(1, sys.byteorder),
+                                   int(self.is_win).to_bytes(1, sys.byteorder),
                                    int(self.move_a).to_bytes(1, sys.byteorder),
                                    int(self.move_b).to_bytes(1, sys.byteorder),
                                    int(self.isEarlyExit).to_bytes(1, sys.byteorder)))
@@ -167,7 +167,7 @@ class GIPS(object):
     def recv(self):
         self.sock.setblocking(True)
         self.pid = ord(self.sock.recv(1))
-        self.isWin = ord(self.sock.recv(1))
+        self.is_win = ord(self.sock.recv(1))
         self.move_a = ord(self.sock.recv(1))
         self.move_b = ord(self.sock.recv(1))
         self.isEarlyExit = ord(self.sock.recv(1))
@@ -177,7 +177,6 @@ class GIPS(object):
         if self.move_b == 255:
             self.move_b = -1
         logging.debug("Received: " + str(self))
-
 
 
 # noinspection PyBroadException
@@ -210,8 +209,8 @@ def main():
     gips = GIPS
     try:
         logging.debug("The GIPS is defined.")
-        keepPlaying = True
-        while (keepPlaying):
+        keep_playing = True
+        while keep_playing:
             sock = establish_connection(host, port)
             gips = GIPS(sock)
             login(sock, upid, username)
@@ -219,7 +218,7 @@ def main():
             screen.player.recv_player(sock)
             board = init_board()
             gips = game_loop(board, pid, username, screen, gips)
-            if gips.isEarlyExit == 1 and gips.isWin == 0:
+            if gips.isEarlyExit == 1 and gips.is_win == 0:
                 screen.halt()
                 print("Thanks for playing!!!")
                 gips.sock.shutdown(socket.SHUT_RDWR)
@@ -230,7 +229,6 @@ def main():
                 print("Thanks for playing!!!")
                 # end sequence
                 end_game(gips, screen, pid)
-
 
     except Exception:
         logging.exception("Exception caught")
@@ -262,7 +260,7 @@ def establish_connection(host, port):
 
 
 def end_game(gips, screen, pid):
-    if (gips.isWin == pid):
+    if gips.is_win == pid:
         print("You Win! :-}")
     else:
         print("You Lost! :-{")
@@ -276,11 +274,11 @@ def end_game(gips, screen, pid):
 
 def game_loop(board, pid, username, screen, gips):
     game_running = True
-    while gips.isWin == 0 and gips.isEarlyExit == 0 and game_running:
+    while gips.is_win == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
         gips.recv()
 
-        if gips.isWin != 0 or gips.isEarlyExit != 0:
+        if gips.is_win != 0 or gips.isEarlyExit != 0:
             return gips
         elif gips.move_a == -1 and gips.move_b == -1:
             pass
@@ -292,10 +290,10 @@ def game_loop(board, pid, username, screen, gips):
         screen.stdscr.refresh()  # This begins the user interaction
         c = screen.stdscr.getch()
         game_running = check_keys(c, screen, gips, board, pid, username)
-        isWin = gips.sock.recv(4)
-        isWin = struct.unpack('!i', isWin)
-        isWin = ntohl(isWin[0])
-        gips.isWin = isWin
+        is_win = gips.sock.recv(4)
+        is_win = struct.unpack('!i', is_win)
+        is_win = ntohl(is_win[0])
+        gips.is_win = is_win
     return gips
 
 
@@ -305,27 +303,37 @@ def check_keys(c, screen, gips, board, pid, username):
         logging.debug("Key: q")
         return False
     if c == ord('m'):
-        logging.debug("Key: m")
-        # Get the next move and send it.
-        screen.game.edit()
-        stuff = screen.game.gather()
-        # Split the move into two components.
-        move = (str(stuff)).split(' ')
-        move.remove('\n')  # kill the newline=
-        # for m in move:
-        #    m = int(m)
-        # If the move is not valid:
-        # make moves ints
-        move = list(map(int, move))
-        while not move_is_valid(move):
-            send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
+        done = False
+        while not done:
+            screen.win1.clear()
+            logging.debug("Key: m")
+            # Get the next move and send it.
+            screen.game.edit()
+            stuff = screen.game.gather()
+            # Split the move into two components.
+            if len(stuff) == 0:
+                done = False
+                continue
+            move = (str(stuff)).split(' ')
+            
+            move.remove('\n')  # kill the newline=
+            # for m in move:
+            #    m = int(m)
+            # If the move is not valid:
+            # make moves ints
+            move = list(map(int, move))
+            if not move_is_valid(move):
+                send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
+                done = False
+                continue
+            done = True
         screen.win1.clear()
         # subtract 1 from moves
         move[0] -= 1
         move[1] -= 1
         # Otherwise:
         # Encode a GIPS
-        gips.pack(pid, gips.isWin, move[0], move[1], 0)
+        gips.pack(pid, gips.is_win, move[0], move[1], 0)
         # Send the GIPS
         gips.send()
         board = update_board(gips, board)
