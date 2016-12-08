@@ -1,3 +1,5 @@
+# Database module written by Sean Batzel
+
 import os
 import shelve
 
@@ -55,6 +57,31 @@ class Database(object):
         self.tables[table].add_row(
             name, self.count, self.tables[table].fields, values)
         self.count += 1
+
+    def update_row(self, table, name, value, new):
+        """
+        :param table:
+        :param name:
+        :param value:
+        :param new:
+        :return:
+
+            Doctest:
+                >>> db = Database('test')
+                >>> db.add_table('test', ['one'])
+                >>> db.insert_row('test', 'test', ['one'])
+                >>> print(db.tables['test'].rows['test'].stuff)
+                {'one': 'one'}
+                >>> print(db.tables['test'].rows['test'].stuff['one'])
+                one
+                >>> db.tables['test'].rows['test'].stuff['one'] = 'two'
+                >>> print(db.tables['test'].rows['test'].stuff['one'])
+                two
+                >>> db.update_row('test', 'test', 'one', 'one')
+                >>> print(db.tables['test'].rows['test'].stuff['one'])
+                one
+        """
+        self.tables[table].rows[name].stuff[value] = new
 
     def drop_row(self, name, row):
         """
@@ -145,15 +172,32 @@ class Database(object):
 
     class Table(object):
         def __init__(self, name, fields):
+            """
+            :param name:
+            :param fields:
+            """
             self.name = name
             self.fields = fields
             self.rows = dict()
 
         def add_row(self, name, count, fields, values):
+            """
+            :param name:
+            :param count:
+            :param fields:
+            :param values:
+            :return:
+            """
             self.rows[name] = self.Row(name, count, fields, values)
 
         class Row(object):
             def __init__(self, name, id, fields, values):
+                """
+                :param name:
+                :param id:
+                :param fields:
+                :param values:
+                """
                 self.name = name
                 self.id = id
                 self.stuff = dict()
@@ -162,6 +206,10 @@ class Database(object):
 
 
 def db_open(name):
+    """
+    :param name:
+    :return:
+    """
     if not os.path.exists('test.dat'):
         return Database(name)
     else:
