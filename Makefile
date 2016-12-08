@@ -57,10 +57,6 @@ clean:
 	rm -rf test
 	rm -rf src/client/*.txt
 	rm -rf *.txt
-	rm -rf src/client/test
-	rm -rf test.bak
-	rm -rf test.dat
-	rm -rf test.dir
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///

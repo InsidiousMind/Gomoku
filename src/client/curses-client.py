@@ -11,42 +11,14 @@ import time
 from curses.textpad import Textbox
 from socket import ntohl
 
-from . import database
-
 
 class Player(object):
     def __init__(self, name, upid, wins, losses, ties):
-        """
-        :param name:
-        :param upid:
-        :param wins:
-        :param losses:
-        :param ties:
-        :param name:
-        :param upid:
-        :param wins:
-        :param losses:
-        :param ties:
-        """
-        self.db = database.db_open('local')
         self.name = name
         self.upid = upid
-        if self.db.get_field_by_id('name', 'players', 0) is None:
-            self.db.add_table('players', ['pid', 'wins', 'losses'])
-            self.db.insert_row('players', name, [upid, name, wins, losses, ties])
-            self.wins = wins
-            self.losses = losses
-            self.ties = ties
-        else:
-            self.wins = self.db.get_field_by_name('wins', 'players', name)
-            self.losses = self.db.get_field_by_name('losses', 'players', name)
-            self.ties = self.db.get_field_by_name('ties', 'players', name)
-
-    def save(self):
-        self.db.update_row('players', self.name, 'wins', self.wins)
-        self.db.update_row('players', self.name, 'losses', self.losses)
-        self.db.update_row('players', self.name, 'ties', self.ties)
-        self.db.db_close()
+        self.wins = wins
+        self.losses = losses
+        self.ties = ties
 
     def print_player(self):
         print(str(self.name) + ' UPID: ' + str(self.upid) + ' has ' + str(self.wins) + ' wins ' + str(
@@ -71,7 +43,6 @@ class Player(object):
         screen.win5.addstr(3, 0, "Losses: " + str(self.losses))
         screen.win5.addstr(4, 0, "Ties:" + str(self.ties))
         screen.win5.refresh()
-
 
 class Chat(threading.Thread):
     def __init__(self, win, sock):
@@ -105,17 +76,6 @@ class Screen(object):
     def __init__(self, height, width, one_begin_x,
                  one_begin_y, two_begin_x, two_begin_y,
                  thr_begin_x, thr_begin_y, player):
-        """
-        :param height:
-        :param width:
-        :param one_begin_x:
-        :param one_begin_y:
-        :param two_begin_x:
-        :param two_begin_y:
-        :param thr_begin_x:
-        :param thr_begin_y:
-        :param player:
-        """
         # init for screen in main
         # screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
 
@@ -141,7 +101,7 @@ class Screen(object):
         # self.win4_sub = self.win4.derwin(2, 1)
         # self.win4.box()
 
-        # win5 is the textbox for player stats
+        #win5 is the textbox for player stats
         self.win5 = curses.newwin(10, 16, 0, 70)
 
         # takes messages for the game
@@ -152,12 +112,8 @@ class Screen(object):
         self.chat = Chat(self.win2, self.stdscr)
 
         self.player = player
-
     @staticmethod
     def initialize():
-        """
-        :return:
-        """
         stdscr = curses.initscr()
         stdscr.clear()
         curses.noecho()
@@ -166,17 +122,11 @@ class Screen(object):
         return stdscr
 
     def halt(self):  # Just to cut down on a few lines in main()
-        """
-        :return:
-        """
         down(self.stdscr)
 
-    # 75-> that way
-    # 12 down
+    #75-> that way
+    #12 down
     def print_title(self):
-        """
-        :return:
-        """
         self.stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
         self.stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
         self.stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
@@ -196,9 +146,6 @@ class Screen(object):
 
 class GIPS(object):
     def __init__(self, sock):
-        """
-        :param sock:
-        """
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
         logging.debug(self.sock)
@@ -209,14 +156,6 @@ class GIPS(object):
         self.isEarlyExit = 0
 
     def pack(self, pid, is_win, move_a, move_b, is_early_exit):
-        """
-        :param pid:
-        :param is_win:
-        :param move_a:
-        :param move_b:
-        :param is_early_exit:
-        :return:
-        """
         logging.debug("Packing: " + str(pid) + " " + str(is_win) +
                       " " + str(move_a) + " " + str(move_b))
         self.is_win = is_win
@@ -234,9 +173,6 @@ class GIPS(object):
                                    int(self.isEarlyExit).to_bytes(1, sys.byteorder)))
 
     def recv(self):
-        """
-        :return:
-        """
         self.sock.setblocking(True)
         self.pid = ord(self.sock.recv(1))
         self.is_win = ord(self.sock.recv(1))
@@ -253,9 +189,6 @@ class GIPS(object):
 
 # noinspection PyBroadException
 def main():
-    """
-    :return:
-    """
     file_id = str(random.randrange(1000))
     logging.basicConfig(filename='log' + file_id + '.txt', level=logging.DEBUG,
                         format='[%(asctime)-15s] %(message)s PID: %(process)d LINE: %(lineno)d')
@@ -281,8 +214,7 @@ def main():
     screen.print_title()
     screen.player.update_win(screen)
     logging.debug("Game starting.")
-    screen.stdscr.addstr(5, 70, "The game will be starting shortly...",
-                         curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
+    screen.stdscr.addstr(5, 70, "The game will be starting shortly...", curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
     screen.stdscr.refresh()
     gips = GIPS
     try:
@@ -330,11 +262,6 @@ def main():
 
 # noinspection PyBroadException
 def establish_connection(host, port):
-    """
-    :param host:
-    :param port:
-    :return:
-    """
     try:
         logging.warning("Trying to connect to the server.")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -349,12 +276,6 @@ def establish_connection(host, port):
 
 
 def end_game(gips, screen, pid):
-    """
-    :param gips:
-    :param screen:
-    :param pid:
-    :return:
-    """
     if gips.is_win == pid:
         print("You Win! :-}")
     else:
@@ -364,19 +285,10 @@ def end_game(gips, screen, pid):
     screen.player.print_player()
     gips.sock.shutdown(socket.SHUT_RDWR)
     gips.sock.close()
-    screen.player.save()
     sys.exit(0)
 
 
 def game_loop(board, pid, username, screen, gips):
-    """
-    :param board:
-    :param pid:
-    :param username:
-    :param screen:
-    :param gips:
-    :return:
-    """
     game_running = True
     while gips.is_win == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
@@ -402,16 +314,6 @@ def game_loop(board, pid, username, screen, gips):
 
 
 def check_keys(c, screen, gips, board, pid, username):
-    """
-    :param c:
-    :param screen:
-    :param gips:
-    :param board:
-    :param pid:
-    :param username:
-    :return:
-    """
-    move = []
     logging.debug("checkKeys")
     if c == ord('q'):
         logging.debug("Key: q")
@@ -429,7 +331,7 @@ def check_keys(c, screen, gips, board, pid, username):
                 done = False
                 continue
             move = (str(stuff)).split(' ')
-
+            
             move.remove('\n')  # kill the newline=
             # for m in move:
             #    m = int(m)
