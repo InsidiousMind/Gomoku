@@ -26,9 +26,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "../lib/database.h"
-///#include "../lib/database.h"
 #include "../lib/andrews-db-prog.h"
+///#include "../lib/database.h"
 #include "commons/asgn6-server.h"
 #include "commons/server_db.h"
 
