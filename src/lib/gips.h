@@ -1,24 +1,23 @@
-#ifndef GIPS
-#define GIPS
+#ifndef GIPS_H
+#define GIPS_H
+
+typedef char BYTE;
+
 typedef struct {
-  char pid;
-  char isWin;
-  char move_a;
-  char move_b;
+  BYTE pid;
+  BYTE isWin;
+  BYTE move_a;
+  BYTE move_b;
+  BYTE isEarlyExit;
 } gips;
 
-typedef struct {
-  char pid;
-  long long comp_board;
-} gips_comp;
+gips *pack(BYTE pid, BYTE isWin, BYTE move_x, BYTE move_y, BYTE isEarlyExit);
 
-gips *to_long(char **pos, short player); //packs long long
-char **from_long(gips *info);
+int send_to(gips *info, int sock);
 
-gips *pack(char pid, char isWin, char move_x, char move_y);
-//void someone_won(gips *x);
-
-#endif /*GIPS*/
+int send_mesg(char *str, int sock);
+int receive_gips(int sock, gips **info);
+#endif /*GIPS_H*/
 
 #ifndef DEPTH
 #define DEPTH 8
@@ -32,3 +31,14 @@ gips *pack(char pid, char isWin, char move_x, char move_y);
 #ifndef TRUE
 #define TRUE 1
 #endif
+
+#ifndef HOST
+//#define HOST "server1.cs.scranton.edu"
+//#define HOST "10.31.226.161"
+#define HOST "127.0.0.1"
+#endif
+#ifndef HTTPPORT
+#define HTTPPORT "32200"
+#endif
+
+

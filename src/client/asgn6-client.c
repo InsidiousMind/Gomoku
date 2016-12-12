@@ -15,41 +15,133 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <netdb.h>
-#include <pthread.h>
 #include <errno.h>
 #include <signal.h>
-#include <ctype.h>
+#include <stdbool.h>
+#include <arpa/inet.h>
 
-#include "../lib/network.h"
+//shared libraries
+#include "../lib/database.h"
 #include "../lib/gips.h"
-#include "../lib/misc.h"
-#include "../lib/andrews-db-prog.h"
-#include "../lib/usermgmt.h"
+#include "../lib/IO_sighandle.h"
 
-#define HTTPPORT "32200"
-#define BACKLOG 10
+//private functions
+#include "commons/client_connect.h"
+
+int gameLoop(gips **player_info, char **name, int sock, char pid);
+char getStone(char pid);
+char getOtherStone(char pid);
+void send_move(int a, int b, char **board, int sock, char player, char stone);
+char **init_board(char **board);
+void display_board(char **board);
+int checkValid(int *moves, char stone, char *name, char **board );
+void print_player(Player *play);
+void get_move(char ***t_board, gips *z, char stone);
+void send_move(int a, int b, char **board, int sock, char player, char stone);
+void establish_connection(int sock, uint32_t *uniquePID, char **username, int *pid);
+
+int main() {
+
+  char *name = calloc(15, sizeof(char));
+ 
+  char *win = calloc(13, sizeof(char));
+
+  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
+  
+  int pid = 0, sock;
+  uint32_t uniquePID;
+  
+  
+  printf("Username: ");
+  readWord(name, (int) (strlen(name) + 1));
+  printf("Player ID: ");
+  scanf("%d", &uniquePID);
+
+  printf("Gomoku Client for Linux\n");
+
+  bool keepPlaying = true;
+  int isWin;
+  while(keepPlaying) {
+    sock = connect_to_server();
+    establish_connection(sock, &uniquePID, &name, &pid);
+    isWin = gameLoop(&player_info, &name, sock, (char) pid);
+    if (player_info->isEarlyExit == -1) {
+      printf("\n The other client has Disconnected. Connect to another client waiting to play? "
+                 "[Y/n]: ");
+
+      char c = getchar();
+      if(c == '\n') c = getchar();
+      
+      if (c == 'Y' || c == 'y') {
+        close(sock);
+        keepPlaying = true;
+      } else exit(0);
+    }else keepPlaying = false;
+  }
+
+  if(isWin != pid)
+    printf("You Lose! :-(\n");
+  else
+    printf("You Win!! :-)\n");
+  
+  Player *player = malloc(sizeof(Player));
+  recv(sock, player, sizeof(Player), 0);
+  print_player(player);
+
+  close(sock);
+
+  free(name);
+  free(win);
+  free(player_info);
+}
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
   // Send the move to the other guy.
-  gips *z = malloc(sizeof(gips));
+  gips *z;
   board[a][b] = stone;
-  z = pack(player, FALSE, a, b);
+  z = pack(player, false, (BYTE) a, (BYTE) b, false);
   send_to(z, sock);
 }
 
-char **get_move(char **board, gips *z, char pid, char stone) {
+void get_move(char ***t_board, gips *z, char stone) {
+  char **board = *t_board;
   // Check if the game is over.
   // Otherwise we just decode
-  board[(int) z->move_a][(int) z->move_b] = stone;
-  return board;
+  board[(int)z->move_a][(int)z->move_b] = stone;
+}
+
+void print_player(Player *play){
+
+  printf("%s%s%s%d%s\n", "Your Stats for username ", play->username,
+                         " and unique ID ", play->userid, " are: \n");
+  printf("%s%d\n", "Wins: ", play->wins);
+  printf("%s%d\n", "Losses: ", play->losses);
+  printf("%s%d\n", "Ties: ", play->ties);
+}
+
+int checkValid(int *moves, char stone, char *name, char **board ){
+
+  printf("%s_> ", name);
+
+  int i = 0;
+  while(readInts(moves, 2, &i));
+
+  //decrement so that it will fit on board
+  moves[0]--;
+  moves[1]--;
+
+  if(moves[0] < 0 || moves[1] < 0 || moves[0] > (HEIGHT-1) || moves[1] > (HEIGHT-1) ){
+    printf("Invalid input.\n");
+    return true;
+  }
+  else if(board[moves[0]][moves[1]] != 'o' && board[moves[0]][moves[1]] != stone){
+    printf("You can't take the other players move!\n");
+    return true; 
+  }else{
+    return false;
+  }
+
 }
 
 void display_board(char **board) {
@@ -88,83 +180,48 @@ char **init_board(char **board) {
 }
 
 //make sure scanf only scans upto 15 characters, and assigns nullbyte at the end
-int main() {
-  char *name = malloc(sizeof(char) * 15);
-  char *win = malloc(sizeof(char) * 13);
-  gips *player_info = calloc(sizeof(gips), sizeof(gips*));
-  int move_x, move_y, i;
-  char pid;
-  int uniquePID;
-  char stone, otherStone;
-
-  int sock = connect_to_server();
-
-  printf("Username: ");
-  scanf("%s", name);
-  printf("Player ID: ");
-  scanf("%d", &uniquePID);
 
 
-  //send username
-  //send PID
-
-  // Login will reassign a PID if that one isn't right,
-  // or will just let them keep the one they supplied.
-
+int gameLoop(gips **player_info, char **name, int sock, char pid){
+  
+  gips *p_info = *player_info;
+  
+  int i = 0;
   char **board = malloc(HEIGHT * sizeof(char *));
+  
   int isWin;
-
   for (i = 0; i < HEIGHT; i++) {
     board[i] = malloc(DEPTH * sizeof(char *));
   }
-
+  int *moves = calloc(2, sizeof(int));
+  
+  char stone = getStone(pid);
+  char otherStone = getOtherStone(pid);
+  
   board = init_board(board);
-  printf("Gomoku Client for Linux\n");
-
-  //Name and stuff
-  if (sock != -1) {
-    uniquePID = login(sock, uniquePID, name) ;
-    recv(sock, &pid, sizeof(char), 0);
-    //TODO
-    //Inform user of Unique PID (If it was the one they requested or different)
-    if(pid == 1) {
-      stone = 'B';
-      otherStone = 'W';
-    }
-    else{
-      stone = 'W';
-      otherStone = 'B';
-    }
-  } else {
-    printf("Couldn't connect to the server. Error number: ");
-    printf("%d\n", errno);
-    exit(0);
-  }
+  
   while (board != NULL) {
+
     printf("Wait your turn!\n");
-    recv(sock, player_info, sizeof(player_info), 0);
-    if (player_info->isWin != 0) {
-      break;
-    } else if ((player_info->move_a == -1) && (player_info->move_b == -1)){
-    } else {
-      board = get_move(board, player_info, pid, otherStone);
-    }
+   //receive a gips
+    receive_gips(sock, &p_info);
+    
+    //break if win, if first turn don't do anything, else get the move
+    if(p_info->isWin != 0) return p_info->isWin;
+    else if (p_info->isEarlyExit != 0) return -1;
+    else if ((p_info->move_a == -1) && (p_info->move_b == -1)) /*nothing*/;
+    else get_move(&board, p_info, otherStone);
+   
     display_board(board);
 
     printf("Now you can move\n");
-    int valid = FALSE;
 
     signal(SIGINT, INThandle);
-    while(valid == FALSE) {
-      printf("\n%s_> ", name);
-      scanf("%d%d", &move_x, &move_y);
-      if(move_x < 1 || move_y < 1 || move_x > 8 || move_y > 8)
-        printf("Invalid input.");
-      else
-        valid = TRUE;
-    }
 
-    send_move(--move_x, --move_y, board, sock, pid, stone);
+    //check for a valid turn 
+    while(checkValid(moves, stone, *name, board));
+    
+    send_move(moves[0], moves[1], board, sock, pid, stone);
 
     //check for win
     display_board(board);
@@ -172,26 +229,43 @@ int main() {
     if (isWin != 0)
       break;
   }
-
-  if(isWin != pid)
-    printf("You Lose! :-(\n");
-  else
-    printf("You Win!! :-)\n");
-
-  Player *player = malloc(sizeof(Player));
-  recv(sock, player, sizeof(Player), 0);
-  printf("%s%s%s%d%s\n", "Your Stats for username ", name, " and unique ID ", uniquePID, " are: \n");
-  printf("%s%d\n", "Wins: ", player->wins);
-  printf("%s%d\n", "Losses: ", player->losses);
-  printf("%s%d\n", "Ties: ", player->ties);
-  close(sock);
-
+ 
   for (i = 0; i < HEIGHT; i++) {
     free(board[i]);
   }
 
   free(board);
-  free(name);
-  free(win);
-  free(player_info);
+  free(moves);
+  
+  return isWin;
+
+}
+
+char getStone(char pid){
+    if(pid == 1) return 'B';
+    else return 'W';
+}
+char getOtherStone(char pid){
+  if(pid == 1) return 'W';
+  else return 'B';
+}
+//sets variables pid etc
+void establish_connection(int sock, uint32_t *uniquePID, char **username, int *pid){
+  
+  char *name = *username;
+  
+  if (sock != -1) {
+    *uniquePID = login(sock, *uniquePID, name) ;
+    recv(sock, pid, sizeof(char), MSG_WAITALL);
+    if(errno || pid == 0 || *pid == -1) {
+      printf("shutdown");
+      exit(1);
+    }
+    //TODO
+    //Inform user of Unique PID (If it was the one they requested or different)
+  } else {
+    printf("Couldn't connect to the server. Error number: ");
+    printf("%d\n", errno);
+    exit(0);
+  }
 }

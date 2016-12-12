@@ -1,12 +1,12 @@
+#include <stdbool.h>
 #include "glogic.h"
-#include "gips.h"
 
 int start_pos_x[HEIGHT];
 int start_pos_y[DEPTH];
 
 void find_starts(char **board);
 
-int IsWithinBoard(int x, int y);
+bool IsWithinBoard(int x, int y);
 
 int crawl_board(char **board, int startx, int starty);
 
@@ -28,7 +28,7 @@ int check_for_win_server(char **board) {
 /*
 * Maybe something like this? instead of iterating through the entire board,
 * we can just check if the latest move results in five-in-a-row.
-* this sets up two arrays with the directoins we need,
+* this sets up two arrays with the directions we need,
 * and loops in that direction until it hits five-in-a-row or the edge of the board
 */
 int crawl_board(char **board, int startx, int starty) {
@@ -47,15 +47,15 @@ int crawl_board(char **board, int startx, int starty) {
     for (j = 0; j < 5 && IsWithinBoard(x, y); j++) {
       // Test this cell here, maybe increment numInARow
       if (board[x][y] == 'x') numInARow++;
-      if (numInARow == 5) return TRUE;
+      if (numInARow == 5) return true;
       x += xdirs[i];
       y += ydirs[i];
     }
   }
-  return FALSE;
+  return false;
 }
 
-int IsWithinBoard(int x, int y) {
+bool IsWithinBoard(int x, int y) {
   return (x < 8 && x >= 0 && y < 8 && y >= 0);
 }
 

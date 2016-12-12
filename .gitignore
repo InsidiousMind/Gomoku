@@ -2,6 +2,11 @@ CMakeLists.txt
 .idea/*
 build/*
 debug/*
+src/client/.idea/*
+src/server/.idea/*
+src/client/curses-client_old.py
+src/client/log.txt
 .*.*.swp
 .*.*.swo
 *.o
+test

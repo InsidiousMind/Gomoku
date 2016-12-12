@@ -1,8 +1,8 @@
 #! /bin/bash
 
-build/bin/./client << EOF
-Tom
-233
+../build/bin/./client << EOF
+Joe
+555
 1 1
 1 2
 1 3
