@@ -39,13 +39,14 @@ int otherClientDisconnected(game **gameInfo, BYTE PID, char **username, int repl
 
   //starts each parallel thread, as programmed in game_thread.c
 void *startGameServer(void *args){
-
+  
   gameArgs *gameSrvInfo = (gameArgs*)args;
 
   game *gameInfo = calloc(1, sizeof(game));
 
   pthread_t pthread, pthread2;
-
+  pthread_mutex_t conn_head_access = gameSrvInfo->conn_head_access;
+    
   gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
   gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
   gameInfo->args.fd = gameSrvInfo->fd;
@@ -73,8 +74,10 @@ void *startGameServer(void *args){
     
   pthread_join(pthread, NULL);
   pthread_join(pthread2, NULL);
-  
+  pthread_mutex_lock(&conn_head_access);
   parseConnections(&gameSrvInfo->conn_head);
+  pthread_mutex_unlock(&conn_head_access);
+    
   pthread_mutex_destroy(&gameInfo->gameInfo_access);
     
   free(gameInfo);
