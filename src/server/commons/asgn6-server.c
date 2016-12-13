@@ -9,12 +9,15 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <signal.h>
+
 #include "asgn6-server.h"
 #include "game_thread.h"
 
 //Shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/database.h"
+
 #include "server_connections.h"
 #include "chat_thread.h"
 
@@ -24,7 +27,9 @@ int get_server_socket(char *hostname, char *port); //get a socket and bind to it
 int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
 int* startGame(c_head **head);
+void INThandle(int sig);
 
+static bool stop = false;
   /*once two clients connect init a game server
    *              Game Server
    *              /        \
@@ -92,15 +97,19 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   chatSrvInfo->stop = false;
     //create the chat thread
   pthread_mutex_lock(&conn_head_access);
-  if((pthread_create(&chat_thread, &attr, (void*)chat_subserver, (void*) chatSrvInfo)) != 0)
+  if((pthread_create(&chat_thread, NULL, (void*)chat_subserver, (void*) chatSrvInfo)) != 0)
     printf("Failed to start chat server\n");
   pthread_mutex_unlock(&conn_head_access);
-
-  while(true){
+  
+  signal(SIGINT, INThandle);
+  
+  //TODO Implement this with select
+    //otherwise shtuffs screwed
+  while(! stop){
  
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
-    
+    if(stop) break;
     pthread_mutex_lock(&conn_head_access);
     c_add(&conn_head, r_sockfd);
     parseConnections(&conn_head);
@@ -122,6 +131,11 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
       free(start_socks);
     }
   }
+    chatSrvInfo->stop = true;
+    pthread_join(chat_thread, NULL);
+    free(chatSrvInfo);
+    free(start_socks);
+    free(gameSrvInfo);
 }
 
 //checks for a valid game, and if it can find one
@@ -244,4 +258,25 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6 *) sa)->sin6_addr);
   }
 
+}
+
+void INThandle(int sig){
+  char c;
+
+  signal(sig, SIG_IGN);
+  write(0, "Do you really want to quit? [Y/n]", 33);
+  
+  c = getc(stdin);
+  if(c != '\n'){
+    ungetc(c, stdin);
+  }else{
+    c = getc(stdin);
+  }
+
+  if(c == 'y' || c == 'Y')
+    stop = true;
+  else
+    signal(SIGINT, INThandle);
+  //grab the newline char so it doesn't screw stuff up
+  getchar();
 }

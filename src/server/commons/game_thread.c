@@ -127,7 +127,7 @@ void *subserver(void *arguments) {
   int win;
   
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
-  
+  //login receives
   //first packet twe receive is the clients 'Expected' unique PID
   if ((read_count = recv(reply_sock_fd, &uPID, sizeof(int), 0)) == -1)
     perror("[!!!] error: receive fail in subserver");

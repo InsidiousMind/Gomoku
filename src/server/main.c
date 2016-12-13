@@ -23,15 +23,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
 
 
 #include "../lib/database.h"
 #include "commons/asgn6-server.h"
-#include "../lib/IO_sighandle.h"
 
 
 int main(int argc, char *argv[]) {
@@ -56,7 +53,6 @@ int main(int argc, char *argv[]) {
 
     } else fd = open(argv[1], O_TRUNC|O_RDWR|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
   }
-  signal(SIGINT, INThandle);
   serverLoop(fd, &game_head, &head_access);
   free_gameList(&game_head);
   close(fd);

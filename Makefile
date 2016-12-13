@@ -19,14 +19,14 @@ BUILD_SRV_OBJ = build/server/main.o build/server/asgn6-server.o build/server/gam
 
 CLIENT_SRC = src/client
 CLIENT_DEP = src/client/commons/
-CLIENT_OBJ = asgn6-client.o
-BUILD_CLIENT_OBJ = build/client/asgn6-client.o
+CLIENT_OBJ = asgn6-client.o IO_sighandle.o
+BUILD_CLIENT_OBJ = build/client/asgn6-client.o build/lib/IO_sighandle.o
 
 #Dependencies
 
 LIB_SRC = src/lib/
-DEP_OBJ = gips.o glogic.o IO_sighandle.o database.o client_connect.o
-BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/IO_sighandle.o build/lib/database.o build/lib/client_connect.o
+DEP_OBJ = gips.o glogic.o database.o client_connect.o
+BUILD_DEP_OBJ = build/lib/gips.o build/lib/glogic.o build/lib/database.o build/lib/client_connect.o
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///
@@ -43,7 +43,7 @@ dir:
 server: $(SRV_OBJ) $(DEP_OBJ)
 	$(CC) -o build/bin/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-client: $(CLIENT_OBJ) $(DEP_OBJ)
+client: $(CLIENT_OBJ) $(DEP_OBJ) 
 	$(CC) -o build/bin/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 curses:
@@ -68,7 +68,7 @@ clean:
 main.o: $(DEP_OBJ) $(SRV_SRC)main.c $(SRV_DEP)asgn6-server.h
 	$(CC) -c src/server/main.c -o build/server/main.o $(CFLAGS)
 
-asgn6-server.o: $(SRV_DEP)asgn6-server.c $(LIB_SRC)IO_sighandle.h $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h $(SRV_DEP)chat_thread.h
+asgn6-server.o: $(SRV_DEP)asgn6-server.c $(SRV_DEP)game_thread.h $(SRV_DEP)asgn6-server.h $(SRV_DEP)chat_thread.h
 	$(CC) -c src/server/commons/asgn6-server.c -o build/server/asgn6-server.o $(CFLAGS)
 
 game_thread.o: $(SRV_DEP)game_thread.c $(SRV_DEP)server_db.h $(LIB_SRC)gips.h $(LIB_SRC)glogic.h $(SRV_DEP)game_thread.h
