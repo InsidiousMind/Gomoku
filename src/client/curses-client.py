@@ -46,6 +46,7 @@ class Player(object):
 
 class Chat(threading.Thread):
     def __init__(self, win, sock):
+        # noinspection PyArgumentList
         super().__init__()
         self.sock = sock
         self.win = win
