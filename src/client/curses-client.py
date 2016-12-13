@@ -54,7 +54,8 @@ class Player(object):
         screen.win5.refresh()
 
 class Chat(threading.Thread):
-    def __init__(self, window, sock):
+    def __init__(self, win, sock):
+        # noinspection PyArgumentList
         super().__init__()
         self.sock = sock
         self.window = window
