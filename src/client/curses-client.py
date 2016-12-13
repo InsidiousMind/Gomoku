@@ -38,7 +38,8 @@ class Player(object):
                 self.upid = int(player[0])
                 self.name = ''
                 for x in range(1, 21):
-                    self.name += player[x].decode("utf-8")
+                    if(player[x].decode("utf-8") != ' '):
+                        self.name += player[x].decode("utf-8")
                 self.wins = int(player[21])
                 self.losses = int(player[22])
                 self.ties = int(player[23])
@@ -262,7 +263,7 @@ def main():
             screen.player.update_win(screen)
             board = init_board()
             gips = game_loop(board, pid, username, screen, gips)
-            if gips.isEarlyExit == 1 and gips.is_win == 0:
+            if gips.isEarlyExit != 0 and gips.is_win == 0:
                 screen.halt()
                 print("Thanks for playing!!!")
                 gips.sock.shutdown(socket.SHUT_RDWR)
