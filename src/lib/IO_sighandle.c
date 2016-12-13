@@ -10,33 +10,6 @@
 int isNextArg();
 int toDigit(char c);
 
-void INThandle(int sig){
-  char c;
-
-  signal(sig, SIG_IGN);
-  write(0, "Do you really want to quit? [Y/n]", 33);
-
-  c = getchar();
-
-  if(c == 'y' || c == 'Y')
-    exit(0);
-  else
-    signal(SIGINT, INThandle);
-  //grab the newline char so it doesn't screw stuff up
-  getchar();
-}
-
-void free_LL(Node**head){
-  Node *node = *head;
-  Node *temp;
-  while(node != NULL){
-    temp = node;
-    node = node->next;
-    temp->next = NULL;
-    free(temp);
-  }
-  *head = NULL;
-}
 
 //same as readWord but for ints
 int readInts(int *numArr, int size, int *i){

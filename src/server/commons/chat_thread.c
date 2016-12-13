@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <memory.h>
+#include <errno.h>
 
 //
 // Created by insi on 12/8/16.
@@ -34,17 +35,14 @@ void chat_subserver(void *args){
  chatArgs *chatInfo = ((chatArgs*) args);
 
   int ret = 0;
- 
- if(chatInfo->stop){
-    pthread_exit(NULL);
- }else{
+  while(chatInfo->stop != true) {
     ret = poll_for_chat(chatInfo);
- }
-  
+  }
+  if(chatInfo->stop) pthread_exit(NULL);
 }
 int poll_for_chat(chatArgs *chatInfo){
 
-  char buf[1025];
+  char buf[1024];
   int i, rv;
   c_head *conn_head = chatInfo->conn_head;
   pthread_mutex_t conn_head_access = chatInfo->conn_head_access;
@@ -92,12 +90,14 @@ int poll_for_chat(chatArgs *chatInfo){
     for (i = 0; i < conn_head->size; i++) {
       if (ufds[i].revents & POLLIN) { //data ready to be recved on this socket
         char peek;
-        int read_count = (int) recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK);
+        int read_count = (int) recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
+        if(errno == EAGAIN || errno == EWOULDBLOCK )
+          continue;
         if(peek == '\v'){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
           if(read_count == 0 || read_count == -1){
             perror("[!!!] recv error in chat_thread on socket");
-            pthread_exit((void*)-1);
+            return -1;
           }else{
             int len_of_upid = (int)buf[1];
             char c_upid[len_of_upid]; //use str to long
@@ -127,11 +127,9 @@ int poll_for_chat(chatArgs *chatInfo){
             free(user_cupid);
             free(msg_begin);
             free(msg);
-            int not_send = i; //we got the msg from this socket
             for(i = 0; i < head_size; i++) {
-              if(not_send == i){
-                /*do nothing*/
-              }else if (send(ufds[i].fd, msg_finish, strlen(msg_finish), 0) == -1) {
+              /*do nothing*/
+              if (send(ufds[i].fd, msg_finish, strlen(msg_finish), 0) == -1) {
                 printf("could not send to socket; possible disconnect");
                 pthread_mutex_lock(&conn_head_access);
                 parseConnections(&conn_head);
@@ -142,6 +140,7 @@ int poll_for_chat(chatArgs *chatInfo){
             free(msg_finish);
           }
         }
+        //end of MSG_PEEK if
       }else if (ufds[i].revents & POLLOUT) {  //this socket is ready to send data
        //sucks, don't really have anything to put here
         

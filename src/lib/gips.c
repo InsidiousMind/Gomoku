@@ -56,15 +56,28 @@ int receive_gips(int sock, gips **info){
   char gipsArr [5];
   int bytes_to_receive = GIPS_SIZE;
   int len = GIPS_SIZE, total = 0;
+  char testBuf;
   ssize_t n;
-  while(total < len){
-    n =  recv(sock, &gipsArr[total], sizeof(char), 0);
-    if(n == -1 || n == 0) {
-      perror("[!!!] could not recv/or clientDC in receive_gips");
+  while(true) {
+    n = recv(sock, &testBuf, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
+    if(n == -1 || n == 0){
+      perror("[!!!] could not recv/clientdc in receive_gips");
       break;
     }
-    total+=n;
-    bytes_to_receive-=n;
+    if(testBuf == '\v'){
+      /*do nothing, let poll_for_chat do it's thang*/
+    }else {
+      while (total < len) {
+        n = recv(sock, &gipsArr[total], sizeof(char), 0);
+        if (n == -1 || n == 0) {
+          perror("[!!!] could not recv/or clientDC in receive_gips");
+          break;
+        }
+      }
+      total += n;
+      bytes_to_receive -= n;
+      break;
+    }
   }
   len = total;
   
