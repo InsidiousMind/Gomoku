@@ -25,6 +25,8 @@
 
 char* concat(const char *s1, const char *s2) ;
 int poll_for_chat(chatArgs *chatInfo);
+char *creat_msg(char *username, char *buf, char *c_upid);
+
 // \v == chat mesg
 void chat_subserver(void *args){
  
@@ -72,7 +74,7 @@ int poll_for_chat(chatArgs *chatInfo){
     ufds[i].events = POLLIN | POLLOUT;
   }
   // wait for events on the sockets, 1 second timeout
-  rv = poll(ufds, head_size, 100);
+  rv = poll(ufds, head_size, -1);
   
   //-1 == error; 0 == timeout
   if(rv == -1)
@@ -86,47 +88,36 @@ int poll_for_chat(chatArgs *chatInfo){
     for (i = 0; i < conn_head->size; i++) {
 
       if (ufds[i].revents & POLLIN) { //data ready to be recved on this socket
-        char peek;
-        int read_count = (int) recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
+        char peek[2];
+        ssize_t read_count = recv(ufds[i].fd, &peek, sizeof(char)*2, MSG_PEEK | MSG_DONTWAIT);
         if(errno == EAGAIN || errno == EWOULDBLOCK ) {
           errno = 0;
           break;
         }
-
-        if(peek == '\v'){
+        if(peek[0] == '\v'){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
-          if(read_count == 0 || read_count == -1){
+          if(errno == EAGAIN) {
+            errno = 0;
+            continue;
+          } else if(read_count == 0 || read_count == -1){
             perror("[!!!] recv error in chat_thread on socket");
             return -1;
           }else{
-            int len_of_upid = (int)buf[1];
+            int len_of_upid = buf[1] - '0';
             char c_upid[len_of_upid]; //use str to long
             memmove(buf, buf+2, strlen(buf)); //get rid of first two ('\v' and len(c_upid) chars)
-            memcpy(&c_upid, &buf, (size_t)len_of_upid);
-            memmove(buf,buf+len_of_upid,strlen(buf));
+            memcpy(&c_upid, &buf, (size_t)len_of_upid); //gets the UPID
+            memmove(buf,buf+len_of_upid,strlen(buf)); //gets rid of upid in the string we want
             
-            char* filling = ": \0";
             long uPID = strtol(c_upid, NULL, 10);
             Player *play;
-            pthread_mutex_lock(&db_head_access);
+            pthread_mutex_lock(&db_head_access);//get the username
             play = fpuPID(uPID, chatInfo->db_fd, &(chatInfo->db_head));
             pthread_mutex_unlock(&db_head_access);
+
+            char *msg_finish = creat_msg(play->username, buf, c_upid);
+
             //form the message credentials
-            char* leftP = "(\0";
-            char* rightP =")\0";
-            char* chat_msg_prefix = "\v\0";
-            char* l_cupid = concat(leftP, c_upid); //free this
-            char* parenth_cupid = concat(c_upid, rightP); //free this
-            char* user_cupid =  concat(play->username, parenth_cupid); //free this
-            char* msg_begin = concat(user_cupid, filling); //free this
-            char* msg = concat(user_cupid, buf); //free this
-            char *msg_finish = concat(chat_msg_prefix, msg);
-            //send them to every socket in ufds
-            free(l_cupid);
-            free(parenth_cupid);
-            free(user_cupid);
-            free(msg_begin);
-            free(msg);
             for(i = 0; i < head_size; i++) {
               /*do nothing*/
               if (send(ufds[i].fd, msg_finish, strlen(msg_finish), 0) == -1) {
@@ -153,6 +144,7 @@ int poll_for_chat(chatArgs *chatInfo){
         pthread_mutex_unlock(&conn_head_access);
       }
     } //end for loop
+      usleep(250000); //sleep for 250ms
   }
   free(sockets);
   return 0;
@@ -169,6 +161,30 @@ char* concat(const char *s1, const char *s2) {
   memcpy(result+len1, s2, len2+1);//+1 to copy the null-terminator
   return result;
 }
+char *creat_msg(char *username, char *buf, char *c_upid){
+
+  char* filling = ": \0";
+  char* leftP = " (\0";
+  char* rightP =") \0";
+  char* chat_msg_prefix = "\v\0";
+  char* l_cupid = concat(leftP, c_upid); //free this
+  char* parenth_cupid = concat(l_cupid, rightP); //free this
+  char* user_cupid =  concat(username, parenth_cupid); //free this
+  char* msg_begin = concat(user_cupid, filling); //free this
+  char* msg = concat(msg_begin, buf); //free this
+  char *msg_finish = concat(chat_msg_prefix, msg);
+
+  //free all the craziness that is string stuff in C
+  free(l_cupid);
+  free(parenth_cupid);
+  free(user_cupid);
+  free(msg_begin);
+  free(msg);
+  return msg_finish;
+}
+
+
+
 
 
 

@@ -71,11 +71,14 @@ class Chat(threading.Thread):
 
     def recv_msg(self):
         msg = self.sock.recv(1024)
-        if self.row >= 40:
+        msg = msg.decode("utf-8")
+        msg = msg[1:] # get rid of the vertical tab
+        if self.row >= 40: #scrolling stuff
             self.window.clear()
             self.row = 0
         self.window.addstr(self.row, self.col, msg)
         self.row += 1
+        self.window.refresh()
 
 
 
@@ -163,6 +166,7 @@ class GIPS(object):
         self.move_b = -1
         self.isEarlyExit = 0
         self.chat = chat
+
         #not a real part of gips struct
         #it's in gips here for ease of use
         self.upid = 0
@@ -203,6 +207,18 @@ class GIPS(object):
                     self.move_b = -1
                 logging.debug("Received: " + str(self))
                 break
+
+    def recv_iswin(self):
+        while True:
+            check = self.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
+            if(check == '\v'):
+               self.chat.recv_msg()
+            else:
+                is_win = self.sock.recv(4)
+                is_win = struct.unpack('!i', is_win)
+                is_win = ntohl(is_win[0])
+                return is_win
+
     #Upid is not apart of the GIPs being sent to and from the server
     def setUPID(self, upid):
         self.upid = upid
@@ -250,6 +266,7 @@ def main():
             gips.upid = upid
             #init chat thread
             chat = Chat(screen.win2, sock)
+            init_chat(chat, screen, gips)
             screen.stdscr.clear()
             screen.print_title()
             screen.stdscr.refresh()
@@ -289,6 +306,9 @@ def main():
         screen.halt()
         sys.exit(0)
 
+def init_chat(chat, screen, gips):
+    screen.chat = chat
+    gips.chat = chat
 
 # noinspection PyBroadException
 def establish_connection(host, port):
@@ -334,73 +354,77 @@ def game_loop(board, pid, username, screen, gips):
         screen.stdscr.refresh()  # This line begins the interface logic.
         display_board(board, screen.win3)
         screen.stdscr.refresh()  # This begins the user interaction
-        c = screen.stdscr.getch()
-        game_running = check_keys(c, screen, gips, board, pid, username)
+        actions_taken = False
+        while actions_taken == False:
+            actions_taken = check_keys(screen, gips, board, pid, username)
 
-        while True:
-            check = gips.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
-            if(check == '\v'):
-               gips.chat.recv_msg()
-            else:
-                is_win = gips.sock.recv(4)
-                is_win = struct.unpack('!i', is_win)
-                is_win = ntohl(is_win[0])
-                break
+
+        is_win = gips.recv_iswin()
         gips.is_win = is_win
     return gips
 
 
-def check_keys(c, screen, gips, board, pid, username):
+def check_keys(screen, gips, board, pid, username):
+    c = screen.stdscr.getch()
     logging.debug("checkKeys")
     if c == ord('q'):
-        logging.debug("Key: q")
-        return False
+        return False #effectively pass your move
     if c == ord('m'):
-        done = False
-        while not done:
-            screen.win1.clear()
-            logging.debug("Key: m")
-            # Get the next move and send it.
-            screen.game.edit()
-            stuff = screen.game.gather()
-            # Split the move into two components.
-            if len(stuff) == 0:
-                done = False
-                continue
-            move = (str(stuff)).split(' ')
-            
-            move.remove('\n')  # kill the newline=
-            # for m in move:
-            #    m = int(m)
-            # If the move is not valid:
-            # make moves ints
-            move = list(map(int, move))
-            if not move_is_valid(move):
-                # send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
-                done = False
-                continue
-            done = True
-        screen.win1.clear()
-        # subtract 1 from moves
-        move[0] -= 1
-        move[1] -= 1
-        # Otherwise:
-        # Encode a GIPS
-        gips.pack(pid, gips.is_win, move[0], move[1], 0)
-        # Send the GIPS
-        gips.send()
-        board = update_board(gips, board)
-        display_board(board, screen.win3)
-        # moves = []
+        move(screen, gips, board, pid)
         return True
     if c == ord('c'):
-        screen.board_mesg.edit()
-        stuff = screen.board_mesg.gather()
-        message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
-        # Send message to the server as a bytestring.
-        send_to_chat(gips.sock, message)
-        screen.stdscr.refresh()  # Redraws the screen.
-        return True
+        chat(screen, gips)
+        return False
+
+
+
+def move(screen, gips, board, pid):
+    while not done:
+        screen.win1.clear()
+        logging.debug("Key: m")
+        # Get the next move and send it.
+        screen.game.edit()
+        stuff = screen.game.gather()
+        # Split the move into two components.
+        if len(stuff) == 0:
+            done = False
+            continue
+        move = (str(stuff)).split(' ')
+
+        move.remove('\n')  # kill the newline=
+        # for m in move:
+        #    m = int(m)
+        # If the move is not valid:
+        # make moves ints
+        move = list(map(int, move))
+        if not move_is_valid(move):
+            # send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
+            done = False
+            continue
+        done = True
+    screen.win1.clear()
+    # subtract 1 from moves
+    move[0] -= 1
+    move[1] -= 1
+    # Otherwise:
+    # Encode a GIPS
+    gips.pack(pid, gips.is_win, move[0], move[1], 0)
+    # Send the GIPS
+    gips.send()
+    board = update_board(gips, board)
+    display_board(board, screen.win3)
+    # moves = []
+
+def chat(screen, gips):
+    screen.board_mesg.edit()
+    stuff = screen.board_mesg.gather()
+    message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
+    # Send message to the server as a bytestring.
+    gips.sock.send(bytes(message, 'utf-8'))
+    screen.stdscr.refresh()  # Redraws the screen.
+    #the server should immediately send back a message if we send it
+    gips.chat.recv_msg()
+    return
 
 
 def login(sock, upid, username):
@@ -419,13 +443,6 @@ def send_string(sock, string):
     sent = sock.send(string)
     if sent != (len(string)):
         logging.warning("Bytes sent DID NOT MATCH")
-
-
-def send_to_chat(sock, message):
-    logging.debug(str(message) + " to chat")
-    test = bytes(message, 'utf-8')
-#   sock.send(bytes(message, 'utf-8'))
-
 
 def update_board(gips, board):
     logging.debug("Updating to the next board.")

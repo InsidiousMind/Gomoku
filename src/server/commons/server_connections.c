@@ -203,14 +203,15 @@ void to_head(cList **src_node, c_head **dest_node, int size){
   dest->pairedSockfd = src->pairedSockfd;
 }
 
+
+//gets sockets from LL, except for head (because head will be -1)
 int *getSockets(c_head **t_head){
   int i;
   c_head  *head = *t_head;
   cList *temp;
   
-  int *sockets = calloc(head->size, sizeof(int));
+  int *sockets = calloc(head->size-1, sizeof(int));
   
-  sockets[0] = head->sockfd;
 
   temp = head->next;
 

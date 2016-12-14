@@ -1,3 +1,4 @@
+
 #ifndef GIPS_H
 #define GIPS_H
 
@@ -17,6 +18,8 @@ int send_to(gips *info, int sock);
 
 int send_mesg(char *str, int sock);
 int receive_gips(int sock, gips **info);
+int checkrecv_err(int n);
+
 #endif /*GIPS_H*/
 
 #ifndef DEPTH
