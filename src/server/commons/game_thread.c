@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <arpa/inet.h>
-
 //shared libraries
 #include "../../lib/gips.h"
 #include "../../lib/glogic.h"
@@ -88,8 +87,6 @@ void *startGameServer(void *args){
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //END OF GAME THREAD
   ///\/\/\/\//\/\/\/\/\/\//\\/\/\/\*/
-
-
 
 /*/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\
   //START OF CLIENT THREAD
@@ -245,8 +242,6 @@ int gameLoop(int reply_sock_fd, char pid, void **args) {
   }
 
   gips *player_info = calloc(sizeof(gips), sizeof(gips));
-  
-  
 
   int read_count;
   bool clientDC;

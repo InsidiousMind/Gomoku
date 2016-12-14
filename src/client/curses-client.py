@@ -2,6 +2,7 @@
 
 import curses
 import logging
+import os
 import random
 import socket
 import struct
@@ -59,7 +60,7 @@ class Chat(threading.Thread):
         # noinspection PyArgumentList
         super().__init__()
         self.sock = sock
-        self.window = window
+        self.window = win
         self.row = 0
         self.col = 0
 
@@ -335,6 +336,7 @@ def game_loop(board, pid, username, screen, gips):
         screen.stdscr.refresh()  # This begins the user interaction
         c = screen.stdscr.getch()
         game_running = check_keys(c, screen, gips, board, pid, username)
+
         while True:
             check = gips.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
             if(check == '\v'):
@@ -374,7 +376,7 @@ def check_keys(c, screen, gips, board, pid, username):
             # make moves ints
             move = list(map(int, move))
             if not move_is_valid(move):
-                send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
+                # send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
                 done = False
                 continue
             done = True
@@ -422,7 +424,7 @@ def send_string(sock, string):
 def send_to_chat(sock, message):
     logging.debug(str(message) + " to chat")
     test = bytes(message, 'utf-8')
-    sock.send(bytes(message, 'utf-8'))
+#   sock.send(bytes(message, 'utf-8'))
 
 
 def update_board(gips, board):

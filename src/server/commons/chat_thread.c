@@ -18,10 +18,6 @@
 #include <memory.h>
 #include <errno.h>
 
-//
-// Created by insi on 12/8/16.
-//
-
 //server shared includes
 #include "server_connections.h"
 #include "../../lib/database.h"
@@ -88,11 +84,15 @@ int poll_for_chat(chatArgs *chatInfo){
     return 0;
   } else {
     for (i = 0; i < conn_head->size; i++) {
+
       if (ufds[i].revents & POLLIN) { //data ready to be recved on this socket
         char peek;
         int read_count = (int) recv(ufds[i].fd, &peek, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
-        if(errno == EAGAIN || errno == EWOULDBLOCK )
-          continue;
+        if(errno == EAGAIN || errno == EWOULDBLOCK ) {
+          errno = 0;
+          break;
+        }
+
         if(peek == '\v'){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
           if(read_count == 0 || read_count == -1){
@@ -139,7 +139,7 @@ int poll_for_chat(chatArgs *chatInfo){
             }
             free(msg_finish);
           }
-        }
+        }else break; //if peek is != '\v'
         //end of MSG_PEEK if
       }else if (ufds[i].revents & POLLOUT) {  //this socket is ready to send data
        //sucks, don't really have anything to put here

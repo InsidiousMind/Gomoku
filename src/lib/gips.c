@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "gips.h"
 //Some functions to compress what we send over the nets
 
@@ -60,24 +61,29 @@ int receive_gips(int sock, gips **info){
   ssize_t n;
   while(true) {
     n = recv(sock, &testBuf, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
-    if(n == -1 || n == 0){
+    if(errno == EAGAIN){
+      errno = 0;
+      continue;
+    }
+    else if(n == -1 || n == 0){
       perror("[!!!] could not recv/clientdc in receive_gips");
       break;
     }
     if(testBuf == '\v'){
       /*do nothing, let poll_for_chat do it's thang*/
-    }else {
-      while (total < len) {
-        n = recv(sock, &gipsArr[total], sizeof(char), 0);
-        if (n == -1 || n == 0) {
-          perror("[!!!] could not recv/or clientDC in receive_gips");
-          break;
-        }
-      }
-      total += n;
-      bytes_to_receive -= n;
+    }else break;
+  }
+  while (total < len) {
+    n = recv(sock, &gipsArr[total], sizeof(char), MSG_DONTWAIT);
+    if(errno == EAGAIN){
+      errno = 0;
+      continue;
+    } else if (n == -1 || n == 0) {
+      perror("[!!!] could not recv/or clientDC in receive_gips");
       break;
     }
+    total += n;
+    bytes_to_receive -= n;
   }
   len = total;
   
