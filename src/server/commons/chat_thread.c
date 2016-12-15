@@ -98,7 +98,7 @@ int poll_for_chat(chatArgs *chatInfo){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
           if(errno == EAGAIN || errno == EWOULDBLOCK) {
             errno = 0;
-            break;
+            continue;
           } else if(read_count == 0 || read_count == -1){
             perror("[!!!] recv error in chat_thread on socket");
             return -1;
@@ -129,6 +129,7 @@ int poll_for_chat(chatArgs *chatInfo){
               }
             }
             free(msg_finish);
+            memset(&buf, 0, sizeof(char)*strlen(buf));
           }
         }else break; //if peek is != '\v'
         //end of MSG_PEEK if

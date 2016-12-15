@@ -101,7 +101,7 @@ class Screen(object):
         # self.win1.box()
 
         # Window 2 carries the chat.
-        self.win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
+        self.win2 = curses.newwin(((3 * height) // 4), (width*3)-1, two_begin_y, two_begin_x)
         # self.win2_sub = self.win2.derwin(2, 1)
         # self.win2.box()
 
@@ -113,7 +113,7 @@ class Screen(object):
         # self.win3.box()
 
         # Window 4 displays the message that the player is currently typing out.
-        self.win4 = curses.newwin((height // 4), width,
+        self.win4 = curses.newwin((height // 4), (width*3)-1,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
         # self.win4_sub = self.win4.derwin(2, 1)
         # self.win4.box()
@@ -156,11 +156,11 @@ class Screen(object):
         self.stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
         self.stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
         self.stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
-        self.stdscr.addstr(14, 70, "Chat")
+        self.stdscr.addstr(13, 1, "Chat")
         self.stdscr.addstr(32, 120, "Game Window")
         self.stdscr.addstr(13, 120, "The Board")
         #Y (first) DOWN
-        #X (sec) accros -> that way
+        #X (sec) across -> that way
 
     def refresh_windows(self):
         self.print_title()
@@ -276,7 +276,7 @@ def main():
     #screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     #Y (first) DOWN
     #X (sec) across -> that way
-    screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
+    screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, player, chat)
     screen.print_title()
     screen.player.update_win(screen)
     screen.refresh_windows()
@@ -396,7 +396,8 @@ def check_keys(screen, gips, board, pid, username):
         chat(screen, gips)
         screen.win4.clear()
         return False
-
+    else:
+        return False
 
 def move(screen, gips, board, pid):
     done = False
@@ -413,18 +414,14 @@ def move(screen, gips, board, pid):
         move = (str(stuff)).split(' ')
 
         move.remove('\n')  # kill the newline=
-        # for m in move:
-        #    m = int(m)
-        # If the move is not valid:
-        # make moves ints
-        move = list(map(int, move))
+
         if not move_is_valid(move):
-            # send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
             done = False
             continue
         done = True
     screen.win1.clear()
     # subtract 1 from moves
+    move = list(map(int, move))
     move[0] -= 1
     move[1] -= 1
     # Otherwise:
@@ -435,6 +432,25 @@ def move(screen, gips, board, pid):
     board = update_board(gips, board)
     display_board(board, screen)
     # moves = []
+
+
+def move_is_valid(move):
+    try:
+        move = list(map(int, move))
+    except ValueError:
+        return False
+    logging.debug("Move: " + str(move))
+    if 9 > int(move[0]) > 0:
+        if 9 > int(move[1]) > 0:
+            logging.debug("Valid")
+            return True
+        else:
+            logging.debug("Invalid")
+            return False
+    else:
+        logging.debug("Invalid.")
+        return False
+
 
 def chat(screen, gips):
     screen.board_mesg.edit()
@@ -478,20 +494,6 @@ def update_board(gips, board):
         board[int(gips.move_b)][int(gips.move_a)] = 'W'
     logging.debug("Returning updated board.")
     return board
-
-
-def move_is_valid(move):
-    logging.debug("Move: " + str(move))
-    if 9 > int(move[0]) > 0:
-        if 9 > int(move[1]) > 0:
-            logging.debug("Valid")
-            return True
-        else:
-            logging.debug("Invalid")
-            return False
-    else:
-        logging.debug("Invalid.")
-        return False
 
 
 def display_board(board, screen):
