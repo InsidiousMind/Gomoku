@@ -2,7 +2,6 @@
 
 import curses
 import logging
-import os
 import random
 import socket
 import struct
@@ -11,13 +10,11 @@ import threading
 import time
 from curses.textpad import Textbox
 from socket import ntohl
-from socket import MSG_PEEK
-from socket import SHUT_RDWR
 
 
 class Player(object):
-    def __init__(self, name, upid, wins, losses, ties, chat):
-        self.chat = chat
+    def __init__(self, name, upid, wins, losses, ties, chat_v):
+        self.chat = chat_v
         self.name = name
         self.upid = upid
         self.wins = wins
@@ -31,7 +28,7 @@ class Player(object):
     def recv_player(self, sock):
         while True:
             check = sock.recv(1, socket.MSG_PEEK).decode("utf-8")
-            if(check == '\v'):
+            if check == '\v':
                 self.chat.recv_msg()
             else:
                 player = sock.recv(40)
@@ -39,7 +36,7 @@ class Player(object):
                 self.upid = int(player[0])
                 self.name = ''
                 for x in range(1, 21):
-                    if(player[x].decode("utf-8") != ' '):
+                    if player[x].decode("utf-8") != ' ':
                         self.name += player[x].decode("utf-8")
                 self.wins = int(player[21])
                 self.losses = int(player[22])
@@ -55,10 +52,11 @@ class Player(object):
         screen.win5.addstr(4, 0, "Ties:" + str(self.ties))
         screen.win5.refresh()
 
+
 class Chat(threading.Thread):
     def __init__(self, win, sock):
         # noinspection PyArgumentList
-        super().__init__()
+        super(Chat, self).__init__()
         self.sock = sock
         self.window = win
         self.row = 0
@@ -72,8 +70,8 @@ class Chat(threading.Thread):
     def recv_msg(self):
         msg = self.sock.recv(1024)
         msg = msg.decode("utf-8")
-        msg = msg[1:] # get rid of the vertical tab
-        if self.row >= 40: #scrolling stuff
+        msg = msg[1:]  # get rid of the vertical tab
+        if self.row >= 40:  # scrolling stuff
             self.window.clear()
             self.row = 0
         self.window.addstr(self.row, self.col, msg)
@@ -81,12 +79,11 @@ class Chat(threading.Thread):
         self.window.refresh()
 
 
-
 # define screen variables
 class Screen(object):
     def __init__(self, height, width, one_begin_x,
                  one_begin_y, two_begin_x, two_begin_y,
-                 thr_begin_x, thr_begin_y, player, chat):
+                 thr_begin_x, thr_begin_y, player, chat_v):
         # init for screen in main
         # screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
 
@@ -96,8 +93,9 @@ class Screen(object):
         # self.win1_sub = self.win1.derwin(1, 1)
         # self.win1.box()
 
-        # Window 2 carries the chat.
-        self.win2 = curses.newwin(((3 * height) // 4), width, two_begin_y, two_begin_x)
+        # Window 2 carries the chat_v.
+        self.win2 = curses.newwin(
+            ((3 * height) // 4), width, two_begin_y, two_begin_x)
         # self.win2_sub = self.win2.derwin(2, 1)
         # self.win2.box()
 
@@ -106,23 +104,25 @@ class Screen(object):
         # self.win3_sub = self.win2.derwin(2, 1)
         # self.win3.box()
 
-        # Window 4 displays the message that the player is currently typing out.
+        # Window 4 displays the message that the player is currently typing
+        # out.
         self.win4 = curses.newwin((height // 4), width,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
         # self.win4_sub = self.win4.derwin(2, 1)
         # self.win4.box()
 
-        #win5 is the textbox for player stats
+        # win5 is the textbox for player stats
         self.win5 = curses.newwin(10, 16, 0, 70)
 
         # takes messages for the game
         self.game = Textbox(self.win1)
-        # takes messages for current gameboard
+        # takes messages for current game board
         self.board_mesg = Textbox(self.win4)
         # commands for game
-        self.chat = chat
+        self.chat = chat_v
 
         self.player = player
+
     @staticmethod
     def initialize():
         stdscr = curses.initscr()
@@ -135,21 +135,33 @@ class Screen(object):
     def halt(self):  # Just to cut down on a few lines in main()
         down(self.stdscr)
 
-    #75-> that way
-    #12 down
+    # 75-> that way
+    # 12 down
     def print_title(self):
-        self.stdscr.addstr(0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
-        self.stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
-        self.stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
+        self.stdscr.addstr(
+            0, 0, "GGGGGGGGGG OOOOOOOOOO MMM MMM MMM OOOOOOOOOO KK      KK UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            1, 0, "GG         OO      OO MMM MMM MMM OO      OO KK     KK  UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            2, 0, "GG         OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            3, 0, "GG         OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            4, 0, "GG         OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            5, 0, "GG         OO      OO MM M   M MM OO      OO KKK        UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            6, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK KK      UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            7, 0, "GG   GGGG  OO      OO MM M   M MM OO      OO KK  KK     UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            8, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK   KK    UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            9, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK    KK   UU     UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
+        self.stdscr.addstr(
+            11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
         self.stdscr.addstr(14, 70, "Chat")
         self.stdscr.addstr(14, 1, "Game Window")
         self.stdscr.addstr(14, 120, "The Board")
@@ -167,8 +179,8 @@ class GIPS(object):
         self.isEarlyExit = 0
         self.chat = chat
 
-        #not a real part of gips struct
-        #it's in gips here for ease of use
+        # not a real part of gips struct
+        # it's in gips here for ease of use
         self.upid = 0
 
     def pack(self, pid, is_win, move_a, move_b, is_early_exit):
@@ -191,7 +203,7 @@ class GIPS(object):
     def recv(self):
         while True:
             check = self.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
-            if(check == '\v'):
+            if check == '\v':
                 self.chat.recv_msg()
             else:
                 self.sock.setblocking(True)
@@ -211,16 +223,16 @@ class GIPS(object):
     def recv_iswin(self):
         while True:
             check = self.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
-            if(check == '\v'):
-               self.chat.recv_msg()
+            if check == '\v':
+                self.chat.recv_msg()
             else:
                 is_win = self.sock.recv(4)
                 is_win = struct.unpack('!i', is_win)
                 is_win = ntohl(is_win[0])
                 return is_win
 
-    #Upid is not apart of the GIPs being sent to and from the server
-    def setUPID(self, upid):
+    # Upid is not apart of the GIPs being sent to and from the server
+    def set_upid(self, upid):
         self.upid = upid
 
 
@@ -243,7 +255,7 @@ def main():
     # Get a chat_socket
     # Get your player number from the server.
 
-    #create player object
+    # create player object
     chat = object
     player = Player(username, upid, 0, 0, 0, chat)
 
@@ -254,7 +266,8 @@ def main():
     screen.player.update_win(screen)
 
     logging.debug("Game starting.")
-    screen.stdscr.addstr(5, 70, "The game will be starting shortly...", curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
+    screen.stdscr.addstr(5, 70, "The game will be starting shortly...",
+                         curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
     screen.stdscr.refresh()
     gips = GIPS
     try:
@@ -264,7 +277,7 @@ def main():
             gips = GIPS(sock, chat)
             upid = login(sock, upid, username)
             gips.upid = upid
-            #init chat thread
+            # init chat thread
             chat = Chat(screen.win2, sock)
             init_chat(chat, screen, gips)
             screen.stdscr.clear()
@@ -280,7 +293,7 @@ def main():
             screen.player.recv_player(sock)
             screen.player.update_win(screen)
             board = init_board()
-            gips = game_loop(board, pid, username, screen, gips)
+            gips = game_loop(board, pid, screen, gips)
             if gips.isEarlyExit != 0 and gips.is_win == 0:
                 screen.halt()
                 print("Thanks for playing!!!")
@@ -306,11 +319,15 @@ def main():
         screen.halt()
         sys.exit(0)
 
+
 def init_chat(chat, screen, gips):
     screen.chat = chat
     gips.chat = chat
 
+
 # noinspection PyBroadException
+
+
 def establish_connection(host, port):
     try:
         logging.warning("Trying to connect to the server.")
@@ -321,7 +338,8 @@ def establish_connection(host, port):
         return sock
     except Exception:
         logging.critical("Server could not be reached!")
-        print("Couldn't connect to the server. Check your internet connection and try again.")
+        print(
+            "Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
 
 
@@ -338,7 +356,7 @@ def end_game(gips, screen, pid):
     sys.exit(0)
 
 
-def game_loop(board, pid, username, screen, gips):
+def game_loop(board, pid, screen, gips):
     game_running = True
     while gips.is_win == 0 and gips.isEarlyExit == 0 and game_running:
         logging.debug("Starting the loop.")
@@ -355,20 +373,19 @@ def game_loop(board, pid, username, screen, gips):
         display_board(board, screen.win3)
         screen.stdscr.refresh()  # This begins the user interaction
         actions_taken = False
-        while actions_taken == False:
-            actions_taken = check_keys(screen, gips, board, pid, username)
-
+        while not actions_taken:
+            actions_taken = check_keys(screen, gips, board, pid)
 
         is_win = gips.recv_iswin()
         gips.is_win = is_win
     return gips
 
 
-def check_keys(screen, gips, board, pid, username):
+def check_keys(screen, gips, board, pid):
     c = screen.stdscr.getch()
     logging.debug("checkKeys")
     if c == ord('q'):
-        return False #effectively pass your move
+        return False  # effectively pass your move
     if c == ord('m'):
         move(screen, gips, board, pid)
         return True
@@ -377,8 +394,8 @@ def check_keys(screen, gips, board, pid, username):
         return False
 
 
-
 def move(screen, gips, board, pid):
+    done = False
     while not done:
         screen.win1.clear()
         logging.debug("Key: m")
@@ -415,14 +432,15 @@ def move(screen, gips, board, pid):
     display_board(board, screen.win3)
     # moves = []
 
+
 def chat(screen, gips):
     screen.board_mesg.edit()
     stuff = screen.board_mesg.gather()
     message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
     # Send message to the server as a bytestring.
-    gips.sock.send(bytes(message, 'utf-8'))
+    gips.sock.send(bytes(message))
     screen.stdscr.refresh()  # Redraws the screen.
-    #the server should immediately send back a message if we send it
+    # the server should immediately send back a message if we send it
     gips.chat.recv_msg()
     return
 
@@ -439,10 +457,11 @@ def login(sock, upid, username):
 
 
 def send_string(sock, string):
-    string = bytes(string, 'utf-8')
+    string = bytes(string)
     sent = sock.send(string)
     if sent != (len(string)):
         logging.warning("Bytes sent DID NOT MATCH")
+
 
 def update_board(gips, board):
     logging.debug("Updating to the next board.")
