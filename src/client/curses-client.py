@@ -168,7 +168,7 @@ class Screen(object):
 
 
 class GIPS(object):
-    def __init__(self, sock, chat):
+    def __init__(self, sock, chat_v):
         logging.debug("GIPS.sock is being defined.")
         self.sock = sock
         logging.debug(self.sock)
@@ -177,7 +177,7 @@ class GIPS(object):
         self.move_a = -1
         self.move_b = -1
         self.isEarlyExit = 0
-        self.chat = chat
+        self.chat = chat_v
 
         # not a real part of gips struct
         # it's in gips here for ease of use
@@ -256,12 +256,12 @@ def main():
     # Get your player number from the server.
 
     # create player object
-    chat = object
-    player = Player(username, upid, 0, 0, 0, chat)
+    chat_v = object
+    player = Player(username, upid, 0, 0, 0, chat_v)
 
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
-    screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player, chat)
+    screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player, chat_v)
     screen.print_title()
     screen.player.update_win(screen)
 
@@ -274,19 +274,19 @@ def main():
         keep_playing = True
         while keep_playing:
             sock = establish_connection(host, port)
-            gips = GIPS(sock, chat)
+            gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
             gips.upid = upid
-            # init chat thread
-            chat = Chat(screen.win2, sock)
-            init_chat(chat, screen, gips)
+            # init chat_v thread
+            chat_v = Chat(screen.win2, sock)
+            init_chat(chat_v, screen, gips)
             screen.stdscr.clear()
             screen.print_title()
             screen.stdscr.refresh()
             while True:
                 check = sock.recv(1, socket.MSG_PEEK).decode("utf-8")
                 if check == '\v':
-                    chat.recv_msg()
+                    chat_v.recv_msg()
                 else:
                     pid = ord(sock.recv(1))
                     break
@@ -320,9 +320,9 @@ def main():
         sys.exit(0)
 
 
-def init_chat(chat, screen, gips):
-    screen.chat = chat
-    gips.chat = chat
+def init_chat(chat_v, screen, gips):
+    screen.chat = chat_v
+    gips.chat = chat_v
 
 
 # noinspection PyBroadException
@@ -396,36 +396,37 @@ def check_keys(screen, gips, board, pid):
 
 def move(screen, gips, board, pid):
     done = False
+    move_v = []
     while not done:
         screen.win1.clear()
         logging.debug("Key: m")
-        # Get the next move and send it.
+        # Get the next move_v and send it.
         screen.game.edit()
         stuff = screen.game.gather()
-        # Split the move into two components.
+        # Split the move_v into two components.
         if len(stuff) == 0:
             done = False
             continue
-        move = (str(stuff)).split(' ')
+        move_v = (str(stuff)).split(' ')
 
-        move.remove('\n')  # kill the newline=
-        # for m in move:
+        move_v.remove('\n')  # kill the newline=
+        # for m in move_v:
         #    m = int(m)
-        # If the move is not valid:
+        # If the move_v is not valid:
         # make moves ints
-        move = list(map(int, move))
-        if not move_is_valid(move):
-            # send_to_chat(gips.sock, "server: Invalid move, " + str(username) + "!")
+        move_v = list(map(int, move_v))
+        if not move_is_valid(move_v):
+            # send_to_chat(gips.sock, "server: Invalid move_v, " + str(username) + "!")
             done = False
             continue
         done = True
     screen.win1.clear()
     # subtract 1 from moves
-    move[0] -= 1
-    move[1] -= 1
+    move_v[0] -= 1
+    move_v[1] -= 1
     # Otherwise:
     # Encode a GIPS
-    gips.pack(pid, gips.is_win, move[0], move[1], 0)
+    gips.pack(pid, gips.is_win, move_v[0], move_v[1], 0)
     # Send the GIPS
     gips.send()
     board = update_board(gips, board)
@@ -507,8 +508,8 @@ def display_board(board, win):
 # noinspection PyUnusedLocal
 def init_board():
     """
-    >>> board = init_board()
-    >>> board[0][0]
+>>> board = init_board()
+>>> board[0][0]
     'o'
     """
     return [['o' for x in range(8)] for y in range(8)]
