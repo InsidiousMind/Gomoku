@@ -4,7 +4,7 @@
 ### Proposal Due Wednesday
 
 ## Author:
-  - Andrew Plaza and Sean Batzel
+  - InsidiousMind and Romulus10
 
 ## Date:
  - October 31, 2016
@@ -12,21 +12,13 @@
 ## GitHub Repository
  - [InsidiousMind/Gomoku](https://github.com/InsidiousMind/Gomoku)
 
-## File Names:
- - asgn6-client.c
- - asgn6-server.c
- - src/lib/glogic.c+h
- - src/lib/gips.c+h
- - src/lib/network.c+h
-
 ## Compile:
- - make server to compile server,
- - make client to compile client,
- - make to compile server and client
+ - cd Gomoku
+ - make
 
 ## run:
- - build/client/./asgn6-client.c
- - build/server/./asgn6-server.c
+ - build/bin/server database_file_name
+ - python3 build/bin/curses-client.py
 
 ## scripts:
  - Scripts in the ./scripts/ directory should be invoked from the root of the repository, they allow ease of testing.
