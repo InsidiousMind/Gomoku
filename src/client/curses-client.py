@@ -478,10 +478,10 @@ def update_board(gips, board):
     return board
 
 
-def move_is_valid(move):
-    logging.debug("Move: " + str(move))
-    if 9 > int(move[0]) > 0:
-        if 9 > int(move[1]) > 0:
+def move_is_valid(move_v):
+    logging.debug("Move: " + str(move_v))
+    if 9 > int(move_v[0]) > 0:
+        if 9 > int(move_v[1]) > 0:
             logging.debug("Valid")
             return True
         else:
