@@ -356,3 +356,20 @@ Player* getPlayer(int uPID, int fd, char *username, Node **head){
   }
   return play;
 }
+
+//TODO Make getPlayer actually use the username, lol
+//find player with upid
+Player * fpuPID(int uPID, int fd, Node **head){
+  Node *temp = *head;
+  Player *play = calloc(1, sizeof(Player));
+  
+  while(temp != NULL){
+    if(temp->userid == uPID) {
+      readp(fd, temp->index, play);
+      break;
+    } else {
+      temp = temp->next;
+    }
+  }
+  return play;
+}

@@ -1,9 +1,15 @@
+//standard libraries
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+
+//header file
 #include "gips.h"
+
 //Some functions to compress what we send over the nets
 
 //packs info needed for playing the game into a struct
@@ -11,6 +17,8 @@
 #ifndef GIPS_SIZE
 #define GIPS_SIZE 5
 #endif
+
+int checkrecv_err(int n);
 
 gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b, BYTE isEarlyExit) {
   static gips info;
@@ -56,15 +64,26 @@ int receive_gips(int sock, gips **info){
   char gipsArr [5];
   int bytes_to_receive = GIPS_SIZE;
   int len = GIPS_SIZE, total = 0;
+  char testBuf;
   ssize_t n;
-  while(total < len){
-    n =  recv(sock, &gipsArr[total], sizeof(char), 0);
-    if(n == -1 || n == 0) {
+  while(true) {
+    n = recv(sock, &testBuf, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
+    if(errno == EAGAIN){
+      errno = 0;
+      usleep(250000);
+      continue;
+    }else if(n == 0 || n == -1){
       perror("[!!!] could not recv/or clientDC in receive_gips");
-      break;
+      return -1;
     }
-    total+=n;
-    bytes_to_receive-=n;
+    if(testBuf == '\v'){ /*do nothing, wait for poll */}
+    else break;
+  }
+  while (total < len) {
+    n = recv(sock, &gipsArr[total], sizeof(char), MSG_DONTWAIT);
+    if(checkrecv_err(n) == -1) return -1;
+    total += n;
+    bytes_to_receive -= n;
   }
   len = total;
   
@@ -96,6 +115,19 @@ int send_mesg(char *str, int sock) {
   }
   len = total;
   return n == -1 ? -1 : total;
+}
+
+int checkrecv_err(int n){
+  if(errno == EAGAIN){
+    errno = 0;
+    usleep(250000);
+  }else{
+    if(n == 0 || n == -1){
+      perror("[!!!] could not recv/or clientDC in receive_gips");
+      return -1;
+    }
+  }
+  return 0;
 }
 
 /*int send_misc(void *thing, int sock){

@@ -113,10 +113,8 @@ int find(c_head **head, int found){
   int i;
   cList *temp;
   c_head *t_head = *head;
-  if(t_head->isPlaying == false && t_head->sockfd != found) {
-    return t_head->sockfd;
-  }
- 
+  
+  //ignore head, socket in head is only -1
   temp = t_head->next;
   for(i = 1; i < t_head->size; i++) {
     if(temp->isPlaying == false && temp->sockfd != found) {
@@ -131,10 +129,9 @@ void parseConnections(c_head **head) {
   c_head *t_head = *head;
   cList *temp;
  
-  if (!isSockUp(t_head->sockfd)) {
-   c_del(head, t_head->sockfd);
-  }
-  temp = t_head->next;
+  //ignore head, set temp to socket head is pointing to
+  if(t_head->next != NULL) temp = t_head->next;
+  else return;
 
   for (i = 1; i < t_head->size; i++, temp = temp->next) {
     if (!isSockUp(temp->sockfd)) {
@@ -206,14 +203,15 @@ void to_head(cList **src_node, c_head **dest_node, int size){
   dest->pairedSockfd = src->pairedSockfd;
 }
 
+
+//gets sockets from LL, except for head (because head will be -1)
 int *getSockets(c_head **t_head){
   int i;
   c_head  *head = *t_head;
   cList *temp;
   
-  int *sockets = calloc(head->size, sizeof(int));
+  int *sockets = calloc(head->size-1, sizeof(int));
   
-  sockets[0] = head->sockfd;
 
   temp = head->next;
 
@@ -221,5 +219,4 @@ int *getSockets(c_head **t_head){
     sockets[i] = temp->sockfd;
   }
   return sockets;
-  
 }

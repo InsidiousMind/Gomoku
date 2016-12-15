@@ -1,3 +1,4 @@
+
 #ifndef GIPS_H
 #define GIPS_H
 
@@ -17,6 +18,8 @@ int send_to(gips *info, int sock);
 
 int send_mesg(char *str, int sock);
 int receive_gips(int sock, gips **info);
+int checkrecv_err(int n);
+
 #endif /*GIPS_H*/
 
 #ifndef DEPTH
@@ -36,6 +39,7 @@ int receive_gips(int sock, gips **info);
 //#define HOST "server1.cs.scranton.edu"
 //#define HOST "10.31.226.161"
 #define HOST "127.0.0.1"
+//#define HOST "10.31.230.94"
 #endif
 #ifndef HTTPPORT
 #define HTTPPORT "32200"

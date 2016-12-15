@@ -216,7 +216,6 @@ int gameLoop(gips **player_info, char **name, int sock, char pid){
 
     printf("Now you can move\n");
 
-    signal(SIGINT, INThandle);
 
     //check for a valid turn 
     while(checkValid(moves, stone, *name, board));
