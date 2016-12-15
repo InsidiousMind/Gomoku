@@ -98,7 +98,7 @@ int poll_for_chat(chatArgs *chatInfo){
           read_count = recv(ufds[i].fd, &buf, sizeof(char) * 1024, 0);
           if(errno == EAGAIN || errno == EWOULDBLOCK) {
             errno = 0;
-            continue;
+            break;
           } else if(read_count == 0 || read_count == -1){
             perror("[!!!] recv error in chat_thread on socket");
             return -1;

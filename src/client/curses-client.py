@@ -84,15 +84,19 @@ class Chat(threading.Thread):
 
 # define screen variables
 class Screen(object):
-    def __init__(self, height, width, one_begin_x,
-                 one_begin_y, two_begin_x, two_begin_y,
-                 thr_begin_x, thr_begin_y, player, chat):
+    def __init__(self, height, width, one_begin_y,
+                 one_begin_x, two_begin_y, two_begin_x,
+                 thr_begin_y, thr_begin_x, player, chat):
         # init for screen in main
         # screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
 
+        #screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
+        #Y (first) DOWN
+        #X (sec) accros -> that way
         self.stdscr = self.initialize()  # Starts the Curses application.
-        # Window 1 takes commands for the game.
-        self.win1 = curses.newwin(height, width, one_begin_y, one_begin_x)
+
+        # Window 1 takes commands for the game.      43        120
+        self.win1 = curses.newwin(4, 4, 33, one_begin_x)
         # self.win1_sub = self.win1.derwin(1, 1)
         # self.win1.box()
 
@@ -101,8 +105,10 @@ class Screen(object):
         # self.win2_sub = self.win2.derwin(2, 1)
         # self.win2.box()
 
-        # Window 3 displays the current game board.
-        self.win3 = curses.newwin(66, 66, thr_begin_y, thr_begin_x)
+        # Window 3 displays the current game board. 40 40      15 121
+        self.win3 = curses.newwin(30, 30, 14, 120)
+
+
         # self.win3_sub = self.win2.derwin(2, 1)
         # self.win3.box()
 
@@ -151,9 +157,19 @@ class Screen(object):
         self.stdscr.addstr(10, 0, "GG     GG  OO      OO MM M   M MM OO      OO KK     KK   UU   UU", curses.A_BLINK)
         self.stdscr.addstr(11, 0, "GGGGGGGGG  OOOOOOOOOO MM M   M MM OOOOOOOOOO KK      KK   UUUUU", curses.A_BLINK)
         self.stdscr.addstr(14, 70, "Chat")
-        self.stdscr.addstr(14, 1, "Game Window")
-        self.stdscr.addstr(14, 120, "The Board")
+        self.stdscr.addstr(32, 120, "Game Window")
+        self.stdscr.addstr(13, 120, "The Board")
+        #Y (first) DOWN
+        #X (sec) accros -> that way
 
+    def refresh_windows(self):
+        self.print_title()
+        self.win1.refresh()
+        self.win2.refresh()
+        self.win3.refresh()
+        self.win4.refresh()
+        self.win5.refresh()
+        self.stdscr.refresh()
 
 class GIPS(object):
     def __init__(self, sock, chat):
@@ -219,6 +235,14 @@ class GIPS(object):
                 is_win = ntohl(is_win[0])
                 return is_win
 
+    def recv_pid(self):
+        while True:
+            check = self.sock.recv(1, socket.MSG_PEEK).decode("utf-8")
+            if check == '\v':
+                self.chat.recv_msg()
+            else:
+                return ord(self.sock.recv(1))
+
     #Upid is not apart of the GIPs being sent to and from the server
     def setUPID(self, upid):
         self.upid = upid
@@ -249,10 +273,13 @@ def main():
 
     # height/width/one_begin_x/one_begin_y/etc
     # GOOD UP TO HERE (With send/recv)
-    screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player, chat)
+    #screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
+    #Y (first) DOWN
+    #X (sec) across -> that way
+    screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     screen.print_title()
     screen.player.update_win(screen)
-
+    screen.refresh_windows()
     logging.debug("Game starting.")
     screen.stdscr.addstr(5, 70, "The game will be starting shortly...", curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
     screen.stdscr.refresh()
@@ -268,15 +295,8 @@ def main():
             chat = Chat(screen.win2, sock)
             init_chat(chat, screen, gips)
             screen.stdscr.clear()
-            screen.print_title()
-            screen.stdscr.refresh()
-            while True:
-                check = sock.recv(1, socket.MSG_PEEK).decode("utf-8")
-                if check == '\v':
-                    chat.recv_msg()
-                else:
-                    pid = ord(sock.recv(1))
-                    break
+            screen.refresh_windows()
+            pid = gips.recv_pid()
             screen.player.recv_player(sock)
             screen.player.update_win(screen)
             board = init_board()
@@ -351,9 +371,9 @@ def game_loop(board, pid, username, screen, gips):
         else:  # update board, get move
             board = update_board(gips, board)
 
-        screen.stdscr.refresh()  # This line begins the interface logic.
-        display_board(board, screen.win3)
-        screen.stdscr.refresh()  # This begins the user interaction
+        screen.refresh_windows()
+        display_board(board, screen)
+        screen.refresh_windows()
         actions_taken = False
         while actions_taken == False:
             actions_taken = check_keys(screen, gips, board, pid, username)
@@ -374,11 +394,12 @@ def check_keys(screen, gips, board, pid, username):
         return True
     if c == ord('c'):
         chat(screen, gips)
+        screen.win4.clear()
         return False
 
 
-
 def move(screen, gips, board, pid):
+    done = False
     while not done:
         screen.win1.clear()
         logging.debug("Key: m")
@@ -412,7 +433,7 @@ def move(screen, gips, board, pid):
     # Send the GIPS
     gips.send()
     board = update_board(gips, board)
-    display_board(board, screen.win3)
+    display_board(board, screen)
     # moves = []
 
 def chat(screen, gips):
@@ -421,9 +442,10 @@ def chat(screen, gips):
     message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
     # Send message to the server as a bytestring.
     gips.sock.send(bytes(message, 'utf-8'))
-    screen.stdscr.refresh()  # Redraws the screen.
+    screen.refresh_windows()
     #the server should immediately send back a message if we send it
     gips.chat.recv_msg()
+
     return
 
 
@@ -472,18 +494,17 @@ def move_is_valid(move):
         return False
 
 
-def display_board(board, win):
+def display_board(board, screen):
     x = 1
     y = 1
     logging.debug("board")
     for a in board:
         for b in a:
-            win.addch(y, x, ord(b))
+            screen.win3.addch(y, x, ord(b))
             y += 2
         y = 1
         x += 4
-    win.refresh()
-
+    screen.refresh_windows()
 
 # noinspection PyUnusedLocal
 def init_board():
