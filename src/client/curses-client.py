@@ -46,15 +46,6 @@ class Player(object):
                 self.ties = int(player[23])
                 break
 
-    def update_win(self, screen):
-        screen.win5.clear()
-        screen.win5.addstr(0, 0, "Player: " + str(self.name))
-        screen.win5.addstr(1, 0, "Unique PID: " + str(self.upid))
-        screen.win5.addstr(2, 0, "Wins: " + str(self.wins))
-        screen.win5.addstr(3, 0, "Losses: " + str(self.losses))
-        screen.win5.addstr(4, 0, "Ties:" + str(self.ties))
-        screen.win5.refresh()
-
 class Chat(threading.Thread):
     def __init__(self, win, sock):
         # noinspection PyArgumentList
@@ -121,6 +112,9 @@ class Screen(object):
         #win5 is the textbox for player stats
         self.win5 = curses.newwin(10, 16, 0, 70)
 
+        #win6 is the window for error correction and telling the player what to do
+        self.win6 = curses.newwin(1, 50, 9, 90)
+
         # takes messages for the game
         self.game = Textbox(self.win1)
         # takes messages for current gameboard
@@ -159,17 +153,34 @@ class Screen(object):
         self.stdscr.addstr(13, 1, "Chat")
         self.stdscr.addstr(32, 120, "Game Window")
         self.stdscr.addstr(13, 120, "The Board")
+        self.stdscr.addstr(7, 70, "Press 'm' to move, 'c' to chat, 'Ctrl-g' to enter a move or chat msg")
         #Y (first) DOWN
         #X (sec) across -> that way
 
     def refresh_windows(self):
         self.print_title()
+        self.update_pwin()
         self.win1.refresh()
         self.win2.refresh()
         self.win3.refresh()
         self.win4.refresh()
         self.win5.refresh()
+        self.win6.refresh()
         self.stdscr.refresh()
+
+    def update_pwin(self):
+        self.win5.clear()
+        self.win5.addstr(0, 0, "Player: " + str(self.player.name))
+        self.win5.addstr(1, 0, "Unique PID: " + str(self.player.upid))
+        self.win5.addstr(2, 0, "Wins: " + str(self.player.wins))
+        self.win5.addstr(3, 0, "Losses: " + str(self.player.losses))
+        self.win5.addstr(4, 0, "Ties:" + str(self.player.ties))
+        self.win5.refresh()
+
+    def update_actionbox(self, msg):
+        self.win6.clear()
+        self.win6.addstr(msg, curses.COLOR_RED)
+        self.win6.refresh()
 
 class GIPS(object):
     def __init__(self, sock, chat):
@@ -271,18 +282,14 @@ def main():
     chat = object
     player = Player(username, upid, 0, 0, 0, chat)
 
-    # height/width/one_begin_x/one_begin_y/etc
-    # GOOD UP TO HERE (With send/recv)
     #screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     #Y (first) DOWN
     #X (sec) across -> that way
     screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, player, chat)
     screen.print_title()
-    screen.player.update_win(screen)
+    screen.stdscr.addstr(6, 70, "The game will be starting shortly....", curses.A_BLINK)
     screen.refresh_windows()
     logging.debug("Game starting.")
-    screen.stdscr.addstr(5, 70, "The game will be starting shortly...", curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
-    screen.stdscr.refresh()
     gips = GIPS
     try:
         keep_playing = True
@@ -295,10 +302,9 @@ def main():
             chat = Chat(screen.win2, sock)
             init_chat(chat, screen, gips)
             screen.stdscr.clear()
-            screen.refresh_windows()
             pid = gips.recv_pid()
             screen.player.recv_player(sock)
-            screen.player.update_win(screen)
+            screen.refresh_windows()
             board = init_board()
             gips = game_loop(board, pid, username, screen, gips)
             if gips.isEarlyExit != 0 and gips.is_win == 0:
@@ -371,14 +377,15 @@ def game_loop(board, pid, username, screen, gips):
         else:  # update board, get move
             board = update_board(gips, board)
 
-        screen.refresh_windows()
         display_board(board, screen)
+        screen.update_actionbox("Now you can move!")
         screen.refresh_windows()
         actions_taken = False
         while actions_taken == False:
             actions_taken = check_keys(screen, gips, board, pid, username)
-
-
+            screen.update_actionbox("You still have actions left")
+        screen.update_actionbox("Wait your turn")
+        screen.refresh_windows()
         is_win = gips.recv_iswin()
         gips.is_win = is_win
     return gips
@@ -393,6 +400,7 @@ def check_keys(screen, gips, board, pid, username):
         move(screen, gips, board, pid)
         return True
     if c == ord('c'):
+        screen.update_actionbox("Enter your chat message")
         chat(screen, gips)
         screen.win4.clear()
         return False
@@ -400,6 +408,7 @@ def check_keys(screen, gips, board, pid, username):
         return False
 
 def move(screen, gips, board, pid):
+    screen.update_actionbox("Now you can move!")
     done = False
     while not done:
         screen.win1.clear()
@@ -416,6 +425,7 @@ def move(screen, gips, board, pid):
         move.remove('\n')  # kill the newline=
 
         if not move_is_valid(move):
+            screen.update_actionbox("Your move is not valid!!, move again")
             done = False
             continue
         done = True
