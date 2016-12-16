@@ -111,7 +111,7 @@ class Screen(object):
         self.win5 = curses.newwin(10, 16, 0, 70)
 
         #win6 is the window for error correction and telling the player what to do
-        self.win6 = curses.newwin(1, 50, 9, 90)
+        self.win6 = curses.newwin(1, 70, 9, 90)
 
         # takes messages for the game
         self.game = Textbox(self.win1)
@@ -128,6 +128,8 @@ class Screen(object):
         stdscr.clear()
         curses.noecho()
         curses.cbreak()
+        curses.start_color()
+        curses.use_default_colors()
         stdscr.keypad(True)
         return stdscr
 
@@ -178,7 +180,7 @@ class Screen(object):
 
     def update_actionbox(self, msg):
         self.win6.clear()
-        self.win6.addstr(msg, curses.COLOR_RED)
+        self.win6.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
         self.win6.refresh()
 
 class GIPS(object):
@@ -276,24 +278,25 @@ def main():
     # Talk to the server and see what we can get.
     # Get a chat_socket
     # Get your player number from the server.
-
     # create player object
     chat_v = object
     player = Player(username, upid, 0, 0, 0, chat_v)
-
+    pid = ''
     # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     # Y (first) DOWN
     # X (sec) across -> that way
     screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, player, chat)
-    screen.print_title()
-    screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
-                         curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
-    screen.refresh_windows()
     logging.debug("Game starting.")
     gips = GIPS
     try:
         keep_playing = True
         while keep_playing:
+            screen.stdscr.clear()
+            screen.win6.clear()
+            screen.print_title()
+            screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
+                         curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
+            screen.refresh_windows()
             sock = establish_connection(host, port)
             gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
@@ -307,17 +310,9 @@ def main():
             screen.refresh_windows()
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
-            if gips.isEarlyExit != 0 and gips.is_win == 0:
-                screen.halt()
-                print("Thanks for playing!!!")
-                gips.sock.shutdown(socket.SHUT_RDWR)
-                gips.sock.close()
-                sys.exit(0)
-            else:
-                screen.halt()
-                print("Thanks for playing!!!")
-                # end sequence
-                end_game(gips, screen, pid)
+            keep_playing = reboot_game_seq(gips, screen, pid)
+        # end the game once the while loop dies
+        end_game(gips, screen, pid)
 
     except Exception:
         logging.exception("Exception caught")
@@ -354,6 +349,50 @@ def establish_connection(host, port):
         print(
             "Couldn't connect to the server. Check your internet connection and try again.")
         sys.exit(0)
+
+
+# if the player so chooses, reboots the game w/ another player waiting
+def reboot_game_seq(gips, screen, pid):
+    if gips.isEarlyExit != 0 and gips.is_win == 0:
+        screen.update_actionbox("OTHER CLIENT D/CED")
+        time.sleep(2)
+        screen.update_actionbox("Do you want to play another game? [Y/n]")
+        screen.refresh_windows()
+        c = chr(screen.stdscr.getch())
+        if(c == 'y' or c == 'Y'):
+            gips.sock.shutdown(socket.SHUT_RDWR)
+            gips.sock.close()
+            return True
+        else:
+            screen.update_actionbox("Are you sure you want to quit? [Y/n]")
+            c = chr(screen.stdscr.getch())
+            if(c == 'y' or c == 'Y'):
+                screen.halt()
+                print("Thanks for playing!!")
+                return False
+            else:
+                gips.sock.shutdown(socket.SHUT_RDWR)
+                gips.sock.close()
+                return True
+    else:
+        screen.update_actionbox("Game has ended! Do you want to play again? [Y/n] ")
+        screen.refresh_windows()
+        c = chr(screen.stdscr.getch())
+        if(c == 'y' or c == 'Y'):
+            gips.sock.shutdown(socket.SHUT_RDWR)
+            gips.sock.close()
+            return True
+        else:
+            screen.update_actionbox("Are you sure you want to quit? [Y/n]")
+            c = chr(screen.stdscr.getch())
+            if(c == 'y' or c == 'Y'):
+                screen.halt()
+                print("Thanks for playing!!!")
+                return False
+            else:
+                gips.sock.shutdown(socket.SHUT_RDWR)
+                gips.sock.close()
+                return True
 
 
 def end_game(gips, screen, pid):
