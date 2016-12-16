@@ -75,7 +75,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
   sock_fd = get_server_socket(HOST, HTTPPORT);
   if( (fcntl(sock_fd, F_SETFD, O_NONBLOCK)) == -1) {
-    printf("socket option: fctnl\n");
+    printf("socket option: fcntl\n");
     exit(1);
   }
   if (start_server(sock_fd, BACKLOG) == -1){
@@ -103,10 +103,9 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   
   signal(SIGINT, INThandle);
   
-  //TODO Implement this with select
+  //TODO Implement this with libevent, that will fix the sighandler
     //otherwise shtuffs screwed
   while(! stop){
- 
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
     if(stop) break;

@@ -214,7 +214,7 @@ int *getSockets(c_head **t_head){
   
 
   temp = head->next;
-
+  // skip the head node, that's just -1, not a real socket
   for (i = 1; i < head->size; i++, temp = temp->next) {
     sockets[i] = temp->sockfd;
   }

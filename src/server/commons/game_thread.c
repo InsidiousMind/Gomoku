@@ -186,7 +186,6 @@ void *subserver(void *arguments) {
   if ((sendPID(PID, reply_sock_fd) == -1))
     c_exit(&gameInfo, PID, &username, reply_sock_fd);
 
-  char *other_username;
   pthread_mutex_lock(&(gameInfo->args.head_access));
   //send player stats
   int ret_sendp = sendPlayer(uPID, username, head, reply_sock_fd, fd);
