@@ -354,46 +354,32 @@ def establish_connection(host, port):
 # if the player so chooses, reboots the game w/ another player waiting
 def reboot_game_seq(gips, screen, pid):
     if gips.isEarlyExit != 0 and gips.is_win == 0:
-        screen.update_actionbox("OTHER CLIENT D/CED")
-        time.sleep(2)
-        screen.update_actionbox("Do you want to play another game? [Y/n]")
+        screen.update_actionbox("Other client D/Ced. Do you want to play another game? [Y/n]")
         screen.refresh_windows()
-        c = chr(screen.stdscr.getch())
-        if(c == 'y' or c == 'Y'):
-            gips.sock.shutdown(socket.SHUT_RDWR)
-            gips.sock.close()
-            return True
-        else:
-            screen.update_actionbox("Are you sure you want to quit? [Y/n]")
-            c = chr(screen.stdscr.getch())
-            if(c == 'y' or c == 'Y'):
-                screen.halt()
-                print("Thanks for playing!!")
-                return False
-            else:
-                gips.sock.shutdown(socket.SHUT_RDWR)
-                gips.sock.close()
-                return True
+        return prompt_endgame(screen, gips)
+
     else:
         screen.update_actionbox("Game has ended! Do you want to play again? [Y/n] ")
         screen.refresh_windows()
+        return prompt_endgame(screen, gips)
+
+def prompt_endgame(screen, gips):
+    c = chr(screen.stdscr.getch())
+    if(c == 'y' or c == 'Y'):
+        gips.sock.shutdown(socket.SHUT_RDWR)
+        gips.sock.close()
+        return True
+    else:
+        screen.update_actionbox("Are you sure you want to quit? [Y/n]")
         c = chr(screen.stdscr.getch())
         if(c == 'y' or c == 'Y'):
+            screen.halt()
+            print("Thanks for playing!!!")
+            return False
+        else:
             gips.sock.shutdown(socket.SHUT_RDWR)
             gips.sock.close()
             return True
-        else:
-            screen.update_actionbox("Are you sure you want to quit? [Y/n]")
-            c = chr(screen.stdscr.getch())
-            if(c == 'y' or c == 'Y'):
-                screen.halt()
-                print("Thanks for playing!!!")
-                return False
-            else:
-                gips.sock.shutdown(socket.SHUT_RDWR)
-                gips.sock.close()
-                return True
-
 
 def end_game(gips, screen, pid):
     if gips.is_win == pid:
