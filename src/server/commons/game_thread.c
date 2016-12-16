@@ -49,7 +49,8 @@ void *startGameServer(void *args){
   gameInfo->args.socket = gameSrvInfo->reply_sock_fd[0];
   gameInfo->args.socket2 = gameSrvInfo->reply_sock_fd[1];
   gameInfo->args.fd = gameSrvInfo->fd;
-
+  gameInfo->args.uPID1 = 0;
+  gameInfo->args.uPID2 = 0;
   gameInfo->args.head = gameSrvInfo->head;
   gameInfo->args.head_access = *gameSrvInfo->head_access;
 
@@ -126,6 +127,7 @@ void *subserver(void *arguments) {
   printf("subserver ID = %lu\n", (unsigned long) pthread_self());
   //login receives
   //first packet twe receive is the clients 'Expected' unique PID
+  //receives the unique PID
   if ((read_count = recv(reply_sock_fd, &uPID, sizeof(int), 0)) == -1)
     perror("[!!!] error: receive fail in subserver");
   uPID = ntohl(uPID);
@@ -155,24 +157,65 @@ void *subserver(void *arguments) {
     uPID = ntohl(uPID);
   }
   pthread_mutex_unlock(&gameInfo->args.head_access);
-  
+
+  //assign playerID's
+  uint32_t other_uPID;
+  if(PID == 1){
+    gameInfo->args.uPID1 = uPID;
+  }
+  else{
+    gameInfo->args.uPID2 = uPID;
+  }
+
+  //sync up the threads
+  while(gameInfo->args.uPID1 == 0 || gameInfo->args.uPID2 == 0){
+    sleep(1);
+  }
+
+  //get the other players uPID
+  pthread_mutex_lock(&gameInfo_access);
+  if(PID == 1) {
+    other_uPID = gameInfo->args.uPID2;
+  }else{
+    other_uPID = gameInfo->args.uPID1;
+  }
+  pthread_mutex_unlock(&gameInfo_access);
+
   if(send_ret == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
   
   if ((sendPID(PID, reply_sock_fd) == -1))
     c_exit(&gameInfo, PID, &username, reply_sock_fd);
-    
+
+  char *other_username;
   pthread_mutex_lock(&(gameInfo->args.head_access));
   //send player stats
   int ret_sendp = sendPlayer(uPID, username, head, reply_sock_fd, fd);
   //record player in database(if new)
   recPlayer(uPID, PID, username, -1, head, fd);
   pthread_mutex_unlock(&(gameInfo->args.head_access));
-  
   //kill thread if client exited
   if(ret_sendp == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
-  
+
+  //wait until the other thread has recorded their player in the db
+  Player *otherPlay = calloc(1, sizeof(Player));
+  while(otherPlay == NULL) {
+    sleep(1);
+    pthread_mutex_lock(&gameInfo->args.head_access);
+    otherPlay = fpuPID(other_uPID, fd, &gameInfo->args.head);
+    pthread_mutex_unlock(&gameInfo->args.head_access);
+  }
+
+  //send the other player
+  pthread_mutex_lock(&(gameInfo->args.head_access));
+  ret_sendp = sendPlayer(other_uPID, otherPlay->username, head, reply_sock_fd, fd);
+  pthread_mutex_unlock(&(gameInfo->args.head_access));
+
+  if(otherPlay != NULL) free(otherPlay);
+  if(ret_sendp == -1) c_exit(&gameInfo, PID, &username, reply_sock_fd);
+
+
   printf("%s %s %d %s %d\n", username, "with PID:", PID, "and uPID: ", uPID);
-  
+
   if (((win = gameLoop(reply_sock_fd, PID, &arguments)) == -1)) {
     perror("[!!!]: Game Loop, client disconnect? : ");
     c_exit(&gameInfo, PID, &username, reply_sock_fd);

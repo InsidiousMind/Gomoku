@@ -136,6 +136,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
     free(chatSrvInfo);
     free(start_socks);
     free(gameSrvInfo);
+    return;
 }
 
 //checks for a valid game, and if it can find one
@@ -276,7 +277,7 @@ void INThandle(int sig){
   if(c == 'y' || c == 'Y')
     stop = true;
   else
-    signal(SIGINT, INThandle);
+    signal(sig, INThandle);
   //grab the newline char so it doesn't screw stuff up
   getchar();
 }

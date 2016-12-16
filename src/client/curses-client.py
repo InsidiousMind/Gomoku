@@ -20,6 +20,7 @@ class Player(object):
         self.wins = wins
         self.losses = losses
         self.ties = ties
+        self.win = None
 
     def print_player(self):
         print(str(self.name) + ' UPID: ' + str(self.upid) + ' has ' + str(self.wins) + ' wins ' + str(
@@ -42,6 +43,16 @@ class Player(object):
                 self.losses = int(player[22])
                 self.ties = int(player[23])
                 break
+
+    def update_pwin(self):
+        self.win.clear()
+        self.win.addstr(0, 0, "Player: " + str(self.name))
+        self.win.addstr(1, 0, "Unique PID: " + str(self.upid))
+        self.win.addstr(2, 0, "Wins: " + str(self.wins))
+        self.win.addstr(3, 0, "Losses: " + str(self.losses))
+        self.win.addstr(4, 0, "Ties:" + str(self.ties))
+        self.win.refresh()
+
 
 
 class Chat(threading.Thread):
@@ -74,7 +85,7 @@ class Chat(threading.Thread):
 class Screen(object):
     def __init__(self, height, width, one_begin_y,
                  one_begin_x, two_begin_y, two_begin_x,
-                 thr_begin_y, thr_begin_x, player, chat_v):
+                 thr_begin_y, thr_begin_x, player, player2, chat_v):
         '''
         init for screen in main
         screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
@@ -112,7 +123,10 @@ class Screen(object):
         self.win5 = curses.newwin(10, 16, 0, 70)
 
         #win6 is the window for error correction and telling the player what to do
-        self.win6 = curses.newwin(1, 70, 9, 90)
+        self.win6 = curses.newwin(1, 60, 10, 90)
+
+        # window 7 is the window for the other players stats
+        self.win7 = curses.newwin(10, 16, 0, 90)
 
         # takes messages for the game
         self.game = Textbox(self.win1)
@@ -122,6 +136,7 @@ class Screen(object):
         self.chat = chat_v
 
         self.player = player
+        self.player2 = player2
 
     @staticmethod
     def initialize():
@@ -161,23 +176,16 @@ class Screen(object):
 
     def refresh_windows(self):
         self.print_title()
-        self.update_pwin()
+        self.player.update_pwin()
+        self.player2.update_pwin()
         self.win1.refresh()
         self.win2.refresh()
         self.win3.refresh()
         self.win4.refresh()
         self.win5.refresh()
         self.win6.refresh()
-        self.stdscr.refresh()
-
-    def update_pwin(self):
-        self.win5.clear()
-        self.win5.addstr(0, 0, "Player: " + str(self.player.name))
-        self.win5.addstr(1, 0, "Unique PID: " + str(self.player.upid))
-        self.win5.addstr(2, 0, "Wins: " + str(self.player.wins))
-        self.win5.addstr(3, 0, "Losses: " + str(self.player.losses))
-        self.win5.addstr(4, 0, "Ties:" + str(self.player.ties))
-        self.win5.refresh()
+        self.win7.refresh()
+        self.stdscr.refresh()       # changing the order of thes
 
     def update_actionbox(self, msg):
         self.win6.clear()
@@ -281,12 +289,17 @@ def main():
     # Get your player number from the server.
     # create player object
     chat_v = object
-    player = Player(username, upid, 0, 0, 0, chat_v)
     pid = ''
     # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     # Y (first) DOWN
     # X (sec) across -> that way
-    screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, player, chat)
+    # create player objects and windows
+    player = Player(username, upid, 0, 0, 0 , chat )
+    player2 = Player("", 0, 0, 0, 0, chat)
+    screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, player, player2, chat)
+    player.win = screen.win5
+    player2.win = screen.win7
+
     logging.debug("Game starting.")
     gips = GIPS
     try:
@@ -308,6 +321,8 @@ def main():
             screen.stdscr.clear()
             pid = gips.recv_pid()
             screen.player.recv_player(sock)
+            # player2 for stats
+            screen.player2.recv_player(sock)
             screen.refresh_windows()
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
@@ -415,7 +430,7 @@ def game_loop(board, pid, screen, gips):
         while actions_taken == False:
             actions_taken = check_keys(screen, gips, board, pid)
             screen.update_actionbox("You still have actions left")
-        screen.update_actionbox("Wait your turn")
+        screen.update_actionbox("Wait your turn. Be Respectful A+ ; ;))")
         screen.refresh_windows()
         is_win = gips.recv_iswin()
         gips.is_win = is_win
@@ -441,6 +456,7 @@ def check_keys(screen, gips, board, pid):
 def move(screen, gips, board, pid):
     screen.update_actionbox("Now you can move!")
     done = False
+    move_v = []
     while not done:
         screen.win1.clear()
         logging.debug("Key: m")
@@ -452,8 +468,10 @@ def move(screen, gips, board, pid):
             done = False
             continue
         move_v = (str(stuff)).split(' ')
-
-        move_v.remove('\n')  # kill the newline=
+        move_len = len(move_v)
+        for x in range(0, move_len):
+            if move_v[x] == '\n':
+                move_v.remove(move_v[x])
 
         if not move_is_valid(move_v):
             screen.update_actionbox("Your move is not valid!!, move again")
@@ -481,8 +499,8 @@ def move_is_valid(move):
     except ValueError:
         return False
     logging.debug("Move: " + str(move))
-    if 9 > int(move[0]) > 0:
-        if 9 > int(move[1]) > 0:
+    if 9 > move[0] > 0:
+        if 9 > move[1] > 0:
             logging.debug("Valid")
             return True
         else:

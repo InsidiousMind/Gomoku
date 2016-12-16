@@ -19,6 +19,8 @@ typedef struct game_srv_args
 typedef struct pthread_args {
   int socket;
   int socket2;
+  int uPID1;
+  int uPID2;
   int fd;
   Node *head;
   pthread_mutex_t head_access;
@@ -32,7 +34,7 @@ typedef struct game_s {
   //shared variables 
   int play1Moves[2];
   int play2Moves[2];
- 
+
   int whoTurn;
   int playerWin;
   int player1Taken;
