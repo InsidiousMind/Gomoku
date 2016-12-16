@@ -91,7 +91,8 @@ class Screen(object):
         # self.win1.box()
 
         # Window 2 carries the chat.
-        self.win2 = curses.newwin(((3 * height) // 4), (width*3)-1, two_begin_y, two_begin_x)
+        self.win2 = curses.newwin(((3 * height) // 4), ((width * 3) - 5),
+                                  two_begin_y, two_begin_x)
 
         # self.win2_sub = self.win2.derwin(2, 1)
         # self.win2.box()
