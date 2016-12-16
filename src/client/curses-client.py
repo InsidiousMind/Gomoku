@@ -583,8 +583,8 @@ def down(stdscr):
     stdscr.keypad(False)
     curses.echo()
     curses.endwin()
-    import doctest
-    doctest.testmod()
+    # import doctest
+    # doctest.testmod()
 
 
 if __name__ == "__main__":

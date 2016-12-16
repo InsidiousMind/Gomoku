@@ -1,13 +1,10 @@
 ## Program:
  - A Networked Gomoku Game
 
-### Proposal Due Wednesday
-
 ## Author:
   - InsidiousMind and Romulus10
 
-## Date:
- - October 31, 2016
+# Feel free to clone and contribute!
 
 ## GitHub Repository
  - [InsidiousMind/Gomoku](https://github.com/InsidiousMind/Gomoku)
