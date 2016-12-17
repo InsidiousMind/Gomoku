@@ -19,18 +19,6 @@ class Screen(object):
         self.stdscr = self.initialize()
         self.windows = {}
 
-
-
-        self.game_command_win = curses.newwin(4, 4, 33, one_begin_x)
-        self.chat_win = curses.newwin(((3 * height) // 4), ((width * 3) - 5),
-                                  two_begin_y, two_begin_x)
-        self.game_board_win = curses.newwin(30, 30, 14, 120)
-        self.current_message_win = curses.newwin((height // 4), (width*3)-1,
-                                  (two_begin_y + ((3 * height) // 4)), two_begin_x)
-        self.actionbox_win = curses.newwin(1, 60, 10, 90)
-        self.player_stats_win = curses.newwin(10, 16, 0, 70)
-        self.other_players_stats_win = curses.newwin(10, 16, 0, 90)
-
         self.game = Textbox(self.game_command_win)
         self.board_mesg = Textbox(self.current_message_win)
         self.chat = chat_v
@@ -46,10 +34,14 @@ class Screen(object):
         stdscr.keypad(True)
         return stdscr
 
-    # y (first) DOWN
-    # x (second) across -> that way
-    def create_window(y, x, begin_y, begin_x, key):
-        windows[key] = curses.newwin(y, x, begin_y, begin_x)
+    '''
+    y (first) DOWN
+    x (second) across -> that way
+    more will be added in this function when we add things like
+    borders etc
+    '''
+    def create(height, width, begin_y, begin_x, key):
+        windows[key] = curses.newwin(height, width, begin_y, begin_x)
 
 
     # 75-> that way
@@ -81,14 +73,11 @@ class Screen(object):
         Used to force Curses to re-display the entire game window.
         """
         self.print_title()
-        self.game_command_win.refresh()
-        self.chat_win.refresh()
-        self.game_board_win.refresh()
-        self.current_message_win.refresh()
-        self.actionbox_win.refresh()
-        self.stdscr.refresh()       # changing the order of thes
+        for key in self.windows:
+            self.windows[key].refresh()
+        screen.stdscr.refresh()
 
     def update_actionbox(self, msg):
         self.actionbox_win.clear()
         self.actionbox_win.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
-        self.actionbox_win.refresh()
+        self.actionbox_win.refresh()

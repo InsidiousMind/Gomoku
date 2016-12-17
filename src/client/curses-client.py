@@ -76,6 +76,7 @@ def main():
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
             # TODO : FIX WINDOWS, DEFINITELY OVERLAPPING GOING ON
+
             screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
@@ -101,6 +102,19 @@ def init_chat(chat_v, screen, gips):
     screen.chat = chat_v
     gips.chat = chat_v
 
+# create windows here
+# a function in Screen should handle resizing based on
+# stuff pased here
+# TODO
+def init_windows(screen):
+    # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
+    screen.create(4, 4, 33, 120, "game commands")
+    screen.create(((3 * 40) // 4), (40 * 3) - 5), 15, 72, "chat")
+    screen.create(30, 30, 14, 120, "board")
+    screen.create(40 // 4, ((40 * 3) - 1), (15 + ((3 * 40) // 4)), 72, "current message")
+    screen.create(1, 60, 10, 90, "actionbox")
+    screen.create(10, 16, 0, 70, "pstats")
+    screen.create(10, 16, 0, 70, "p2stats")
 
 # noinspection PyBroadException
 
@@ -183,7 +197,6 @@ def game_loop(board, pid, screen, gips):
         while actions_taken is False:
             actions_taken = check_keys(screen, gips, board, pid)
             screen.update_actionbox("You still have actions left")
-        # Why does this say A+ ;))?
         screen.update_actionbox("Wait your turn. Be Respectful A+ ; ;))")
         screen.refresh_windows()
         is_win = gips.recv_iswin()
