@@ -231,7 +231,7 @@ def move(screen, gips, board, pid):
             done = False
             continue
         done = True
-    screen.game_command_wn.clear()
+    screen.game_command_win.clear()
     # subtract 1 from moves
     move_v = list(map(int, move_v))
     move_v[0] -= 1
