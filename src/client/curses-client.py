@@ -11,7 +11,6 @@ import threading
 import time
 from curses.textpad import Textbox
 from socket import ntohl
-from CursesClient import *
 from CursesClient import GIPS, Screen, Chat, Player
 
 
@@ -41,8 +40,8 @@ def main():
     # Y (first) DOWN
     # X (sec) across -> that way
     # create player objects and windows
-    player Player(username, upid, 0, 0, 0 , chat )
-    player2 = Player.Player("", 0, 0, 0, 0, chat)
+    player = CursesClient.Player(username, upid, 0, 0, 0 , chat )
+    player2 = CursesClient.Player("", 0, 0, 0, 0, chat)
     screen = Screen.Screen(40, 40, 43, 120, 15, 1, 15, 121, chat)
     player.win = screen.player_stats_win
     player2.win = screen.other_players_stats_win
@@ -129,14 +128,14 @@ def reboot_game_seq(gips, screen, pid):
 
 def prompt_endgame(screen, gips):
     c = chr(screen.stdscr.getch())
-    if(c == 'y' or c == 'Y'):
+    if c in ('y','Y'):
         gips.sock.shutdown(socket.SHUT_RDWR)
         gips.sock.close()
         return True
     else:
         screen.update_actionbox("Are you sure you want to quit? [Y/n]")
         c = chr(screen.stdscr.getch())
-        if(c == 'y' or c == 'Y'):
+        if c in ('y', 'Y'):
             screen.halt()
             print("Thanks for playing!!!")
             return False
@@ -144,7 +143,6 @@ def prompt_endgame(screen, gips):
             gips.sock.shutdown(socket.SHUT_RDWR)
             gips.sock.close()
             return True
-
 def end_game(gips, screen, pid):
     if gips.is_win == pid:
         print("You Win! :-}")
