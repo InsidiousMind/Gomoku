@@ -286,7 +286,6 @@ def chat(screen, gips):
     screen.refresh_windows()
     #the server should immediately send back a message if we send it
     gips.chat.recv_msg()
-
     return
 
 

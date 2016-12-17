@@ -1,6 +1,7 @@
 import curses
 from curses.textpad import Textbox
 
+# TODO:
 
 class Screen(object):
     def __init__(self, height, width, one_begin_y,
@@ -15,7 +16,6 @@ class Screen(object):
         the 'self.derwin' windows are derivative windows meant to be borders
         still
         '''
-
         self.stdscr = self.initialize()
         self.windows = {}
 
@@ -40,8 +40,8 @@ class Screen(object):
     more will be added in this function when we add things like
     borders etc
     '''
-    def create(height, width, begin_y, begin_x, key):
-        windows[key] = curses.newwin(height, width, begin_y, begin_x)
+    def create(self, height, width, begin_y, begin_x, key):
+        self.windows[key] = curses.newwin(height, width, begin_y, begin_x)
 
 
     # 75-> that way
@@ -75,9 +75,9 @@ class Screen(object):
         self.print_title()
         for key in self.windows:
             self.windows[key].refresh()
-        screen.stdscr.refresh()
+        self.stdscr.refresh()
 
     def update_actionbox(self, msg):
-        self.actionbox_win.clear()
-        self.actionbox_win.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
-        self.actionbox_win.refresh()
+        self.windows["actionbox"].clear()
+        self.windows["actionbox"].addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
+        self.windows["actionbox"].refresh()
