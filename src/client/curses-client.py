@@ -149,6 +149,7 @@ def prompt_endgame(screen, gips):
             gips.sock.shutdown(socket.SHUT_RDWR)
             gips.sock.close()
             return True
+
 def end_game(gips, screen, pid):
     if gips.is_win == pid:
         print("You Win! :-}")
@@ -195,7 +196,7 @@ def check_keys(screen, gips, board, pid):
     logging.debug("checkKeys")
     if c == ord('q'):
         print("You are quitting? [Y/n]")
-        prompt_endgame(screen, gips)
+        endgame(screen, gips, pid)
     if c == ord('m'):
         move(screen, gips, board, pid)
         return True
