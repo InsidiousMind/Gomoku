@@ -11,10 +11,7 @@ import threading
 import time
 from curses.textpad import Textbox
 from socket import ntohl
-from CursesClient import Chat.Chat
-from CursesClient import GIPS.GIPS
-from CursesClient import Player.Player
-from CursesClient import Screen.Screen
+from CursesClient import *
 
 
 # noinspection PyBroadException
@@ -43,7 +40,7 @@ def main():
     # Y (first) DOWN
     # X (sec) across -> that way
     # create player objects and windows
-    player = Player.Player(username, upid, 0, 0, 0 , chat )
+    player Player(username, upid, 0, 0, 0 , chat )
     player2 = Player.Player("", 0, 0, 0, 0, chat)
     screen = Screen.Screen(40, 40, 43, 120, 15, 1, 15, 121, chat)
     player.win = screen.player_stats_win
@@ -177,7 +174,7 @@ def game_loop(board, pid, screen, gips):
         screen.update_actionbox("Now you can move!")
         screen.refresh_windows()
         actions_taken = False
-        while actions_taken == False:
+        while actions_taken is False:
             actions_taken = check_keys(screen, gips, board, pid)
             screen.update_actionbox("You still have actions left")
         # Why does this say A+ ;))?
