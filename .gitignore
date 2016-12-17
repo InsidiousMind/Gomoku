@@ -11,4 +11,5 @@ src/client/log.txt
 .*.*.swp
 .*.*.swo
 *.o
+.ropeproject
 test
