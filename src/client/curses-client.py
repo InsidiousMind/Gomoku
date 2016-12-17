@@ -11,10 +11,10 @@ import threading
 import time
 from curses.textpad import Textbox
 from socket import ntohl
-from CursesClient import Chat
-from CursesClient import GIPS
-from CursesClient import Player
-from CursesClient import Screen
+from CursesClient import Chat.Chat
+from CursesClient import GIPS.GIPS
+from CursesClient import Player.Player
+from CursesClient import Screen.Screen
 
 
 # noinspection PyBroadException
