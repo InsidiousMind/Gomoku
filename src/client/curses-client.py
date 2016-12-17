@@ -201,7 +201,7 @@ def check_keys(screen, gips, board, pid):
     if c == ord('c'):
         screen.update_actionbox("Enter your chat message")
         chat(screen, gips)
-        screen.chat_win.clear()
+        screen.current_message_win.clear()
         return False
     else:
         return False
