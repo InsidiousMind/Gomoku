@@ -314,7 +314,7 @@ def display_board(board, screen):
     logging.debug("board")
     for a in board:
         for b in a:
-            screen.win3.addch(y, x, ord(b))
+            screen.game_board_win.addch(y, x, ord(b))
             y += 2
         y = 1
         x += 4
