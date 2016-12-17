@@ -143,7 +143,7 @@ def prompt_endgame(screen, gips):
             gips.sock.shutdown(socket.SHUT_RDWR)
             gips.sock.close()
             return True
-
+
 def end_game(gips, screen, pid):
     if gips.is_win == pid:
         print("You Win! :-}")
