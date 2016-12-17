@@ -201,7 +201,7 @@ def check_keys(screen, gips, board, pid):
     if c == ord('c'):
         screen.update_actionbox("Enter your chat message")
         chat(screen, gips)
-        screen.win4.clear()
+        screen.chat_win.clear()
         return False
     else:
         return False
@@ -211,7 +211,7 @@ def move(screen, gips, board, pid):
     done = False
     move_v = []
     while not done:
-        screen.win1.clear()
+        screen.game_command_win.clear()
         logging.debug("Key: m")
         # Get the next move_v and send it.
         screen.game.edit()
@@ -231,7 +231,7 @@ def move(screen, gips, board, pid):
             done = False
             continue
         done = True
-    screen.win1.clear()
+    screen.game_command_wn.clear()
     # subtract 1 from moves
     move_v = list(map(int, move_v))
     move_v[0] -= 1
