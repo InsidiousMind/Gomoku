@@ -11,12 +11,16 @@ class Screen(object):
         screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
         screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
         Y (first) DOWN
-        X (sec) accros -> that way
+        X (sec) across -> that way
         the 'self.derwin' windows are derivative windows meant to be borders
         still
         '''
 
         self.stdscr = self.initialize()
+        self.windows = {}
+
+
+
         self.game_command_win = curses.newwin(4, 4, 33, one_begin_x)
         self.chat_win = curses.newwin(((3 * height) // 4), ((width * 3) - 5),
                                   two_begin_y, two_begin_x)
@@ -26,6 +30,7 @@ class Screen(object):
         self.actionbox_win = curses.newwin(1, 60, 10, 90)
         self.player_stats_win = curses.newwin(10, 16, 0, 70)
         self.other_players_stats_win = curses.newwin(10, 16, 0, 90)
+
         self.game = Textbox(self.game_command_win)
         self.board_mesg = Textbox(self.current_message_win)
         self.chat = chat_v
@@ -40,6 +45,12 @@ class Screen(object):
         curses.use_default_colors()
         stdscr.keypad(True)
         return stdscr
+
+    # y (first) DOWN
+    # x (second) across -> that way
+    def create_window(y, x, begin_y, begin_x, key):
+        windows[key] = curses.newwin(y, x, begin_y, begin_x)
+
 
     # 75-> that way
     # 12 down
@@ -80,4 +91,4 @@ class Screen(object):
     def update_actionbox(self, msg):
         self.actionbox_win.clear()
         self.actionbox_win.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
-        self.actionbox_win.refresh()
+        self.actionbox_win.refresh()
