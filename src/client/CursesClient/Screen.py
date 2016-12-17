@@ -23,7 +23,7 @@ class Screen(object):
         self.game_board_win = curses.newwin(30, 30, 14, 120)
         self.current_message_win = curses.newwin((height // 4), (width*3)-1,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
-        self.error_correction_win = curses.newwin(1, 60, 10, 90)
+        self.actionbox_win = curses.newwin(1, 60, 10, 90)
         self.player_stats_win = curses.newwin(10, 16, 0, 70)
         self.other_players_stats_win = curses.newwin(10, 16, 0, 90)
         self.game = Textbox(self.game_command_win)
@@ -74,10 +74,10 @@ class Screen(object):
         self.chat_win.refresh()
         self.game_board_win.refresh()
         self.current_message_win.refresh()
-        self.error_correction_win.refresh()
+        self.actionbox_win.refresh()
         self.stdscr.refresh()       # changing the order of thes
 
     def update_actionbox(self, msg):
-        self.error_correction_win.clear()
-        self.error_correction_win.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
-        self.error_correction_win.refresh()
+        self.actionbox_win.clear()
+        self.actionbox_win.addstr(msg, curses.A_BOLD | curses.A_STANDOUT)
+        self.actionbox_win.refresh()

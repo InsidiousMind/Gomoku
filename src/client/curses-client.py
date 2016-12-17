@@ -52,13 +52,13 @@ def main():
         keep_playing = True
         while keep_playing:
             screen.stdscr.clear()
-            screen.error_correction_win.clear()
+            screen.actionbox_win.clear()
             screen.print_title()
             screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
                          curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
-            screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
+            screen.refresh_windows()
             sock = establish_connection(host, port)
             gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
@@ -69,11 +69,10 @@ def main():
             screen.stdscr.clear()
             pid = gips.recv_pid()
             player.recv_player(sock)
-            # player2 for stats
             player2.recv_player(sock)
-            screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
+            screen.refresh_windows()
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
             screen.refresh_windows()
@@ -195,7 +194,6 @@ def check_keys(screen, gips, board, pid):
     c = screen.stdscr.getch()
     logging.debug("checkKeys")
     if c == ord('q'):
-        print("You are quitting? [Y/n]")
         endgame(screen, gips, pid)
     if c == ord('m'):
         move(screen, gips, board, pid)
