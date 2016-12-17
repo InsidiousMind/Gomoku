@@ -1,6 +1,5 @@
 import curses
 from curses.textpad import Textbox
-from .Player import Player
 
 
 class Screen(object):
