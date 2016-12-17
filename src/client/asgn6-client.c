@@ -94,6 +94,7 @@ int main() {
   free(name);
   free(win);
   free(player_info);
+  return 0;
 }
 
 void send_move(int a, int b, char **board, int sock, char player, char stone) {
