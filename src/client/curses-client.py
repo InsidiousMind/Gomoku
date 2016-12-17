@@ -56,7 +56,9 @@ def main():
             screen.print_title()
             screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
                          curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
-            screen.refresh_windows(player, player2)
+            screen.refresh_windows()
+            player.update_pwin()
+            player2.update_pwin()
             sock = establish_connection(host, port)
             gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
@@ -69,7 +71,9 @@ def main():
             player.recv_player(sock)
             # player2 for stats
             player2.recv_player(sock)
-            screen.refresh_windows(player, player2)
+            screen.refresh_windows()
+            player.update_pwin()
+            player2.update_pwin()
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
             screen.refresh_windows()

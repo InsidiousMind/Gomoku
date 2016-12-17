@@ -17,27 +17,17 @@ class Screen(object):
         '''
 
         self.stdscr = self.initialize()
-
         self.game_command_win = curses.newwin(4, 4, 33, one_begin_x)
-
         self.chat_win = curses.newwin(((3 * height) // 4), ((width * 3) - 5),
                                   two_begin_y, two_begin_x)
-
         self.game_board_win = curses.newwin(30, 30, 14, 120)
-
         self.current_message_win = curses.newwin((height // 4), (width*3)-1,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
-
         self.error_correction_win = curses.newwin(1, 60, 10, 90)
-
         self.player_stats_win = curses.newwin(10, 16, 0, 70)
-
         self.other_players_stats_win = curses.newwin(10, 16, 0, 90)
-
         self.game = Textbox(self.game_command_win)
-
         self.board_mesg = Textbox(self.current_message_win)
-
         self.chat = chat_v
 
     @staticmethod
