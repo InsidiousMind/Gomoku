@@ -43,7 +43,7 @@ dir:
 server: $(SRV_OBJ) $(DEP_OBJ)
 	$(CC) -o build/bin/server $(BUILD_SRV_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
-client: $(CLIENT_OBJ) $(DEP_OBJ) 
+client: $(CLIENT_OBJ) $(DEP_OBJ)
 	$(CC) -o build/bin/client $(BUILD_CLIENT_OBJ) $(BUILD_DEP_OBJ) $(CFLAGS)
 
 curses:
@@ -57,6 +57,8 @@ clean:
 	rm -rf test
 	rm -rf src/client/*.txt
 	rm -rf *.txt
+	rm -rf src/client/CursesClient/*.pyc
+	rm -rf src/client/CursesClient/__pycache__/
 
 
 #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\///

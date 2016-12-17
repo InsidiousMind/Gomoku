@@ -1,6 +1,6 @@
 import curses
 from curses.textpad import Textbox
-from Player import Player
+from .Player import Player
 
 
 class Screen(object):
@@ -76,14 +76,11 @@ class Screen(object):
 
     # args should be a list of Player objects, if they aren't Player objs
     # ignore them
-    def refresh_windows(self, *args):
+    def refresh_windows(self):
         """
         Used to force Curses to re-display the entire game window.
         """
         self.print_title()
-        for arg in args:
-            if isinstance(arg, Player.Player):
-                Player.arg.update_pwin()
         self.game_command_win.refresh()
         self.chat_win.refresh()
         self.game_board_win.refresh()

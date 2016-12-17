@@ -47,7 +47,7 @@ def main():
     player2.win = screen.other_players_stats_win
 
     logging.debug("Game starting.")
-    gips = GIPS.GIPS
+    gips = GIPS
     try:
         keep_playing = True
         while keep_playing:
@@ -58,11 +58,11 @@ def main():
                          curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
             screen.refresh_windows(player, player2)
             sock = establish_connection(host, port)
-            gips = GIPS.GIPS(sock, chat_v)
+            gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
             gips.upid = upid
             # init chat_v thread
-            chat_v = Chat.Chat(screen.chat_win, sock)
+            chat_v = Chat(screen.chat_win, sock)
             init_chat(chat_v, screen, gips)
             screen.stdscr.clear()
             pid = gips.recv_pid()
@@ -72,7 +72,9 @@ def main():
             screen.refresh_windows(player, player2)
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
-            screen.refresh_windows(player, player2)
+            screen.refresh_windows()
+            player.update_pwin()
+            player2.update_pwin()
             keep_playing = reboot_game_seq(gips, screen, pid)
         # end the game once the while loop dies
         end_game(gips, screen, pid)
