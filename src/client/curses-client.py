@@ -194,7 +194,8 @@ def check_keys(screen, gips, board, pid):
     c = screen.stdscr.getch()
     logging.debug("checkKeys")
     if c == ord('q'):
-        return False  # effectively pass your move
+        print("You are quitting? [Y/n]")
+        prompt_endgame(screen, gips)
     if c == ord('m'):
         move(screen, gips, board, pid)
         return True
