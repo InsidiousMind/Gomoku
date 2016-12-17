@@ -19,9 +19,7 @@ class GIPS(object):
         # Cartesian-type coordinates for which point is being toggled.
         self.move_a = -1
         self.move_b = -1
-        # Are we quitting the game early?
-        self.isEarlyExit = 0
-        # The chat object involved in the game.
+        self.is_early_exit = 0
         self.chat = chat_v
         # not a real part of gips struct
         # it's in gips here for ease of use
@@ -34,7 +32,7 @@ class GIPS(object):
         self.pid = pid
         self.move_a = move_a
         self.move_b = move_b
-        self.isEarlyExit = is_early_exit
+        self.is_early_exit = is_early_exit
 
     def send(self):
         logging.debug("Sending.")
@@ -42,7 +40,7 @@ class GIPS(object):
                                    int(self.is_win).to_bytes(1, sys.byteorder),
                                    int(self.move_a).to_bytes(1, sys.byteorder),
                                    int(self.move_b).to_bytes(1, sys.byteorder),
-                                   int(self.isEarlyExit).to_bytes(1, sys.byteorder)))
+                                   int(self.is_early_exit).to_bytes(1, sys.byteorder)))
 
     def recv(self):
         while True:
@@ -55,8 +53,7 @@ class GIPS(object):
                 self.is_win = ord(self.sock.recv(1))
                 self.move_a = ord(self.sock.recv(1))
                 self.move_b = ord(self.sock.recv(1))
-                self.isEarlyExit = ord(self.sock.recv(1))
-
+                self.is_early_exit = ord(self.sock.recv(1))
                 if self.move_a == 255:
                     self.move_a = -1
                 if self.move_b == 255:

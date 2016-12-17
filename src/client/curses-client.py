@@ -45,7 +45,7 @@ def main():
     # create player objects and windows
     player = Player.Player(username, upid, 0, 0, 0 , chat )
     player2 = Player.Player("", 0, 0, 0, 0, chat)
-    screen = Screen.Screen(40, 40, 43, 120, 15, 1, 15, 121, player, player2, chat)
+    screen = Screen.Screen(40, 40, 43, 120, 15, 1, 15, 121, chat)
     player.win = screen.player_stats_win
     player2.win = screen.other_players_stats_win
 
@@ -59,7 +59,7 @@ def main():
             screen.print_title()
             screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
                          curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
-            screen.refresh_windows()
+            screen.refresh_windows(player, player2)
             sock = establish_connection(host, port)
             gips = GIPS.GIPS(sock, chat_v)
             upid = login(sock, upid, username)
@@ -69,12 +69,13 @@ def main():
             init_chat(chat_v, screen, gips)
             screen.stdscr.clear()
             pid = gips.recv_pid()
-            screen.player.recv_player(sock)
+            player.recv_player(sock)
             # player2 for stats
-            screen.player2.recv_player(sock)
-            screen.refresh_windows()
+            player2.recv_player(sock)
+            screen.refresh_windows(player, player2)
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
+            screen.refresh_windows(player, player2)
             keep_playing = reboot_game_seq(gips, screen, pid)
         # end the game once the while loop dies
         end_game(gips, screen, pid)
@@ -118,7 +119,7 @@ def establish_connection(host, port):
 
 # if the player so chooses, reboots the game w/ another player waiting
 def reboot_game_seq(gips, screen, pid):
-    if gips.isEarlyExit != 0 and gips.is_win == 0:
+    if gips.is_early_exit != 0 and gips.is_win == 0:
         screen.update_actionbox("Other client D/Ced. Do you want to play another game? [Y/n]")
         screen.refresh_windows()
         return prompt_endgame(screen, gips)
@@ -161,11 +162,11 @@ def end_game(gips, screen, pid):
 
 def game_loop(board, pid, screen, gips):
     game_running = True
-    while gips.is_win == 0 and gips.isEarlyExit == 0 and game_running:
+    while gips.is_win == 0 and gips.is_early_exit == 0 and game_running:
         logging.debug("Starting the loop.")
         gips.recv()
 
-        if gips.is_win != 0 or gips.isEarlyExit != 0:
+        if gips.is_win != 0 or gips.is_early_exit != 0:
             return gips
         elif gips.move_a == -1 and gips.move_b == -1:
             pass

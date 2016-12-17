@@ -2,7 +2,7 @@ import threading
 import time
 
 
-class Chat(threading.Thread):
+class Chat(object):
     def __init__(self, win, sock):
         # noinspection PyArgumentList
         super(Chat, self).__init__()

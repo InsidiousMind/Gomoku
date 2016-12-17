@@ -1,11 +1,12 @@
 import curses
 from curses.textpad import Textbox
+import Player
 
 
 class Screen(object):
     def __init__(self, height, width, one_begin_y,
                  one_begin_x, two_begin_y, two_begin_x,
-                 thr_begin_y, thr_begin_x, player, player2, chat_v):
+                 thr_begin_y, thr_begin_x, chat_v):
         '''
         init for screen in main
         screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
@@ -20,24 +21,13 @@ class Screen(object):
 
         self.game_command_win = curses.newwin(4, 4, 33, one_begin_x)
 
-        # self.win1_sub = self.win1.derwin(1, 1)
-        # self.win1.box()
-
         self.chat_win = curses.newwin(((3 * height) // 4), ((width * 3) - 5),
                                   two_begin_y, two_begin_x)
 
-        # self.win2_sub = self.win2.derwin(2, 1)
-        # self.win2.box()
-
         self.game_board_win = curses.newwin(30, 30, 14, 120)
-
-        # self.win3_sub = self.win2.derwin(2, 1)
-        # self.win3.box()
 
         self.current_message_win = curses.newwin((height // 4), (width*3)-1,
                                   (two_begin_y + ((3 * height) // 4)), two_begin_x)
-        # self.win4_sub = self.win4.derwin(2, 1)
-        # self.win4.box()
 
         self.error_correction_win = curses.newwin(1, 60, 10, 90)
 
@@ -50,8 +40,6 @@ class Screen(object):
         self.board_mesg = Textbox(self.current_message_win)
 
         self.chat = chat_v
-        self.player = player
-        self.player2 = player2
 
     @staticmethod
     def initialize():
@@ -86,20 +74,21 @@ class Screen(object):
         #Y (first) DOWN
         #X (sec) across -> that way
 
-    def refresh_windows(self):
+    # args should be a list of Player objects, if they aren't Player objs
+    # ignore them
+    def refresh_windows(self, *args):
         """
         Used to force Curses to re-display the entire game window.
         """
         self.print_title()
-        self.player.update_pwin()
-        self.player2.update_pwin()
+        for arg in args:
+            if isinstance(arg, Player.Player):
+                Player.arg.update_pwin()
         self.game_command_win.refresh()
         self.chat_win.refresh()
         self.game_board_win.refresh()
         self.current_message_win.refresh()
-        self.player_stats_win.refresh()
         self.error_correction_win.refresh()
-        self.other_players_stats_win.refresh()
         self.stdscr.refresh()       # changing the order of thes
 
     def update_actionbox(self, msg):
