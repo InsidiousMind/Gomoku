@@ -6,6 +6,7 @@ src/client/.idea/*
 src/server/.idea/*
 src/client/curses-client_old.py
 src/client/CursesClient/__pycache__
+src/client/CursesClient/.ropeproject
 src/client/log.txt
 .*.*.swp
 .*.*.swo
