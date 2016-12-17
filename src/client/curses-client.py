@@ -12,6 +12,7 @@ import time
 from curses.textpad import Textbox
 from socket import ntohl
 from CursesClient import *
+from CursesClient import GIPS, Screen, Chat, Player
 
 
 # noinspection PyBroadException
@@ -40,7 +41,7 @@ def main():
     # Y (first) DOWN
     # X (sec) across -> that way
     # create player objects and windows
-    player Player.Player(username, upid, 0, 0, 0 , chat )
+    player Player(username, upid, 0, 0, 0 , chat )
     player2 = Player.Player("", 0, 0, 0, 0, chat)
     screen = Screen.Screen(40, 40, 43, 120, 15, 1, 15, 121, chat)
     player.win = screen.player_stats_win
