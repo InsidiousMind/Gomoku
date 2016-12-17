@@ -70,11 +70,12 @@ def main():
             pid = gips.recv_pid()
             player.recv_player(sock)
             player2.recv_player(sock)
+            screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
-            screen.refresh_windows()
             board = init_board()
             gips = game_loop(board, pid, screen, gips)
+            # TODO : FIX WINDOWS, DEFINITELY OVERLAPPING GOING ON
             screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
