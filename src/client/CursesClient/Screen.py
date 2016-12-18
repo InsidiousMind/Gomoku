@@ -3,11 +3,10 @@ from curses.textpad import Textbox
 
 # TODO:
 
+
 class Screen(object):
-    def __init__(self, height, width, one_begin_y,
-                 one_begin_x, two_begin_y, two_begin_x,
-                 thr_begin_y, thr_begin_x, chat_v):
-        '''
+    def __init__(self, chat_v):
+        """
         init for screen in main
         screen = Screen(40, 40, 1, 15, 70, 15, 121, 15, player)
         screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
@@ -15,7 +14,7 @@ class Screen(object):
         X (sec) across -> that way
         the 'self.derwin' windows are derivative windows meant to be borders
         still
-        '''
+        """
         self.stdscr = self.initialize()
         self.windows = {}
 
@@ -43,7 +42,6 @@ class Screen(object):
     def create(self, height, width, begin_y, begin_x, key):
         self.windows[key] = curses.newwin(height, width, begin_y, begin_x)
 
-
     # 75-> that way
     # 12 down
     def print_title(self):
@@ -63,8 +61,8 @@ class Screen(object):
         self.stdscr.addstr(32, 120, "Game Window")
         self.stdscr.addstr(13, 120, "The Board")
         self.stdscr.addstr(7, 70, "Press 'm' to move, 'c' to chat, 'Ctrl-g' to enter a move or chat msg")
-        #Y (first) DOWN
-        #X (sec) across -> that way
+        # Y (first) DOWN
+        # X (sec) across -> that way
 
     # args should be a list of Player objects, if they aren't Player objs
     # ignore them

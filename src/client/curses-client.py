@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
 import curses
-from curses import *
 import logging
 import random
 import socket
 import struct
 import sys
-import threading
-import time
-from curses.textpad import Textbox
 from socket import ntohl
+
 from CursesClient import GIPS, Screen, Chat, Player
 
 
@@ -29,7 +26,7 @@ def main():
     print("PLAYER ID NUMBER")
     upid = input("> ")
     # Login with our unique pid.
-        # this will block until we get a game pairing
+    # this will block until we get a game pairing
     # Talk to the server and see what we can get.
     # Get a chat_socket
     # Get your player number from the server.
@@ -40,9 +37,9 @@ def main():
     # Y (first) DOWN
     # X (sec) across -> that way
     # create player objects and windows
-    player = Player(username, upid, 0, 0, 0 , chat )
+    player = Player(username, upid, 0, 0, 0, chat)
     player2 = Player("", 0, 0, 0, 0, chat)
-    screen = Screen(40, 40, 43, 120, 15, 1, 15, 121, chat)
+    screen = Screen(chat)
     player.win = screen.player_stats_win
     player2.win = screen.other_players_stats_win
 
@@ -55,7 +52,7 @@ def main():
             screen.actionbox_win.clear()
             screen.print_title()
             screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
-                         curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
+                                 curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
             player.update_pwin()
             player2.update_pwin()
             screen.refresh_windows()
@@ -80,7 +77,7 @@ def main():
             screen.refresh_windows()
             player.update_pwin()
             player2.update_pwin()
-            keep_playing = reboot_game_seq(gips, screen, pid)
+            keep_playing = reboot_game_seq(gips, screen)
         # end the game once the while loop dies
         end_game(gips, screen, pid)
 
@@ -102,6 +99,7 @@ def init_chat(chat_v, screen, gips):
     screen.chat = chat_v
     gips.chat = chat_v
 
+
 # create windows here
 # a function in Screen should handle resizing based on
 # stuff pased here
@@ -109,16 +107,18 @@ def init_chat(chat_v, screen, gips):
 def init_windows(screen):
     # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
     screen.create(4, 4, 33, 120, "game commands")
-    screen.create(((3 * 40) // 4), (40 * 3) - 5), 15, 72, "chat")
+    screen.create((((3 * 40) // 4), (40 * 3) - 5), 15, 72, "chat")
     screen.create(30, 30, 14, 120, "board")
     screen.create(40 // 4, ((40 * 3) - 1), (15 + ((3 * 40) // 4)), 72, "current message")
     screen.create(1, 60, 10, 90, "actionbox")
     screen.create(10, 16, 0, 70, "pstats")
     screen.create(10, 16, 0, 70, "p2stats")
 
+
 # noinspection PyBroadException
 
 
+# noinspection PyBroadException
 def establish_connection(host, port):
     try:
         logging.warning("Trying to connect to the server.")
@@ -135,7 +135,7 @@ def establish_connection(host, port):
 
 
 # if the player so chooses, reboots the game w/ another player waiting
-def reboot_game_seq(gips, screen, pid):
+def reboot_game_seq(gips, screen):
     if gips.is_early_exit != 0 and gips.is_win == 0:
         screen.update_actionbox("Other client D/Ced. Do you want to play another game? [Y/n]")
         screen.refresh_windows()
@@ -146,9 +146,10 @@ def reboot_game_seq(gips, screen, pid):
         screen.refresh_windows()
         return prompt_endgame(screen, gips)
 
+
 def prompt_endgame(screen, gips):
     c = chr(screen.stdscr.getch())
-    if c in ('y','Y'):
+    if c in ('y', 'Y'):
         gips.sock.shutdown(socket.SHUT_RDWR)
         gips.sock.close()
         return True
@@ -163,6 +164,7 @@ def prompt_endgame(screen, gips):
             gips.sock.shutdown(socket.SHUT_RDWR)
             gips.sock.close()
             return True
+
 
 def end_game(gips, screen, pid):
     if gips.is_win == pid:
@@ -208,7 +210,7 @@ def check_keys(screen, gips, board, pid):
     c = screen.stdscr.getch()
     logging.debug("checkKeys")
     if c == ord('q'):
-        endgame(screen, gips, pid)
+        end_game(screen, gips, pid)
     if c == ord('m'):
         move(screen, gips, board, pid)
         return True
@@ -219,6 +221,7 @@ def check_keys(screen, gips, board, pid):
         return False
     else:
         return False
+
 
 def move(screen, gips, board, pid):
     screen.update_actionbox("Now you can move!")
@@ -260,14 +263,14 @@ def move(screen, gips, board, pid):
     # moves = []
 
 
-def move_is_valid(move):
+def move_is_valid(move_v):
     try:
-        move = list(map(int, move))
+        move_v = list(map(int, move_v))
     except ValueError:
         return False
-    logging.debug("Move: " + str(move))
-    if 9 > move[0] > 0:
-        if 9 > move[1] > 0:
+    logging.debug("Move: " + str(move_v))
+    if 9 > move_v[0] > 0:
+        if 9 > move_v[1] > 0:
             logging.debug("Valid")
             return True
         else:
@@ -277,14 +280,15 @@ def move_is_valid(move):
         logging.debug("Invalid.")
         return False
 
+
 def chat(screen, gips):
     screen.board_mesg.edit()
     stuff = screen.board_mesg.gather()
     message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
     # Send message to the server as a bytestring.
-    gips.sock.send(bytes(message, 'utf-8'))
+    gips.sock.send(bytes(message))
     screen.refresh_windows()
-    #the server should immediately send back a message if we send it
+    # the server should immediately send back a message if we send it
     gips.chat.recv_msg()
     return
 
@@ -333,13 +337,9 @@ def display_board(board, screen):
         x += 4
     screen.refresh_windows()
 
+
 # noinspection PyUnusedLocal
 def init_board():
-    """
->>> board = init_board()
->>> board[0][0]
-    'o'
-    """
     return [['o' for x in range(8)] for y in range(8)]
 
 
