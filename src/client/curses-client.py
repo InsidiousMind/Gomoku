@@ -25,12 +25,6 @@ def main():
     username = input("> ")
     print("PLAYER ID NUMBER")
     upid = input("> ")
-    # Login with our unique pid.
-    # this will block until we get a game pairing
-    # Talk to the server and see what we can get.
-    # Get a chat_socket
-    # Get your player number from the server.
-    # create player object
     chat_v = object
     pid = ''
     # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
