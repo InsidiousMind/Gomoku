@@ -74,10 +74,7 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
 
 
   sock_fd = get_server_socket(HOST, HTTPPORT);
-  if( (fcntl(sock_fd, F_SETFD, O_NONBLOCK)) == -1) {
-    printf("socket option: fcntl\n");
-    exit(1);
-  }
+
   if (start_server(sock_fd, BACKLOG) == -1){
     perror("[!!!] error on server start");
     exit(1);

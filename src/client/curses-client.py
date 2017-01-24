@@ -192,7 +192,7 @@ def check_keys(screen, gips, board, pid):
     if c == ord('c'):
         screen.update_actionbox("Enter your chat message")
         chat(screen, gips)
-        screen.current_message_win.clear()
+        screen.windows["current_message"].clear()
         return False
     else:
         return False
@@ -266,7 +266,7 @@ def chat(screen, gips):
     stuff = screen.board_mesg.gather()
     message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
     # Send message to the server as a bytestring.
-    gips.sock.send(bytes(message))
+    gips.sock.send(bytes(message.encode("utf-8")))
     screen.refresh_windows()
     # the server should immediately send back a message if we send it
     gips.chat.recv_msg()
