@@ -103,7 +103,8 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   
   signal(SIGINT, INThandle);
   
-  //TODO Implement this with libevent, that will fix the sighandler
+  //TODO Implement this with libuv, that will make the sighandler easier to
+    // implement
     //otherwise shtuffs screwed
   while(! stop){
     if ((r_sockfd = accept_client(sock_fd)) == -1)

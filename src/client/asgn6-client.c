@@ -1,3 +1,15 @@
+/*
+  _____   ______  _____   _____   ______  _____         _______  ______  _____  
+ |  __ \ |  ____||  __ \ |  __ \ |  ____|/ ____|    /\ |__   __||  ____||  __ \ 
+ | |  | || |__   | |__) || |__) || |__  | |        /  \   | |   | |__   | |  | |
+ | |  | ||  __|  |  ___/ |  _  / |  __| | |       / /\ \  | |   |  __|  | |  | |
+ | |__| || |____ | |     | | \ \ | |____| |____  / ____ \ | |   | |____ | |__| |
+ |_____/ |______||_|     |_|  \_\|______|\_____|/_/    \_\|_|   |______||_____/ 
+ * This client is no longer supported and does not work with the newest version of the server
+ * Feel free to revive this client if you feel you want a pure-C alternative to the Python Curses-client
+ */
+
+
 /*Author: Sean Batzel and Andrew Plaza
  * Date: October 31 2016
  * Github: https://github.com/InsidiousMind/Gomoku
