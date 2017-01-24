@@ -262,6 +262,7 @@ def move_is_valid(move_v, board):
 def chat(screen, gips):
     screen.board_mesg.edit()
     stuff = screen.board_mesg.gather()
+    logging.debug(stuff)
     message = '\v' + str(len(str(gips.upid))) + str(gips.upid) + str(stuff)
     # Send message to the server as a bytestring.
     gips.sock.send(bytes(message.encode("utf-8")))
