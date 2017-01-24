@@ -51,6 +51,8 @@ def main():
             player2.update_pwin()
             screen.refresh_windows()
             sock = establish_connection(host, port)
+            if(not sock):
+                hard_shutdown(gips, screen)
             gips = GIPS(sock, chat_v)
             upid = login(sock, upid, username)
             gips.upid = upid
@@ -77,16 +79,10 @@ def main():
 
     except Exception:
         logging.exception("Exception caught")
-        gips.sock.shutdown(socket.SHUT_RDWR)
-        gips.sock.close()
-        down(screen.stdscr)
-        sys.exit(0)
+        hard_shutdown(gips, screen)
     except KeyboardInterrupt:
         logging.exception("SIGINT received")
-        gips.sock.shutdown(socket.SHUT_RDWR)
-        gips.sock.close()
-        down(screen.stdscr)
-        sys.exit(0)
+        hard_shutdown(gips, screen)
 
 
 def init_chat(chat_v, screen, gips):
@@ -103,11 +99,9 @@ def establish_connection(host, port):
         logging.warning("Socket issue check: " + str(sock))
         return sock
     except Exception:
+        print("Couldn't connect to the server. Check your internet connection and try again.")
         logging.critical("Server could not be reached!")
-        print(
-            "Couldn't connect to the server. Check your internet connection and try again.")
-        sys.exit(0)
-
+        return False
 
 # if the player so chooses, reboots the game w/ another player waiting
 def reboot_game_seq(gips, screen):
@@ -149,10 +143,14 @@ def end_game(gips, screen, pid):
     print("Your new stats are:")
     screen.player.recv_player(gips.sock)
     screen.player.print_player()
-    gips.sock.shutdown(socket.SHUT_RDWR)
-    gips.sock.close()
-    sys.exit(0)
+    hard_shutdown(gips, screen)
 
+def hard_shutdown(gips, screen):
+    if(gips is not None and hasattr(gips, 'sock')):
+        gips.sock.shutdown(socket.SHUT_RDWR)
+        gips.sock.close()
+    down(screen.stdscr)
+    sys.exit(0)
 
 def game_loop(board, pid, screen, gips):
     game_running = True
