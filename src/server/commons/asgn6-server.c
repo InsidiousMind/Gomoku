@@ -24,34 +24,37 @@
 void *get_in_addr(struct sockaddr *sa); //get info of incoming addr in struct
 void print_ip(struct addrinfo *ai); //prints IP
 int get_server_socket(char *hostname, char *port); //get a socket and bind to it
-int start_server(int serv_socket, int backlog);  //starts listening on port for inc connections
+int start_server(int serv_socket,
+                 int backlog);  //starts listening on port for inc connections
 int accept_client(int serv_sock); //accepts incoming connection
-int* startGame(c_head **head);
+int *startGame(c_head **head);
+
 void INThandle(int sig);
 
 static bool stop = false;
-  /*once two clients connect init a game server
-   *              Game Server
-   *              /        \
-   *             /          \
-   *   Client Thread      Client Thread  ( both attached to game server)
-   *
-   *   this gives more control over client threads
-   *   For example, now we can use pthread_join in Game server
-   *   to wait for each client thread to finish
-   *  reducing memory leaks
-   */
-void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
-  
+
+/*once two clients connect init a game server
+ *              Game Server
+ *              /        \
+ *             /          \
+ *   Client Thread      Client Thread  ( both attached to game server)
+ *
+ *   this gives more control over client threads
+ *   For example, now we can use pthread_join in Game server
+ *   to wait for each client thread to finish
+ *  reducing memory leaks
+ */
+void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access) {
+
   c_head *conn_head = NULL;
-  
+
   //add just one 'placeholder' socket to init head, so that the LL will always at least
   // include one entry
   c_add(&conn_head, -1);
-    
+
   pthread_mutex_t conn_head_access = PTHREAD_MUTEX_INITIALIZER;
   int sock_fd;
-  
+
   Node *game_head = *temp;
   gameArgs *gameSrvInfo = calloc(1, sizeof(gameArgs));
 
@@ -72,79 +75,79 @@ void serverLoop(int fd, Node **temp, pthread_mutex_t *head_access){
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-
   sock_fd = get_server_socket(HOST, HTTPPORT);
 
-  if (start_server(sock_fd, BACKLOG) == -1){
+  if (start_server(sock_fd, BACKLOG) == -1) {
     perror("[!!!] error on server start");
     exit(1);
   }
-  
 
   int r_sockfd;
   int *start_socks;
-    
-    //information and mutexes for the chat thread
-  chatArgs *chatSrvInfo = calloc(1, sizeof(chatArgs)) ;
+
+  //information and mutexes for the chat thread
+  chatArgs *chatSrvInfo = calloc(1, sizeof(chatArgs));
   chatSrvInfo->conn_head = conn_head;
   chatSrvInfo->conn_head_access = conn_head_access;
   chatSrvInfo->db_head = *temp;
   chatSrvInfo->db_head_access = *head_access;
   chatSrvInfo->db_fd = fd;
   chatSrvInfo->stop = false;
-    //create the chat thread
+  //create the chat thread
   pthread_mutex_lock(&conn_head_access);
-  if((pthread_create(&chat_thread, NULL, (void*)chat_subserver, (void*) chatSrvInfo)) != 0)
+  if ((pthread_create(&chat_thread, NULL, (void *) chat_subserver,
+                      (void *) chatSrvInfo)) != 0)
     printf("Failed to start chat server\n");
   pthread_mutex_unlock(&conn_head_access);
-  
+
   signal(SIGINT, INThandle);
-  
+
   //TODO Implement this with libuv, that will make the sighandler easier to
-    // implement
-    //otherwise shtuffs screwed
-  while(! stop){
+  // implement
+  //otherwise shtuffs screwed
+  while (!stop) {
     if ((r_sockfd = accept_client(sock_fd)) == -1)
       continue;
-    if(stop) break;
+    if (stop) break;
     pthread_mutex_lock(&conn_head_access);
     c_add(&conn_head, r_sockfd);
     parseConnections(&conn_head);
     pthread_mutex_unlock(&conn_head_access);
-    
-    if( (start_socks = startGame(&conn_head)) != NULL) {
+
+    if ((start_socks = startGame(&conn_head)) != NULL) {
       gameSrvInfo->reply_sock_fd[0] = start_socks[0];
       gameSrvInfo->reply_sock_fd[1] = start_socks[1];
       //start game server thread which starts two client threads.
-      if((pthread_create(&pthread, &attr, (void*) startGameServer, (void*) gameSrvInfo)) != 0)
-       printf("Failed to start Game Server\n");
-      
+      if ((pthread_create(&pthread, &attr, (void *) startGameServer,
+                          (void *) gameSrvInfo)) != 0)
+        printf("Failed to start Game Server\n");
+
       //invert isPlaying
       pthread_mutex_lock(&conn_head_access);
       setPlaying(&conn_head, start_socks[0]);
       setPlaying(&conn_head, start_socks[1]);
       pthread_mutex_unlock(&conn_head_access);
-      
+
       free(start_socks);
     }
   }
-    chatSrvInfo->stop = true;
-    pthread_join(chat_thread, NULL);
-    free(chatSrvInfo);
-    free(start_socks);
-    free(gameSrvInfo);
-    return;
+  chatSrvInfo->stop = true;
+  pthread_join(chat_thread, NULL);
+  free(chatSrvInfo);
+  free(start_socks);
+  free(gameSrvInfo);
+  return;
 }
 
 //checks for a valid game, and if it can find one
 //returns the two socket connections to start one
-int* startGame(c_head **head){
-  
+int *startGame(c_head **head) {
+
   int *start_socks = calloc(2, sizeof(int));
- 
-  if( (start_socks[0] = find(head, -1)) == -1)
+
+  if ((start_socks[0] = find(head, -1)) == -1)
     return NULL;
-  if( (start_socks[1] = find(head, start_socks[0])) == -1)
+  if ((start_socks[1] = find(head, start_socks[0])) == -1)
     return NULL;
   return start_socks;
 }
@@ -167,11 +170,12 @@ int get_server_socket(char *hostname, char *port) {
 
   for (p = servinfo; p != NULL; p = p->ai_next) {
     if ((server_socket = socket(p->ai_family, p->ai_socktype,
-            p->ai_protocol)) == -1) {
+                                p->ai_protocol)) == -1) {
       printf("socket socket \n");
       continue;
     }
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &yes,
+                   sizeof(int)) == -1) {
       printf("socket option: setsockopt\n");
       continue;
     }
@@ -186,7 +190,6 @@ int get_server_socket(char *hostname, char *port) {
   return server_socket;
 }
 
-
 int start_server(int serv_socket, int backlog) {
   int status = 0;
   if ((status = listen(serv_socket, backlog)) == -1) {
@@ -195,20 +198,21 @@ int start_server(int serv_socket, int backlog) {
   return status;
 }
 
-
 int accept_client(int serv_sock) {
   int reply_sock_fd = -1;
   socklen_t sin_size = sizeof(struct sockaddr_storage);
   struct sockaddr_storage client_addr;
   char client_printable_addr[INET6_ADDRSTRLEN];
 
-  if ((reply_sock_fd = accept(serv_sock, (struct sockaddr *) &client_addr, &sin_size)) == -1) {
+  if ((reply_sock_fd = accept(serv_sock, (struct sockaddr *) &client_addr,
+                              &sin_size)) == -1) {
     perror("socket accept error\n");
   } else {
-    inet_ntop(client_addr.ss_family, get_in_addr((struct sockaddr *) &client_addr),
-        client_printable_addr, sizeof client_printable_addr);
+    inet_ntop(client_addr.ss_family,
+              get_in_addr((struct sockaddr *) &client_addr),
+              client_printable_addr, sizeof client_printable_addr);
     printf("server: connection from %s at port %d\n", client_printable_addr,
-        ((struct sockaddr_in *) &client_addr)->sin_port);
+           ((struct sockaddr_in *) &client_addr)->sin_port);
   }
   return reply_sock_fd;
 }
@@ -230,7 +234,6 @@ void print_ip(struct addrinfo *ai) {
       port = ipv4->sin_port;
       ipver = "IPV4";
 
-
     } else {
       ipv6 = (struct sockaddr_in6 *) p->ai_addr;
       addr = &(ipv6->sin6_addr);
@@ -250,7 +253,7 @@ void *get_in_addr(struct sockaddr *sa) {
 
     return &(((struct sockaddr_in *) sa)->sin_addr);
 
-  } else{
+  } else {
 
     printf("ipv6\n");
     return &(((struct sockaddr_in6 *) sa)->sin6_addr);
@@ -258,20 +261,20 @@ void *get_in_addr(struct sockaddr *sa) {
 
 }
 
-void INThandle(int sig){
+void INThandle(int sig) {
   char c;
 
   signal(sig, SIG_IGN);
   write(0, "Do you really want to quit? [Y/n]", 33);
-  
+
   c = getc(stdin);
-  if(c != '\n'){
+  if (c != '\n') {
     ungetc(c, stdin);
-  }else{
+  } else {
     c = getc(stdin);
   }
 
-  if(c == 'y' || c == 'Y')
+  if (c == 'y' || c == 'Y')
     stop = true;
   else
     signal(sig, INThandle);

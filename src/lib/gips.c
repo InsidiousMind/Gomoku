@@ -20,7 +20,7 @@
 
 int checkrecv_err(int n);
 
-gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b, BYTE isEarlyExit) {
+gips *pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b, BYTE isEarlyExit) {
   static gips info;
   info.pid = pid; //1 if player1, 2 if player2
   info.isWin = isWin; //0 if not win, 1 if player 1 win, 2 if player 2 win
@@ -29,7 +29,6 @@ gips * pack(BYTE pid, BYTE isWin, BYTE move_a, BYTE move_b, BYTE isEarlyExit) {
   info.isEarlyExit = isEarlyExit;
   return &info;
 }
-
 
 //Functions to safely send things over to client, or from client to server
 int send_to(gips *info, int sock) {
@@ -42,11 +41,11 @@ int send_to(gips *info, int sock) {
   gipsArr[2] = info->move_a;
   gipsArr[3] = info->move_b;
   gipsArr[4] = info->isEarlyExit;
-  
+
   size_t bytesleft = GIPS_SIZE;
   int len = GIPS_SIZE;
   while (total < len) {
-    n = send(sock, &(*(gipsArr+total)), sizeof(char), MSG_NOSIGNAL);
+    n = send(sock, &(*(gipsArr + total)), sizeof(char), MSG_NOSIGNAL);
     if (n == -1) {
       perror("[!!!] could not send");
       break;
@@ -59,41 +58,41 @@ int send_to(gips *info, int sock) {
   return n == -1 ? -1 : total; //-1 on fail 0 on success
 }
 
-int receive_gips(int sock, gips **info){
+int receive_gips(int sock, gips **info) {
   gips *tempInfo = *info;
-  char gipsArr [5];
+  char gipsArr[5];
   int bytes_to_receive = GIPS_SIZE;
   int len = GIPS_SIZE, total = 0;
   char testBuf;
   ssize_t n;
-  while(true) {
+  while (true) {
     n = recv(sock, &testBuf, sizeof(char), MSG_PEEK | MSG_DONTWAIT);
-    if(errno == EAGAIN){
+    if (errno == EAGAIN) {
       errno = 0;
       usleep(250000);
       continue;
-    }else if(n == 0 || n == -1){
+    } else if (n == 0 || n == -1) {
       perror("[!!!] could not recv/or clientDC in receive_gips");
       return -1;
     }
-    if(testBuf == '\v'){ /*do nothing, wait for poll */}
+    if (testBuf == '\v') { /*do nothing, wait for poll */}
     else break;
   }
   while (total < len) {
     n = recv(sock, &gipsArr[total], sizeof(char), MSG_DONTWAIT);
-    if(checkrecv_err(n) == -1) return -1;
+    if (checkrecv_err(n) == -1) return -1;
     total += n;
     bytes_to_receive -= n;
   }
   len = total;
-  
+
   tempInfo->pid = gipsArr[0];
   tempInfo->isWin = gipsArr[1];
   tempInfo->move_a = gipsArr[2];
   tempInfo->move_b = gipsArr[3];
   tempInfo->isEarlyExit = gipsArr[4];
   *info = tempInfo;
-  
+
   return n == -1 ? -1 : total; //-1 on fail 0 on success
 }
 
@@ -117,12 +116,12 @@ int send_mesg(char *str, int sock) {
   return n == -1 ? -1 : total;
 }
 
-int checkrecv_err(int n){
-  if(errno == EAGAIN){
+int checkrecv_err(int n) {
+  if (errno == EAGAIN) {
     errno = 0;
     usleep(250000);
-  }else{
-    if(n == 0 || n == -1){
+  } else {
+    if (n == 0 || n == -1) {
       perror("[!!!] could not recv/or clientDC in receive_gips");
       return -1;
     }
