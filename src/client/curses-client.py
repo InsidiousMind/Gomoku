@@ -34,8 +34,8 @@ def main():
     player = Player(username, upid, 0, 0, 0, chat)
     player2 = Player("", 0, 0, 0, 0, chat)
     screen = Screen(chat)
-    player.win = screen.player_stats_win
-    player2.win = screen.other_players_stats_win
+    player.win = screen.windows["player_stats"]
+    player2.win = screen.windows["player2_stats"]
 
     logging.debug("Game starting.")
     gips = GIPS
@@ -43,7 +43,7 @@ def main():
         keep_playing = True
         while keep_playing:
             screen.stdscr.clear()
-            screen.actionbox_win.clear()
+            screen.windows["actionbox"].clear()
             screen.print_title()
             screen.stdscr.addstr(6, 70, "The game will be starting shortly....",
                                  curses.A_BLINK | curses.A_BOLD | curses.COLOR_RED)
@@ -55,7 +55,7 @@ def main():
             upid = login(sock, upid, username)
             gips.upid = upid
             # init chat_v thread
-            chat_v = Chat(screen.chat_win, sock)
+            chat_v = Chat(screen.windows["chat"], sock)
             init_chat(chat_v, screen, gips)
             screen.stdscr.clear()
             pid = gips.recv_pid()
@@ -92,25 +92,6 @@ def main():
 def init_chat(chat_v, screen, gips):
     screen.chat = chat_v
     gips.chat = chat_v
-
-
-# create windows here
-# a function in Screen should handle resizing based on
-# stuff pased here
-# TODO
-def init_windows(screen):
-    # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
-    screen.create(4, 4, 33, 120, "game commands")
-    screen.create((((3 * 40) // 4), (40 * 3) - 5), 15, 72, "chat")
-    screen.create(30, 30, 14, 120, "board")
-    screen.create(40 // 4, ((40 * 3) - 1), (15 + ((3 * 40) // 4)), 72, "current message")
-    screen.create(1, 60, 10, 90, "actionbox")
-    screen.create(10, 16, 0, 70, "pstats")
-    screen.create(10, 16, 0, 70, "p2stats")
-
-
-# noinspection PyBroadException
-
 
 # noinspection PyBroadException
 def establish_connection(host, port):
@@ -222,7 +203,7 @@ def move(screen, gips, board, pid):
     done = False
     move_v = []
     while not done:
-        screen.game_command_win.clear()
+        screen.windows["game_commands"].clear()
         logging.debug("Key: m")
         # Get the next move_v and send it.
         screen.game.edit()
@@ -242,7 +223,7 @@ def move(screen, gips, board, pid):
             done = False
             continue
         done = True
-    screen.game_command_win.clear()
+    screen.windows["game_commands"].clear()
     # subtract 1 from moves
     move_v = list(map(int, move_v))
     move_v[0] -= 1
@@ -325,7 +306,7 @@ def display_board(board, screen):
     logging.debug("board")
     for a in board:
         for b in a:
-            screen.game_board_win.addch(y, x, ord(b))
+            screen.windows["board"].addch(y, x, ord(b))
             y += 2
         y = 1
         x += 4

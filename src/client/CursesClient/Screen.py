@@ -17,9 +17,9 @@ class Screen(object):
         """
         self.stdscr = self.initialize()
         self.windows = {}
-
-        self.game = Textbox(self.game_command_win)
-        self.board_mesg = Textbox(self.current_message_win)
+        self.init_base_windows()
+        self.game = Textbox(self.windows["game_commands"])
+        self.board_mesg = Textbox(self.windows["current_message"])
         self.chat = chat_v
 
     @staticmethod
@@ -41,6 +41,21 @@ class Screen(object):
     '''
     def create(self, height, width, begin_y, begin_x, key):
         self.windows[key] = curses.newwin(height, width, begin_y, begin_x)
+
+    # create windows here
+    # a function in Screen should handle resizing based on
+    # stuff passed here
+    # TODO
+    def init_base_windows(self):
+        # screen = Screen(40, 40, 43, 120, 15, 72, 15, 121, player, chat)
+        self.create(4, 4, 33, 120, "game_commands")
+        self.create(((3 * 40) // 4), ((40 * 3) - 5), 15, 72, "chat")
+        self.create(30, 30, 14, 120, "board")
+        self.create(40 // 4, ((40 * 3) - 1), (15 + ((3 * 40) // 4)), 72, "current_message")
+        self.create(1, 60, 10, 90, "actionbox")
+        self.create(10, 16, 0, 70, "player_stats")
+        self.create(10, 16, 0, 70, "player2_stats")
+
 
     # 75-> that way
     # 12 down
