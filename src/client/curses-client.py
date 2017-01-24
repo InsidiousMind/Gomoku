@@ -255,7 +255,7 @@ def move_is_valid(move_v, board):
     else:
         logging.debug("Invalid.")
         valid = False
-    if board[move_v[0]][move_v[1]] is not "o":
+    if board[move_v[0]-1][move_v[1]-1] is not "o":
         logging.debug("Invalid.")
         valid = False
     return valid
