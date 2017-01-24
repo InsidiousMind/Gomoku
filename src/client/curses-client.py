@@ -218,7 +218,7 @@ def move(screen, gips, board, pid):
             if move_v[x] == '\n':
                 move_v.remove(move_v[x])
 
-        if not move_is_valid(move_v):
+        if not move_is_valid(move_v, board):
             screen.update_actionbox("Your move is not valid!!, move again")
             done = False
             continue
@@ -238,7 +238,8 @@ def move(screen, gips, board, pid):
     # moves = []
 
 
-def move_is_valid(move_v):
+def move_is_valid(move_v, board):
+    valid = False
     try:
         move_v = list(map(int, move_v))
     except ValueError:
@@ -247,13 +248,17 @@ def move_is_valid(move_v):
     if 9 > move_v[0] > 0:
         if 9 > move_v[1] > 0:
             logging.debug("Valid")
-            return True
+            valid = True
         else:
             logging.debug("Invalid")
-            return False
+            valid = False
     else:
         logging.debug("Invalid.")
-        return False
+        valid = False
+    if board[move_v[0]][move_v[1]] is not "o":
+        logging.debug("Invalid.")
+        valid = False
+    return valid
 
 
 def chat(screen, gips):
