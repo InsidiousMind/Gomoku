@@ -4,8 +4,6 @@
 ## Author:
   - InsidiousMind and Romulus10
 
-# Feel free to clone and contribute!
-
 ## GitHub Repository
  - [InsidiousMind/Gomoku](https://github.com/InsidiousMind/Gomoku)
 
@@ -22,6 +20,8 @@
 
 ### Wiki
 [Wiki](https://github.com/InsidiousMind/Gomoku/wiki)
+
+#### Feel free to clone and contribute!
 
 # What is Gomoku?
 
